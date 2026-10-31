@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.21.0-beta.2 — explicit memory workflow
+
+- Move model-facing memory instructions into a separate protocol context, available with an empty index and reporting scoped write-tool availability.
+- Direct explicit durable-memory requests to the real tool in the same turn; distinguish recorded/duplicate, pending and rejected results. Personal statements remain claims; guesses are not promoted.
+- Bind short automatic-capture source labels back to original message identities before the unchanged role and quotation checks.
+- Preserve source validation, managed withdrawal, storage schemas and historical beta.1 evidence. This remains a public beta.
+
 ## 0.21.0-beta.1 — SoloPup Memory public beta
 
 - Publish the dev.45-derived plugin as SoloPup Memory (`solopup-memory`), with localized DSH metadata, executable ESM and a Git-compatible bundle.

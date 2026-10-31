@@ -4,6 +4,7 @@ import {assertRestorationInactive} from './restoration-lock.mjs'
 export {initializeManagedMemory,managedMemoryStatus} from './managed-access.mjs'
 import {createObservationTracker,observationRoots,OBSERVATION_REFERENCE_SCHEMA,OBSERVATION_LIST_SCHEMA} from './tool-observations.mjs'
 import {createToolInputTracker} from './tool-inputs.mjs'
+import {memoryProtocol} from './memory-protocol.mjs'
 import {nativeOwnerEvidence,validateNativeWrite} from './native-write-validation.mjs'
 import {toolProposal} from './source-record.mjs'
 import {revisionMode,prepareValueRevision,inheritedRoots} from './field-lineage.mjs'
@@ -2799,6 +2800,11 @@ export function apply(ctx, config = {}) {
 
   let calls = 0
   const memoryHistory = setupMemoryHistory(ctx, renderForRuntime)
+
+  ctx.systemPrompt.context({
+    name: 'memory:protocol', order: CONTEXT_ORDER - 1, required: true,
+    interpolate: false, text: context => memoryProtocol(ctx, context),
+  })
 
   ctx.systemPrompt.context({
     name: CONTEXT_NAME,

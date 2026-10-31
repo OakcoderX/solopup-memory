@@ -2,7 +2,7 @@
 
 **记住重要的事，跟上你的改变。** · [English](README.en.md)
 
-当前公开版本为 **0.21.0-beta.1**，是文字记忆测试版，尚未通过稳定版验收。已验证范围和已知问题见 [RELEASE.md](RELEASE.md)。
+当前公开版本为 **0.21.0-beta.2**，是文字记忆测试版，尚未通过稳定版验收。已验证范围和已知问题见 [RELEASE.md](RELEASE.md)。
 
 把用户明确表达的长期偏好、项目决定、可查证线索和暂定信念保存下来，在后续对话中按项目与适用条件找回。首次公开版本只处理文字。
 
@@ -12,6 +12,8 @@
 2. 独立检查持久价值、归属、措辞、认识类型、适用条件、信念归属和修订关系。审查不能改写候选。
 3. 通过检查后才发布到有效记忆。明确拒绝的不写入；无法判断的新候选可以留在不自动注入的待审区。未通过的替换请求不降格成普通追加。
 4. 后续对话自动得到受预算限制的索引；检索同时查当前项目与全局库，结果标明归属。其他项目不会因此自动变成当前项目的记忆。
+
+用户明确要求记住持久信息时，插件指令要求本轮使用正式 `memory_write`，等待实际结果再确认；不等待后台整理。本人陈述的个人资料按未独立核实的 `claim` 保存，助手猜测不能冒充本人确认。模型仍可能不遵循指令，因此需要实际调用与新会话验收。
 
 默认每四轮尝试一次后台整理。主动 `memory_write` 也经过来源审查。`pending-review`、`rejected`、`not-applied` 都不表示已经记住。
 
@@ -43,7 +45,7 @@ Markdown 索引和主题正文便于阅读；来源、候选、历史与调用�
 dsh plugin --profile desktop add solopup-memory@beta --ignore-scripts
 ```
 
-npm 包已公开发布，可使用 `solopup-memory@0.21.0-beta.1` 固定版本。Git 安装仍可用：`dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.21.0-beta.1 --ignore-scripts`；需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。也可下载发行页的 `.tgz`，使用 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.21.0-beta.1.tgz --offline --ignore-scripts`。
+npm 包已公开发布，可使用 `solopup-memory@0.21.0-beta.2` 固定版本。Git 安装仍可用：`dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.21.0-beta.2 --ignore-scripts`；需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。也可下载发行页的 `.tgz`，使用 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.21.0-beta.2.tgz --offline --ignore-scripts`。
 
 已安装旧名 `dsh-memory` 时，先完成完整备份、关闭使用该库的宿主，用官方管理器移除旧包，再安装新包；不要同时启用两个记忆插件。新名字继续使用原记忆库和控制格式。
 

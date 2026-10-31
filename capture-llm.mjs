@@ -15,6 +15,7 @@ import {createHash} from 'node:crypto'
 import {TEXT_MEMORY_POLICY} from './memory-policy.mjs'
 import {VALIDATION_CONTRACT} from './capture-validation-contract.mjs'
 import {CaptureSubmission,CAPTURE_SUBMISSION_TOOL} from './capture-submission.mjs'
+import {captureSourceAliases} from './capture-source-aliases.mjs'
 import {parseCaptureBatch,CAPTURE_RESPONSE_BYTES} from './capture-diagnostics.mjs'
 import { escapeFraming, findSecrets, normalizeText, redactSecrets } from './security.mjs'
 
@@ -52,6 +53,7 @@ const SYSTEM = [
   '- 新观测明确支持或反驳已有主张时，使用meaning.kind=episode或claim并给relations:[{target:完整recordId,stance:supports或contradicts}]。只能引用下方同scope现行目标清单，目标不明确则省略，不猜ID；不把旧摘要复述当新实验，不自动将信念取代为已证事实，明确更正个人决定仍用supersedes。关系是陈述映射，不是独立查证。',
   '- 竞争解释用 meaning.alternatives，可能推翻判断的观测用 meaning.falsifiedBy（各最多3条，仅有依据时给）。这些是待检验内容，不是已经查证的反证。不输出 verified、confidence、授权等字段；',
   '- 每条evidence最少1条、最多3条不同用户消息的引用，每条含真实messageId和8到500字的连续原话quote。合并同一信念时选择支撑主张、竞争解释和反证条件的最多3个直接来源，不为重复说明增加第4个引用；超过3条会整条拒绝，不会自动截掉证据。不得引用助手消息作用户证据。',
+  '- 对话中的id是本次请求绑定的短来源标签（如source1）；messageId只逐字复制对应用户消息的id，不猜会话编号、UUID或事件序号。代码会还原真实来源并继续核对角色和原话。',
   '- relations.target仅能逐字复制现行目标清单提供的64位十六进制recordId，不是sessionId、messageId或8位索引id。目标清单为空时不得填target；不要为本批尚未发布的新主张伪造身份。',
   '- explicit 表示用户明确陈述了本人长期身份、署名或固定工作关系，或明确表达了持久偏好、纠正、决定、价值、本人持有的暂定信念，或明确要求长期保留的未核实主张；不表示外部命题已被证明。用户明确说“我长期持有但可推翻的假设”应记录为explicit且meaning.kind=belief，仍是暂定信念。模型从行为猜测偏好、补猜用户未说的原因仍必须标inferred，仅进候选；',
   '- 每条一句话，不超过 120 字，写清「做什么/不做什么」，不要写「用户希望」这类空话；',
@@ -218,7 +220,10 @@ export function selectCaptureControls(controls, modelInfo) {
  */
 export async function extractWithLlm(options) {
  if(Array.isArray(options.messages)&&options.messages.some(m=>m?.role==='user'&&m.sourceComplete===false))throw Error('capture-input-source-incomplete')
- return runCaptureModel(options,{system:SYSTEM,tool:CAPTURE_SUBMISSION_TOOL,prepare:(messages,indexLines,maxEntries,maxInputBytes,targets,records)=>({text:buildUserPrompt(messages,indexLines,maxEntries,maxInputBytes,targets,records)}),submission:()=>new CaptureSubmission()})
+ return runCaptureModel(options,{system:SYSTEM,tool:CAPTURE_SUBMISSION_TOOL,prepare:(messages,indexLines,maxEntries,maxInputBytes,targets,records)=>{
+   const sources=captureSourceAliases(messages)
+   return {text:buildUserPrompt(sources.messages,indexLines,maxEntries,maxInputBytes,targets,records),restore:sources.restore}
+ },submission:()=>new CaptureSubmission(),finalize:(batch,prepared)=>prepared.restore(batch)})
 }
 export async function runCaptureModel(options,task) {
   const { llm, sessionId, messages, indexLines, maxEntries = 4, maxTokens = 800, maxInputBytes, timeoutMs = 25_000, route, signal, relationTargets=[],structuredRecords=[] } = options
@@ -276,7 +281,8 @@ export async function runCaptureModel(options,task) {
     }
     controller.signal.throwIfAborted()
     if (!submission.sawTool&&text.trim().length === 0) throw new Error('capture-empty-response')
-    const batch=submission.batch(text,maxEntries)
+    const parsed=submission.batch(text,maxEntries)
+    const batch=task.finalize?task.finalize(parsed,prepared):parsed
     return options.includeDiagnostics===true?batch:batch.candidates
   }
   try {

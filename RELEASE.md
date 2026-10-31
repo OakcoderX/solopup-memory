@@ -1,3 +1,20 @@
+# 0.21.0-beta.2 — explicit memory workflow update
+
+Public beta, not stable semantic acceptance. The beta.1 evidence in the historical section below is not automatically a beta.2 result.
+
+- Add a separate, scoped protocol context directing explicit remember requests to the real memory tool in the same turn, with truthful success/pending/failure reporting. It is available even with an empty index. Model compliance is still checked through actual calls, not assumed from instructions.
+- Keep personal self-reports as claims and assistant guesses separate; do not use shell imports or fabricated provenance to bypass native validation.
+- Shorten automatic-capture message labels with a request-local code binding. Original role, quote, scope and source withdrawal checks still apply.
+- No data schema change; existing records and provenance are preserved. Existing semantic and platform gaps remain open.
+
+Verified in the daily macOS DSH host using the actual DeepSeek account and Standard preset: an ordinary remember request invoked the native memory tool and was recorded in its first turn; a fresh conversation without inherited history recovered the project fact. A separate fresh conversation recovered an existing global personal fact. One real extraction preserved the original user source through the short labels and omitted an assistant-invented place. Synthetic test sources were withdrawn and original Markdown remained unchanged.
+
+The first test attempt exhausted its own call cap before the global-personal query could answer; that attempt is retained as incomplete, with a separately identified successful follow-up. These bounded cases do not establish general semantic accuracy or stable-release readiness.
+
+---
+
+## Historical beta.1 release evidence
+
 # 0.21.0-beta.1 — public beta / 公开测试版
 
 SoloPup Memory is the public product name of the former local `dsh-memory` plugin. This release derives from the privately tested dev.45 implementation. It is **not stable** and does not claim superiority over other memory systems.

@@ -1,6 +1,6 @@
 {
   "name": "solopup-memory",
-  "version": "0.21.0-beta.1",
+  "version": "0.21.0-beta.2",
   "description": "SoloPup Memory — source-linked, layered text memory for DeepSeek Harness. Public beta.",
   "type": "module",
   "main": "index.mjs",
@@ -144,7 +144,10 @@
     "icon.svg",
     "locale/",
     "README.en.md",
-    "RELEASE.md"
+    "RELEASE.md",
+    "memory-protocol.mjs",
+    "capture-source-aliases.mjs",
+    "test-explicit-memory.mjs"
   ],
   "engines": {
     "node": ">=24.9",
@@ -157,7 +160,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "test": "node --test --test-concurrency=4 test.mjs test-security.mjs test-adversarial.mjs test-concurrency.mjs test-supersede.mjs test-history.mjs test-smell.mjs test-links.mjs test-packaging.mjs test-patch.mjs test-compat.mjs test-conflict.mjs test-usability.mjs test-compaction-compat.mjs test-schema.mjs test-capture.mjs test-paired-analysis.mjs test-retrieval.mjs test-candidates.mjs test-publication.mjs test-withdrawal.mjs test-capture-jobs.mjs test-context-history.mjs test-capture-inputs.mjs test-inline-summary.mjs test-withdrawal-archives.mjs test-plugin-contract.mjs test-project-stores.mjs test-service-readiness.mjs test-source-key.mjs test-tool-inputs.mjs test-tool-write-lifecycle.mjs test-tool-write-guard.mjs test-source-retirement.mjs test-managed-access.mjs test-managed-activation.mjs test-runtime-startup.mjs test-capture-revision.mjs test-meaning.mjs test-episodes.mjs test-belief-revision.mjs test-tool-observations.mjs test-capture-diagnostics.mjs test-snapshots.mjs test-restore.mjs test-status-both.mjs test-text-admission.mjs test-capture-submission.mjs test-capture-projections.mjs test-capture-validation.mjs test-capture-validation-job.mjs test-capture-validation-flow.mjs test-capture-validation-lineage.mjs test-native-write-validation.mjs test-native-service-lifecycle.mjs test-field-lineage.mjs test-capture-field-lineage.mjs test-validation-transition-context.mjs test-control-schema.mjs test-revision-admission.mjs test-rule-admission.mjs test-validation-source-refs.mjs test-source-completeness.mjs test-legacy-source-identity.mjs",
+    "test": "node --test --test-concurrency=4 test.mjs test-security.mjs test-adversarial.mjs test-concurrency.mjs test-supersede.mjs test-history.mjs test-smell.mjs test-links.mjs test-packaging.mjs test-patch.mjs test-compat.mjs test-conflict.mjs test-usability.mjs test-compaction-compat.mjs test-schema.mjs test-capture.mjs test-paired-analysis.mjs test-retrieval.mjs test-candidates.mjs test-publication.mjs test-withdrawal.mjs test-capture-jobs.mjs test-context-history.mjs test-capture-inputs.mjs test-inline-summary.mjs test-withdrawal-archives.mjs test-plugin-contract.mjs test-project-stores.mjs test-service-readiness.mjs test-source-key.mjs test-tool-inputs.mjs test-tool-write-lifecycle.mjs test-tool-write-guard.mjs test-source-retirement.mjs test-managed-access.mjs test-managed-activation.mjs test-runtime-startup.mjs test-capture-revision.mjs test-meaning.mjs test-episodes.mjs test-belief-revision.mjs test-tool-observations.mjs test-capture-diagnostics.mjs test-snapshots.mjs test-restore.mjs test-status-both.mjs test-text-admission.mjs test-capture-submission.mjs test-capture-projections.mjs test-capture-validation.mjs test-capture-validation-job.mjs test-capture-validation-flow.mjs test-capture-validation-lineage.mjs test-native-write-validation.mjs test-native-service-lifecycle.mjs test-field-lineage.mjs test-capture-field-lineage.mjs test-validation-transition-context.mjs test-control-schema.mjs test-revision-admission.mjs test-rule-admission.mjs test-validation-source-refs.mjs test-source-completeness.mjs test-legacy-source-identity.mjs test-explicit-memory.mjs",
     "eval": "node eval/run-eval.mjs",
     "gate": "node eval/run-eval.mjs --check",
     "verify": "node scripts/verify.mjs",
