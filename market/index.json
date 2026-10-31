@@ -62,9 +62,8 @@
             "dsh": ">=0.2.1-rc.0 <0.3.0"
           },
           "source": {
-            "type": "git",
-            "url": "https://github.com/OakcoderX/solopup-memory",
-            "commit": "d2972fbbf66bf9131e144694e59073829d9159fb"
+            "type": "npm",
+            "registry": "https://registry.npmjs.org/"
           }
         },
         {
