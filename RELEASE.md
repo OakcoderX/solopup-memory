@@ -23,4 +23,4 @@ Stable release still requires prospective semantic acceptance, handling/document
 
 - [Package and install a plugin](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/develop/basic/publish.md): the package declares `dsh.bundle.patch`; direct Git and archive installation are supported.
 - [Plugin markets](https://deepseek-harness.github.io/deepseek-harness/en/guide/plugin-market): publish a format-1 HTTPS index with a Git version pinned to a full commit; users add the source themselves.
-- The official [DSH site](https://www.deepseek.com/en/harness/) links its community plugin entry to the GitHub `dsh-plugin` topic. The repository uses that topic. No central listing approval or npm publication is claimed.
+- The official [DSH site](https://www.deepseek.com/en/harness/) links its community plugin entry to the GitHub `dsh-plugin` topic. The repository uses that topic. No central listing approval is claimed. The same tested beta archive was subsequently published to npm as `solopup-memory@0.21.0-beta.1` with the `beta` tag; the market index now installs this exact npm version.

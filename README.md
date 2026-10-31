@@ -40,10 +40,10 @@ Markdown 索引和主题正文便于阅读；来源、候选、历史与调用�
 使用 DeepSeek Harness 官方插件管理器安装。代码为可直接执行的 ESM，无安装时构建脚本，也不需要 npm 账户。以下以 desktop profile 为例。
 
 ```sh
-dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.21.0-beta.1 --ignore-scripts
+dsh plugin --profile desktop add solopup-memory@beta --ignore-scripts
 ```
 
-标签便于阅读；需要不可变来源时使用发行页给出的完整提交 SHA 替换标签。也可下载发行页的 `.tgz`，使用 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.21.0-beta.1.tgz --offline --ignore-scripts`。
+npm 包已公开发布，可使用 `solopup-memory@0.21.0-beta.1` 固定版本。Git 安装仍可用：`dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.21.0-beta.1 --ignore-scripts`；需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。也可下载发行页的 `.tgz`，使用 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.21.0-beta.1.tgz --offline --ignore-scripts`。
 
 已安装旧名 `dsh-memory` 时，先完成完整备份、关闭使用该库的宿主，用官方管理器移除旧包，再安装新包；不要同时启用两个记忆插件。新名字继续使用原记忆库和控制格式。
 
@@ -100,3 +100,5 @@ node accept.mjs --profile desktop
 详细安全边界见 [SECURITY.md](SECURITY.md)，宿主兼容范围见 [COMPATIBILITY.md](COMPATIBILITY.md)。
 
 用户单条消息的完整来源窗口目前上限为 2000 字符。超长消息不从前半段建立记忆；自动整理显示来源不完整并暂不执行，主动写入也拒绝使用仍在当前核对窗口内的截断来源。可在新的短消息会话中完整重述需长期保留的约定。这个修复不会自动纠正旧版已经保存的解释。
+
+市场源请求失败时，按 [DSH 官方代理手册](https://deepseek-harness.github.io/deepseek-harness/guide/network-proxy) 配置 DSH 自身的代理环境；DSH 不自动读取 macOS 系统代理。
