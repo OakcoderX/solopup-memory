@@ -1,0 +1,12 @@
+{
+  "sourceVersion": "0.15.0",
+  "candidateId": "33fd1aff300b73b9077435a026e3312cddfd27c0de259fea2b523bd5895ff329",
+  "memoryId": "64cdc5fe",
+  "files": {
+    ".audit.jsonl": "{\"at\":\"2026-10-29T02:12:59.405Z\",\"pid\":98430,\"op\":\"write\",\"outcome\":\"ok\",\"type\":\"user\",\"bytes\":89,\"withDetail\":false,\"line\":\"- [user] 合成旧摘要：答复固定先给结论 — user.md\",\"sessionId\":\"legacy-summary-source\",\"via\":\"local-candidate-review\",\"scope\":\"project\",\"evidence\":[{\"messageId\":\"legacy-summary-message\",\"hash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"quote\":\"本合成测试约定答复先给结论\"}]}\n",
+    ".candidates.json": "{\n  \"schema\": 1,\n  \"revision\": 2,\n  \"records\": [\n    {\n      \"id\": \"33fd1aff300b73b9077435a026e3312cddfd27c0de259fea2b523bd5895ff329\",\n      \"type\": \"user\",\n      \"scope\": \"project\",\n      \"summary\": \"合成旧摘要：答复固定先给结论\",\n      \"sessionId\": \"legacy-summary-source\",\n      \"evidence\": [\n        {\n          \"messageId\": \"legacy-summary-message\",\n          \"hash\": \"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\n          \"quote\": \"本合成测试约定答复先给结论\"\n        }\n      ],\n      \"sources\": [\n        \"3124b9ca789eaa09bfebffced1bfee875935bf26063759d34ea950c07c1ed46b\"\n      ],\n      \"indexRevision\": \"a4f0266dc8cba5a3c6f478c33259954392deca56de7e7da63dd026e79abaadb2\",\n      \"status\": \"adopted\",\n      \"createdAt\": \"2026-10-29T02:12:59.345Z\",\n      \"adoption\": {\n        \"memoryId\": \"64cdc5fe\",\n        \"reviewedIndex\": \"a4f0266dc8cba5a3c6f478c33259954392deca56de7e7da63dd026e79abaadb2\",\n        \"at\": \"2026-10-29T02:12:59.360Z\"\n      }\n    }\n  ],\n  \"revoked\": [],\n  \"rejectedIds\": [],\n  \"withdrawnLines\": [],\n  \"withdrawnMemoryIds\": [],\n  \"withdrawnCandidateIds\": [],\n  \"withdrawnBlocks\": [],\n  \"managedWithdrawnSources\": []\n}\n",
+    ".history.jsonl": "{\"at\":\"2026-10-29T02:12:59.402Z\",\"pid\":98430,\"op\":\"insert\",\"id\":\"64cdc5fe\",\"line\":\"- [user] 合成旧摘要：答复固定先给结论 — user.md\",\"type\":\"user\",\"related\":[],\"sessionId\":\"legacy-summary-source\"}\n",
+    "MEMORY.md": "# 记忆索引\n\n## user\n\n- [user] 合成旧摘要：答复固定先给结论 — user.md\n\n"
+  },
+  "sourceArchiveSha256": "7e956a3dd7b7123c2af3d866dc8acd929c6958285e9721ec7d680c021696e16f"
+}

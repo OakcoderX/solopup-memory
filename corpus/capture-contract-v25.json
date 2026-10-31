@@ -1,0 +1,59 @@
+{
+  "generatedWith": "immutable package-dev25/capture-inputs.mjs",
+  "session": {
+    "id": "synthetic-contract-v25",
+    "header": {
+      "createdAt": "2026-10-29T00:00:00.000Z"
+    }
+  },
+  "event": {
+    "type": "user/message",
+    "seq": 1,
+    "data": {
+      "message": {
+        "source": {
+          "kind": "user"
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Synthetic durable source, only for draft documents."
+          }
+        ]
+      }
+    }
+  },
+  "options": {
+    "everyTurns": 4,
+    "maxEntries": 3,
+    "maxTokens": 800,
+    "maxInputBytes": 24576,
+    "timeoutMs": 25000
+  },
+  "cwd": "/synthetic/project",
+  "route": {
+    "provider": "fixture",
+    "model": "fixture"
+  },
+  "message": {
+    "id": "synthetic-contract-v25:1",
+    "role": "user",
+    "text": "Synthetic durable source, only for draft documents.",
+    "hash": "f67bfcb20b932ff2f55f6bc13306629c779f5aafcfc2eeb4a4ea520d85e256ad",
+    "seq": 1
+  },
+  "descriptor": {
+    "id": "3e47b6a9f6bb1d9c3f5f64b12087b0ee08da96c1e4cf7444223d431deb9b8bc4",
+    "sessionHash": "a9eb58eec4f5360aa0e4f016613ddf7d875edf5164aa5a9de6689c4e4ad1781b",
+    "scopeHash": "eb1c8f905552df807f14f14b4736cf9f49d1b716133f0a4f0220694e4e82d6d2",
+    "configurationHash": "bee199ed42c1120284fb42874e1c687aa24728cb3656cc0451e01ecf8bc6eb1c",
+    "routeHash": "4ff90abd48940cf2645b6afcb52067bc9dc8f7ae58d392cc5a93451ea0f328ca",
+    "refs": [
+      {
+        "seq": 1,
+        "role": "user",
+        "hash": "f67bfcb20b932ff2f55f6bc13306629c779f5aafcfc2eeb4a4ea520d85e256ad"
+      }
+    ]
+  }
+}
