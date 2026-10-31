@@ -1,5 +1,7 @@
 # SoloPup Memory
 
+**新用户入口：** [快速上手](docs/guides/quickstart.md) · [六个虚构试用案例](docs/README.md) · [常见问题](docs/faq.md) · [反馈](docs/feedback.md)
+
 **记住重要的事，跟上你的改变。** · [English](README.en.md)
 
 当前公开版本为 **0.21.0-beta.2**，是文字记忆测试版，尚未通过稳定版验收。已验证范围和已知问题见 [RELEASE.md](RELEASE.md)。

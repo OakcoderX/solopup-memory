@@ -1,5 +1,7 @@
 # SoloPup Memory
 
+**Start here:** [Quick start](docs/guides/quickstart.md) · [Synthetic trials](docs/README.md) · [FAQ](docs/faq.md) · [Feedback](docs/feedback.md)
+
 **Remember what matters. Keep up when you change your mind.** · [中文](README.md)
 
 Source-linked, layered **text memory** for DeepSeek Harness. **0.21.0-beta.2 is a public beta, not a stable release.** See [RELEASE.md](RELEASE.md) for tested scope and known gaps.
