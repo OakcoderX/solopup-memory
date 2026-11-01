@@ -16,10 +16,10 @@ Source-linked, layered **text memory** for DeepSeek Harness. **0.21.0-beta.3 is 
 ## Install in DSH
 
 ```sh
-dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.21.0-beta.3 --ignore-scripts
+dsh plugin --profile desktop add solopup-memory@0.21.0-beta.3 --ignore-scripts
 ```
 
-This pins the privacy update; the release page supplies a full commit SHA for an immutable Git pin. npm availability may follow the GitHub release: check the registry and release notes before installing `solopup-memory@0.21.0-beta.3`. The npm beta tag may still point to an earlier release. This package ships executable ESM and has no dependency installation or build scripts. Alternatively download its release tarball and install the local file with `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.21.0-beta.3.tgz --offline --ignore-scripts`.
+The public npm beta.3 archive has been downloaded and verified against the tested release, and the beta tag points to beta.3. This command pins the exact update. Git installation remains available with `github:OakcoderX/solopup-memory#v0.21.0-beta.3`; the release page supplies a full commit SHA for an immutable Git pin. This package ships executable ESM and has no dependency installation or build scripts. Alternatively download its release tarball and install the local file with `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.21.0-beta.3.tgz --offline --ignore-scripts`.
 
 Restart the profile and use `memory_status`. Existing legacy stores may require explicit local review. Do not delete control files to bypass that review. If upgrading from `dsh-memory`, create a full private backup, stop the hosts using that data, remove the old package, then install SoloPup Memory. Do not run both packages together. The data location and legacy format identifiers are intentionally retained.
 

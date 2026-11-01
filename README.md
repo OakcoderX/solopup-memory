@@ -50,10 +50,10 @@ Markdown 索引和主题正文便于阅读；来源、候选、历史与调用�
 使用 DeepSeek Harness 官方插件管理器安装。代码为可直接执行的 ESM，无安装时构建脚本，也不需要 npm 账户。以下以 desktop profile 为例。
 
 ```sh
-dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.21.0-beta.3 --ignore-scripts
+dsh plugin --profile desktop add solopup-memory@0.21.0-beta.3 --ignore-scripts
 ```
 
-以上固定本次修复版本；需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。npm 发布可能晚于 GitHub，请先核对注册表和发行说明，再使用 `dsh plugin --profile desktop add solopup-memory@0.21.0-beta.3 --ignore-scripts`；旧的 `beta` 标签可能仍指向先前版本。也可下载发行页的 `.tgz`，使用 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.21.0-beta.3.tgz --offline --ignore-scripts`。
+npm 上的 beta.3 已公开并完成下载核验，`beta` 标签指向 beta.3。上面的命令固定本次修复版本；Git 安装可用 `dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.21.0-beta.3 --ignore-scripts`，需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。也可下载发行页的 `.tgz`，使用 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.21.0-beta.3.tgz --offline --ignore-scripts`。
 
 已安装旧名 `dsh-memory` 时，先完成完整备份、关闭使用该库的宿主，用官方管理器移除旧包，再安装新包；不要同时启用两个记忆插件。新名字继续使用原记忆库和控制格式。
 
