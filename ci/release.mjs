@@ -1,4 +1,4 @@
-import {readFileSync,writeFileSync,mkdirSync,mkdtempSync,rmSync,existsSync} from 'node:fs'
+import {readFileSync,writeFileSync,mkdirSync,mkdtempSync,rmSync,existsSync,readdirSync} from 'node:fs'
 import {resolve,join} from 'node:path'
 import {tmpdir} from 'node:os'
 import {createHash} from 'node:crypto'
@@ -46,7 +46,9 @@ async function prepare(){
     total=Number(/(?:ℹ|#) tests (\d+)/.exec(result)?.[1]);if(!total)throw Error('archive test count missing')
     console.log(result.slice(-1800))
   }finally{rmSync(root,{recursive:true,force:true})}
-  const manifest={...id,commit,repository:repo,channel:'beta',engines:p.engines,sha256:hash(bytes),integrity:`sha512-${hash(bytes,'sha512')}`,files:packed.files.length,packagedTests:total,node:process.version,npm:run('npm',['--version']).trim(),scope:'mechanical archive checks; not stable semantic or real DSH host acceptance'}
+  const gates=[];const collect=dir=>{for(const e of readdirSync(dir,{withFileTypes:true})){const path=join(dir,e.name);if(e.isDirectory())collect(path);else if(e.name.endsWith('.json'))gates.push(json(path))}};if(existsSync('source-gates'))collect('source-gates')
+  if(process.env.GITHUB_ACTIONS&&(!gates.some(g=>g.platform==='darwin'&&g.passed&&g.timingPassed)||!gates.some(g=>g.platform==='linux'&&g.passed&&g.correctnessPassed)))throw Error('required source gate receipts missing')
+  const manifest={...id,commit,repository:repo,channel:'beta',engines:p.engines,sourceGates:gates,sha256:hash(bytes),integrity:`sha512-${hash(bytes,'sha512')}`,files:packed.files.length,packagedTests:total,node:process.version,npm:run('npm',['--version']).trim(),scope:'mechanical archive checks; Mac reference timing required; Linux timing not performance-certified; not stable semantic or real DSH host acceptance'}
   writeFileSync('release/manifest.json',JSON.stringify(manifest,null,2)+'\n');writeFileSync('release/SHA256SUMS',`${manifest.sha256}  ${id.filename}\n`)
   const changelog=readFileSync('CHANGELOG.md','utf8'),start=changelog.indexOf(`## ${p.version}`),end=start<0?-1:changelog.indexOf('\n## ',start+1)
   const notes=start<0?'Public text-memory beta.':changelog.slice(start,end<0?undefined:end).trim()

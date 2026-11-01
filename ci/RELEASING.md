@@ -25,6 +25,13 @@ After verification it creates the GitHub prerelease and updates the configured
 third-party market index on main. It does not claim central-market approval,
 stable semantic acceptance, actual user adoption, or historical data erasure.
 
+All correctness gates block on both platforms. The existing 5ms rendering budget
+remains mandatory on the macOS reference runner. The first Ubuntu hosted-runner
+measurement was 5.905ms at 300 entries; it is retained as a timing failure rather
+than called a pass. Linux timing is diagnostic until a hardware baseline is
+established. Each platform's gate receipt, including this limitation, is attached
+to the immutable release manifest. Linux is not performance-certified.
+
 For a rehearsal, manually run **Publish npm beta** with `dry_run=true` and blank
 tag. No npm publish, GitHub release or market mutation occurs. For recovery,
 rerun the same release tag; do not delete a published npm version. A failed

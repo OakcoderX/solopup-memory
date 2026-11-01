@@ -3,6 +3,8 @@ node_modules/
 .DS_Store
 coverage/
 release/
+release-gates/
+source-gates/
 *.log
 .env*
 !.env.example
