@@ -46,7 +46,7 @@ async function prepare(){
     total=Number(/(?:ℹ|#) tests (\d+)/.exec(result)?.[1]);if(!total)throw Error('archive test count missing')
     console.log(result.slice(-1800))
   }finally{rmSync(root,{recursive:true,force:true})}
-  const manifest={...id,commit,repository:repo,channel:'beta',sha256:hash(bytes),integrity:`sha512-${hash(bytes,'sha512')}`,files:packed.files.length,packagedTests:total,node:process.version,npm:run('npm',['--version']).trim(),scope:'mechanical archive checks; not stable semantic or real DSH host acceptance'}
+  const manifest={...id,commit,repository:repo,channel:'beta',engines:p.engines,sha256:hash(bytes),integrity:`sha512-${hash(bytes,'sha512')}`,files:packed.files.length,packagedTests:total,node:process.version,npm:run('npm',['--version']).trim(),scope:'mechanical archive checks; not stable semantic or real DSH host acceptance'}
   writeFileSync('release/manifest.json',JSON.stringify(manifest,null,2)+'\n');writeFileSync('release/SHA256SUMS',`${manifest.sha256}  ${id.filename}\n`)
   const changelog=readFileSync('CHANGELOG.md','utf8'),start=changelog.indexOf(`## ${p.version}`),end=start<0?-1:changelog.indexOf('\n## ',start+1)
   const notes=start<0?'Public text-memory beta.':changelog.slice(start,end<0?undefined:end).trim()
@@ -97,7 +97,7 @@ async function finalize(){
   }
   const index=json('market/index.json'),entry=index.plugins.find(p=>p.name==='solopup-memory')
   if(!entry)throw Error('market entry missing')
-  const version={version:m.version,publishTimestamp:Math.floor(Date.parse(receipt.publishedAt)/1000),engines:json('package.json').engines?.dsh?{dsh:json('package.json').engines.dsh}:{},source:{type:'npm',registry:registry+'/'}}
+  const version={version:m.version,publishTimestamp:Math.floor(Date.parse(receipt.publishedAt)/1000),engines:m.engines?.dsh?{dsh:m.engines.dsh}:{},source:{type:'npm',registry:registry+'/'}}
   if(!entry.versions.some(v=>v.version===m.version))entry.versions.unshift(version)
   writeFileSync('market/index.json',JSON.stringify(index,null,2)+'\n')
   run('git',['config','user.name','github-actions[bot]']);run('git',['config','user.email','41898282+github-actions[bot]@users.noreply.github.com']);run('git',['add','market/index.json'])
