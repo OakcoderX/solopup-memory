@@ -5,6 +5,7 @@ export {initializeManagedMemory,managedMemoryStatus} from './managed-access.mjs'
 import {createObservationTracker,observationRoots,OBSERVATION_REFERENCE_SCHEMA,OBSERVATION_LIST_SCHEMA} from './tool-observations.mjs'
 import {createToolInputTracker} from './tool-inputs.mjs'
 import {memoryProtocol} from './memory-protocol.mjs'
+import {privateMemory,publicMemoryRecords,publicMemoryIndex,PRIVATE_MEMORY_NOTICE} from './privacy.mjs'
 import {nativeOwnerEvidence,validateNativeWrite} from './native-write-validation.mjs'
 import {toolProposal} from './source-record.mjs'
 import {revisionMode,prepareValueRevision,inheritedRoots} from './field-lineage.mjs'
@@ -291,8 +292,9 @@ function renderScopeLocal(scope, dir) {
   let flagged = 0
   const kept = []
   const policy = withdrawalPolicy(dir)
-  const typed=activeMeanings(candidateSnapshot(dir,scope).records),assessmentRecords=effectiveSourceRecords(dir,scope)
+  const typed=activeMeanings(candidateSnapshot(dir,scope).records),assessmentRecords=publicMemoryRecords(effectiveSourceRecords(dir,scope))
   for (const line of filterWithdrawn(index.text, policy, true).split('\n')) {
+    if (privateMemory(meaningForLine(typed,line),line)) continue
     if (line.trim().startsWith('- [')) {
       if (isExpired(line, now)) {
         hidden += 1
@@ -1048,16 +1050,19 @@ function writeMemoryLocal({ type, dir, line, detail, summary, expires, supersede
       evidence: provenance?.evidence,
       basis: provenance?.basis,
     })
+    const privateLines=new Set(liveSourceRecords(dir,scope).filter(privateMemory).map(record=>record.indexLine).filter(Boolean))
+    const hiddenLine=line=>privateLines.has(line)||privateMemory(line)
+    const visibleWarnings=warnings.filter(w=>!privateMemory(w)&&![...privateLines].some(line=>w.includes(summaryOf(line))))
     return {
       path: indexFile,
       indexLine: cleanLine,
       duplicate: false,
       lineCount: next.split(/\r?\n/).length,
       ...(detailPath === undefined ? {} : { detailPath }),
-      ...(supersededLine === undefined ? {} : { superseded: supersededLine }),
+      ...(supersededLine === undefined||hiddenLine(supersededLine) ? {} : { superseded: supersededLine }),
       id: newId,
-      related,
-      ...(warnings.length === 0 ? {} : { warning: warnings.join('；') }),
+      related:related.filter(edge=>!hiddenLine(edge.line)),
+      ...(visibleWarnings.length === 0 ? {} : { warning: visibleWarnings.join('；') }),
     }
   }
   return lockToken === REVIEW_LOCK ? execute() : withLock(dir, execute)
@@ -1245,7 +1250,7 @@ function effectiveSourceRecords(dir,scope,indexText,includeUntyped=false){
 }
 
 /** Current index-only legacy entries are visible as unclassified data, never inherited sources. */
-function validationCurrentRecords(dir,scope,records){
+function validationCurrentRecords(dir,scope,records,privateTarget){
  const policy=withdrawalPolicy(dir),index=filterWithdrawn(readTextSafe(join(dir,'MEMORY.md'))??'',policy,true)
  const known=new Set(records.map(r=>r.indexLine??indexLine(r.type,r.summary,r.expires,r.detail!==undefined))),rows=[...records]
  for(const line of new Set(index.split(/\r?\n/).map(line=>line.trim()))){
@@ -1253,7 +1258,7 @@ function validationCurrentRecords(dir,scope,records){
   const type=/^- \[(user|feedback|project|reference)\] /.exec(line)?.[1];if(!type)continue
   rows.push({id:createHash('sha256').update('memory-unclassified-current-index:'+scope+':'+line).digest('hex'),status:'recorded',scope,type,summary:summaryOf(line),indexLine:line,legacyIndexOnly:true,expires:/ \(exp:(\d{4}-\d{2}-\d{2})\)$/.exec(line)?.[1]})
  }
- return rows
+ return rows.filter(row=>!privateMemory(row)||typeof privateTarget==='string'&&privateTarget.length>0&&row.indexLine?.includes(privateTarget))
 }
 
 function publishIndexChange(dir,before,after,reason){
@@ -1269,6 +1274,7 @@ function searchHistoricalStores(stores,needle,options,context,task,limit,mode){
     const policy=withdrawalPolicy(dir),index=filterWithdrawn(readTextSafe(join(dir,'MEMORY.md'))??'',policy,true)
     const result=historyRows(dir,{scope,index,revoked:policy.revoked,atSequence:options.atSequence,asOf:options.asOf,expiredAt:isExpired});coverage.push(result.coverage)
     for(const {row,line,history}of result.rows){
+      if(options.includePrivate!==true&&privateMemory(row.source,row.line))continue
       const interpretation=row.source.meaning?meaningView(row.source,context,task):undefined
       if(interpretation?.applicability==='not-applicable')continue
       if(interpretation)interpretation.advice={action:'continue',reason:'historical-record-is-not-a-current-instruction',authority:'none'}
@@ -1298,6 +1304,7 @@ function searchScopedStoresLocal(stores, query, options = {}) {
   if (needle.length > 200) throw new Error('memory_search: query 太长（上限 200 字）')
   const limit = Math.max(1, Math.min(20, options.limit ?? 8))
   const mode = options.mode ?? 'ranked'
+  if(options.includePrivate!==undefined&&typeof options.includePrivate!=='boolean')throw Error('memory-search-invalid-private-option')
   if (mode !== 'exact' && mode !== 'ranked') throw new Error('memory_search: mode 必须是 exact 或 ranked')
   const context=normalizeContext(options.context),task=normalizeTask(options.task)
   if(options.view!==undefined&&!['current','history'].includes(options.view))throw new Error('memory-search-invalid-view')
@@ -1306,7 +1313,7 @@ function searchScopedStoresLocal(stores, query, options = {}) {
 
   const files = stores.flatMap(({ dir, scope }) => {
     const policy = withdrawalPolicy(dir)
-    const owned=liveSourceRecords(dir,scope).filter(record=>['recorded','adopted'].includes(record.status)),typed=activeMeanings(owned),assessmentRecords=effectiveSourceRecords(dir,scope)
+    const owned=liveSourceRecords(dir,scope).filter(record=>['recorded','adopted'].includes(record.status)),typed=activeMeanings(owned),assessmentRecords=options.includePrivate===true?effectiveSourceRecords(dir,scope):publicMemoryRecords(effectiveSourceRecords(dir,scope))
     return ['MEMORY.md', ...TYPES.map(type => `${type}.md`)].map(name => ({
       name, path: join(dir, name), policy, scope, typed, owned, assessmentRecords, key: scope === undefined ? name : `${scope}/${name}`,
     }))
@@ -1319,12 +1326,16 @@ function searchScopedStoresLocal(stores, query, options = {}) {
   for (const file of files) {
     const text = readTextSafe(file.path)
     if (text === undefined) continue
+    // Legacy topic paragraphs may span lines without record markers. Never
+    // return the unlabelled continuation of a recognized private paragraph.
+    if(file.name!=='MEMORY.md'&&options.includePrivate!==true&&privateMemory(text))continue
     let lineNumber = 0
     const filtered=filterWithdrawn(text,file.policy,file.name==='MEMORY.md'),details=file.name==='MEMORY.md'?undefined:detailedMeanings(file.owned,filtered)
     for (const raw of filtered.split('\n')) {
       lineNumber += 1
       if(file.name==='MEMORY.md'&&isExpired(raw))continue
       const record=file.name==='MEMORY.md'?meaningForLine(file.typed,raw):details.get(lineNumber)
+      if(options.includePrivate!==true&&privateMemory(record,raw))continue
       if(record?.expires&&isExpired(`placeholder (exp:${record.expires})`))continue
       const interpretation=record?.meaning?meaningView(record,context,task,file.assessmentRecords):undefined
       if(interpretation?.applicability==='not-applicable')continue
@@ -1599,6 +1610,8 @@ function readLog(dir) {
  * @param query - `{ id }` 或 `{ match }`（索引行子串，必须唯一）。
  */
 function lookupLinksLocal(dir, query) {
+  const hiddenLines=new Set(liveSourceRecords(dir).filter(privateMemory).map(record=>record.indexLine).filter(Boolean))
+  const hidden=line=>hiddenLines.has(line)||privateMemory(line)
   assertPublicationClear(dir)
   const policy = withdrawalPolicy(dir)
   const events = readLog(dir).filter((e) => !policy.memoryIds.includes(e.id) && !policy.lineHashes.includes(normalizedLineHash(String(e.line ?? ''))))
@@ -1607,7 +1620,7 @@ function lookupLinksLocal(dir, query) {
   const live = new Map()
   for (const line of current.split('\n')) {
     const trimmed = line.trim()
-    if (trimmed.startsWith('- [')) live.set(entryId(trimmed), trimmed)
+    if (trimmed.startsWith('- [')&&!hidden(trimmed)) live.set(entryId(trimmed), trimmed)
   }
 
   let key = query.id
@@ -1628,8 +1641,9 @@ function lookupLinksLocal(dir, query) {
   const inserted = events.filter((event) => event.op === 'insert' && event.id === key)
   const line = live.get(key) ?? inserted.at(-1)?.line ?? events.find((event) => event.id === key)?.line
   if (line === undefined) return { found: false, related: [], backlinks: [] }
+  if(hidden(line))return{found:false,related:[],backlinks:[]}
 
-  const related = inserted.at(-1)?.related ?? []
+  const related = (inserted.at(-1)?.related ?? []).filter(item=>!hidden(item.line))
 
   // 入边要顺着取代链找：指向被取代旧条目的边，等同指向新条目。
   // 否则「改了一条记忆」就等于把它从图上拔掉。
@@ -1640,6 +1654,7 @@ function lookupLinksLocal(dir, query) {
   const backlinks = []
   for (const event of events) {
     if (event.op !== 'insert' || lineage.has(event.id)) continue
+    if(hidden(event.line))continue
     if (!(event.related ?? []).some((item) => lineage.has(item.id))) continue
     if (backlinks.some((item) => item.id === event.id)) continue
     backlinks.push({ id: event.id, line: event.line })
@@ -1661,7 +1676,7 @@ function lookupLinksLocal(dir, query) {
     backlinks: backlinks.slice(0, RELATION_LIMIT),
     backlinksTotal: backlinks.length,
     ...(replaced?.supersededById === undefined ? {} : { supersededById: replaced.supersededById }),
-    ...(supersedesLine === undefined ? {} : { supersedesLine }),
+    ...(supersedesLine === undefined||hidden(supersedesLine) ? {} : { supersedesLine }),
   }
 }
 
@@ -1777,7 +1792,7 @@ async function admitNativeWrite(ctx,sourceInputs,config,args,exec,target){
   const revision=readOwned(()=>{
     const value=storeRevision(target.dir)
     const sourceRecords=effectiveSourceRecords(target.dir,target.scope,undefined,true)
-    currentRecords=validationCurrentRecords(target.dir,target.scope,sourceRecords)
+    currentRecords=validationCurrentRecords(target.dir,target.scope,sourceRecords,target.supersedes)
     if(target.supersedes!==undefined){
       const hits=(readTextSafe(join(target.dir,'MEMORY.md'))??'').split(/\r?\n/).filter(line=>line.trim().startsWith('- [')&&line.includes(target.supersedes));if(hits.length!==1)throw Error('memory-native-supersedes-not-unique')
       const compiled=prepareValueRevision(target,sourceRecords,hits[0].trim())
@@ -1946,6 +1961,7 @@ function defineSearchTool(ctx) {
     name: 'memory_search',
     description:
       '在记忆索引与主题文件里检索。默认 ranked 支持中英多词问题与有限英文词形归并；exact 用于精确子串定位；' +
+      '默认隐藏已识别的个人敏感内容。用户询问相关资料时才设includePrivate=true；返回内容会进入当前会话日志和模型请求，不能声称只在本地读取。' +
       '默认同时查当前项目和全局偏好，不查其他项目；可指定单库。view=history显式查询带来源的旧值、取代与移出记录，返回历史身份及覆盖范围，不能当当前指令。',
     parameters: {
       type: 'object',
@@ -1953,6 +1969,7 @@ function defineSearchTool(ctx) {
       required: ['query'],
       properties: {
         query: { type: 'string', description: '检索词，尽量具体（≤200 字）；也可给返回的完整64位recordId精确定位来源条目，不能用8位索引id' },
+        includePrivate:{type:'boolean',description:'仅在用户询问相关个人资料时明确设true，允许读取被自动降载的个人内容。默认false；不是文件访问权限或完整隐私识别器。'},
         mode: { type: 'string', enum: ['exact', 'ranked'], description: 'ranked 默认多词排序；exact 精确定位。不是语义向量检索，不支持完整同义词或英文词形分析' },
         view:{type:'string',enum:['current','history'],description:'current默认只查当前视图；history查受管历史档案（已撤回来源仍不可见）。旧日志不会被伪造成完整历史。'},
         atSequence:{type:'integer',description:'仅history：按选定单库的记录序号查询当时有效的条目，必须指定scope=project或global；不是跨库统一版本。'},
@@ -2000,10 +2017,10 @@ function defineSearchTool(ctx) {
         return searchScopedStores([
           { dir: resolveStoreDir(ctx, exec, 'memory_search', 'project'), scope: 'project' },
           { dir: resolveStoreDir(ctx, exec, 'memory_search', 'global'), scope: 'global' },
-        ], args.query, { limit: args.limit, mode: args.mode, context:args.context,task:args.task,view:args.view,atSequence:args.atSequence,asOf:args.asOf })
+        ], args.query, { includePrivate:args.includePrivate,limit: args.limit, mode: args.mode, context:args.context,task:args.task,view:args.view,atSequence:args.atSequence,asOf:args.asOf })
       }
       const dir = resolveStoreDir(ctx, exec, 'memory_search', args.scope)
-      return searchStore(dir, args.query, { limit: args.limit, mode: args.mode, context:args.context,task:args.task,view:args.view,atSequence:args.atSequence,asOf:args.asOf })
+      return searchStore(dir, args.query, { includePrivate:args.includePrivate,limit: args.limit, mode: args.mode, context:args.context,task:args.task,view:args.view,atSequence:args.atSequence,asOf:args.asOf })
     },
   }
 }
@@ -2255,7 +2272,7 @@ function defineForgetTool(ctx) {
           text:
             value.removed === 0
               ? `没有匹配到任何索引行：${value.path}`
-              : `已删除 ${value.removed} 条（${value.path}）`,
+              : `已停止使用 ${value.removed} 条索引记忆（${value.path}）。原话、主题正文、会话日志、备份及已发送内容未由此清除；这不是历史数据擦除。`,
         },
       ],
     },
@@ -2430,13 +2447,14 @@ function setupAutoCapture(ctx, config) {
         const captureDirs=[storeRoot(),projectDir].filter(Boolean)
         const memorySnapshot=managedReadMany(captureDirs,()=>{
           const stores=captureDirs.map(dir=>{const scope=dir===storeRoot()?'global':'project',policy=withdrawalPolicy(dir);return{dir,scope,policy,records:effectiveSourceRecords(dir,scope,undefined,true),indexLines:filterWithdrawn(readTextSafe(join(dir,'MEMORY.md'))??'',policy,true).split('\n').map(line=>line.trim()).filter(line=>line.startsWith('- [')).slice(-60)}})
-          const projections=stores.flatMap(store=>store.records.flatMap(record=>{
+          for(const store of stores)store.indexLines=publicMemoryIndex(store.indexLines,store.records)
+          const projections=stores.flatMap(store=>publicMemoryRecords(store.records).flatMap(record=>{
             const line=record.indexLine??indexLine(record.type,record.summary,record.expires,record.detail!==undefined)
             if(!store.indexLines.includes(line))return[]
             const topic=filterWithdrawn(readTextSafe(join(store.dir,record.type+'.md'))??'',store.policy)
             return[captureProjection(record,store.scope,`[${store.scope}] ${line}`,topic)]
           })).slice(-60)
-          return{validationRecords:stores.flatMap(store=>validationCurrentRecords(store.dir,store.scope,store.records)),sourceRecords:stores.flatMap(store=>store.records),structuredRecords:projections,relationTargets:stores.flatMap(store=>store.records.filter(record=>['claim','belief'].includes(record.meaning?.kind)&&!record.meaning.relations?.length).map(record=>({scope:store.scope,recordId:record.id,kind:record.meaning.kind,summary:record.summary}))).slice(-60),revisions:new Map(captureDirs.map(dir=>[dir,{value:storeRevision(dir)}])),indexLines:stores.flatMap(store=>store.indexLines.map(line=>`[${store.scope}] ${line}`))}
+          return{validationRecords:stores.flatMap(store=>validationCurrentRecords(store.dir,store.scope,store.records)),sourceRecords:stores.flatMap(store=>store.records),structuredRecords:projections,relationTargets:stores.flatMap(store=>publicMemoryRecords(store.records).filter(record=>['claim','belief'].includes(record.meaning?.kind)&&!record.meaning.relations?.length).map(record=>({scope:store.scope,recordId:record.id,kind:record.meaning.kind,summary:record.summary}))).slice(-60),revisions:new Map(captureDirs.map(dir=>[dir,{value:storeRevision(dir)}])),indexLines:stores.flatMap(store=>store.indexLines.map(line=>`[${store.scope}] ${line}`))}
         })
         const revisions=memorySnapshot.revisions
         // 按类型分库：跨项目的偏好/纠正进全局库，项目决定进项目库。
@@ -2803,7 +2821,7 @@ export function apply(ctx, config = {}) {
 
   ctx.systemPrompt.context({
     name: 'memory:protocol', order: CONTEXT_ORDER - 1, required: true,
-    interpolate: false, text: context => memoryProtocol(ctx, context),
+    interpolate: false, text: context => memoryProtocol(ctx, context)+'\n'+PRIVATE_MEMORY_NOTICE,
   })
 
   ctx.systemPrompt.context({

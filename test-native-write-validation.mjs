@@ -40,6 +40,12 @@ test('native approval publishes the unchanged typed candidate; exact replay is a
  assert.equal(result.status,'recorded');assert.equal(f.records()[0].summary,proposal.summary);assert.equal(f.requests.length,1)
  assert.equal((await f.tool.execute(proposal,exec)).status,'duplicate');assert.equal(f.requests.length,1)
 }))
+test('unrelated native admission does not disclose saved private records to its reviewer',()=>box({duringStream:(_f,input)=>{
+ assert.doesNotMatch(JSON.stringify(input.currentMemory),/1993|4月16|个人档案/)
+}},async f=>{
+ writeFixtureMemory({dir:f.root,type:'user',scope:'global',summary:'个人档案：出生于1993年4月16日，女性',meaning:{kind:'claim'}})
+ f.owner();const result=await f.tool.execute(proposal,f.call());assert.equal(result.status,'recorded')
+}))
 test('definite rejection leaves no current or pending memory and does not render success',()=>box({state:'unsupported'},async f=>{
  f.owner();const result=await f.tool.execute(proposal,f.call());assert.equal(result.status,'rejected');assert.equal(f.records().length,0);assert.doesNotMatch(f.rendered(result),/已写入/);assert.equal(searchStore(f.root,'长期反馈').hits.length,0)
 }))

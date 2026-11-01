@@ -2,7 +2,7 @@
 
 **Remember what matters. Keep up when you change your mind.** · [中文](README.md)
 
-Source-linked, layered **text memory** for DeepSeek Harness. **0.21.0-beta.2 is a public beta, not a stable release.** See [RELEASE.md](RELEASE.md) for tested scope and known gaps.
+Source-linked, layered **text memory** for DeepSeek Harness. **0.21.0-beta.3 is a public beta, not a stable release.** See [RELEASE.md](RELEASE.md) for tested scope and known gaps.
 
 - Separate global preferences from project decisions.
 - Keep original owner-message citations, conditions, exceptions and optional expiry.
@@ -14,10 +14,10 @@ Source-linked, layered **text memory** for DeepSeek Harness. **0.21.0-beta.2 is 
 ## Install in DSH
 
 ```sh
-dsh plugin --profile desktop add solopup-memory@beta --ignore-scripts
+dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.21.0-beta.3 --ignore-scripts
 ```
 
-The package is published on npm; use `solopup-memory@0.21.0-beta.2` for an exact version. Git installation remains available with `dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.21.0-beta.2 --ignore-scripts`; the release page supplies a full commit SHA for an immutable Git pin. This package ships executable ESM and has no dependency installation or build scripts. Alternatively download its release tarball and install the local file with `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.21.0-beta.2.tgz --offline --ignore-scripts`.
+This pins the privacy update; the release page supplies a full commit SHA for an immutable Git pin. npm availability may follow the GitHub release: check the registry and release notes before installing `solopup-memory@0.21.0-beta.3`. The npm beta tag may still point to an earlier release. This package ships executable ESM and has no dependency installation or build scripts. Alternatively download its release tarball and install the local file with `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.21.0-beta.3.tgz --offline --ignore-scripts`.
 
 Restart the profile and use `memory_status`. Existing legacy stores may require explicit local review. Do not delete control files to bypass that review. If upgrading from `dsh-memory`, create a full private backup, stop the hosts using that data, remove the old package, then install SoloPup Memory. Do not run both packages together. The data location and legacy format identifiers are intentionally retained.
 
@@ -60,3 +60,5 @@ node accept.mjs --profile desktop
 MIT License. Copyright © 2026 oakfilm.
 
 Explicit requests to remember durable information are directed to the native `memory_write` tool in the same turn. A separate protocol context is available even when the memory store is empty. Personal self-reports remain claims; assistant guesses are not confirmed facts. Automatic capture uses short, code-bound source labels before the original identity and quote checks. This remains a public beta, and instructions do not guarantee model compliance.
+
+Recognized private content is excluded from automatic memory projection and unrelated saved-memory context in capture/admission review. Current and historical search hide it by default; includePrivate=true enables explicit on-demand retrieval. These are conservative content rules, not exhaustive classification or a filesystem security boundary. Raw Markdown and provenance remain local plaintext. Explicit retrieval still enters session history and model requests. Existing session archives, exports, backups and already-sent data are not erased.

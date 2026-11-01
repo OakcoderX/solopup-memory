@@ -71,3 +71,7 @@
 ## 报告问题
 
 私密报告：在本机开 issue 或直接告知维护者，不要在公开渠道贴出可利用细节。
+
+## beta.3 privacy boundary
+
+Recognized private records, including their quoted evidence, are omitted from automatic projection and unrelated saved-memory contexts. The classifier is heuristic and incomplete; explicit [private] or [private:category] text is conservatively treated as on-demand. Searches default to excluding recognized private content; includePrivate=true is a disclosure control, not a user authentication boundary. Other tools can read the raw files. Private facts explicitly present in the current conversation or prior ordinary messages remain in that conversation. Existing append-only archives, caches, exports, backups and provider-side copies are not purged. Never claim that hiding an index or memory_forget erases those copies. Physical raw-index migration and reviewed local erasure are separate work.

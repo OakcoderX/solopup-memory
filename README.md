@@ -2,9 +2,15 @@
 
 **记住重要的事，跟上你的改变。** · [English](README.en.md)
 
-当前公开版本为 **0.21.0-beta.2**，是文字记忆测试版，尚未通过稳定版验收。已验证范围和已知问题见 [RELEASE.md](RELEASE.md)。
+当前公开版本为 **0.21.0-beta.3**，是文字记忆测试版，尚未通过稳定版验收。已验证范围和已知问题见 [RELEASE.md](RELEASE.md)。
 
 把用户明确表达的长期偏好、项目决定、可查证线索和暂定信念保存下来，在后续对话中按项目与适用条件找回。首次公开版本只处理文字。
+
+## 个人资料与按需读取
+
+已识别的生日、性别、健康、亲密关系和私人联系方式默认不进入自动索引投影，也不作为无关后台整理或写入审查的旧记忆发送。普通 `memory_search` 默认隐藏这些内容；用户询问相关资料时，才明确使用 `includePrivate: true`。主题文件含有未分段的敏感内容时，普通搜索会保守跳过整个主题文件，安全的索引摘要仍可检索。
+
+这是内容规则提供的降载保护，不是完整的隐私分类器。未识别的改写仍可能漏过；文件工具仍能读原始文件，按需读取结果也会进入当前会话日志和模型请求。此版本没有把原始 `MEMORY.md` 改成无明文的指针库，没有擦除既有日志、缓存、备份或已发送数据。`memory_forget` 表示停止使用索引条目，不表示彻底删除个人信息。
 
 ## 工作过程
 
@@ -42,10 +48,10 @@ Markdown 索引和主题正文便于阅读；来源、候选、历史与调用�
 使用 DeepSeek Harness 官方插件管理器安装。代码为可直接执行的 ESM，无安装时构建脚本，也不需要 npm 账户。以下以 desktop profile 为例。
 
 ```sh
-dsh plugin --profile desktop add solopup-memory@beta --ignore-scripts
+dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.21.0-beta.3 --ignore-scripts
 ```
 
-npm 包已公开发布，可使用 `solopup-memory@0.21.0-beta.2` 固定版本。Git 安装仍可用：`dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.21.0-beta.2 --ignore-scripts`；需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。也可下载发行页的 `.tgz`，使用 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.21.0-beta.2.tgz --offline --ignore-scripts`。
+以上固定本次修复版本；需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。npm 发布可能晚于 GitHub，请先核对注册表和发行说明，再使用 `dsh plugin --profile desktop add solopup-memory@0.21.0-beta.3 --ignore-scripts`；旧的 `beta` 标签可能仍指向先前版本。也可下载发行页的 `.tgz`，使用 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.21.0-beta.3.tgz --offline --ignore-scripts`。
 
 已安装旧名 `dsh-memory` 时，先完成完整备份、关闭使用该库的宿主，用官方管理器移除旧包，再安装新包；不要同时启用两个记忆插件。新名字继续使用原记忆库和控制格式。
 

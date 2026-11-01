@@ -1,3 +1,13 @@
+# 0.21.0-beta.3 - private-memory exposure reduction
+
+Public beta. Conservative known-category filtering, not full privacy isolation or stable semantic acceptance.
+
+Recognized private summaries, details and quoted evidence are excluded from automatic memory projection and unrelated saved-memory context for capture and admission review. Default current/history searches hide this content; includePrivate=true allows on-demand retrieval. Existing records and original session logs are preserved. File tools can still read raw data, classifier coverage is incomplete, and on-demand output still enters logs and model requests. Raw-index pointer migration and physical history cleanup are not part of this release.
+
+Prior beta.2 evidence below is historical and not automatically a beta.3 result.
+
+---
+
 # 0.21.0-beta.2 — explicit memory workflow update
 
 Public beta, not stable semantic acceptance. The beta.1 evidence in the historical section below is not automatically a beta.2 result.

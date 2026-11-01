@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.21.0-beta.3 - private-memory exposure reduction
+
+- Exclude recognized personal profiles, birth details, health, intimate and private contact information from automatic index projection and unrelated capture/review context, including private source quotations.
+- Hide these records from default current/history memory searches; explicit includePrivate=true enables on-demand retrieval and its normal log/model exposure.
+- Preserve stored records, source identities and append-only session logs. Forget results now distinguish index withdrawal from historical erasure.
+- This is a conservative content classifier, not exhaustive PII detection, encryption, a file-access boundary, or remote deletion. Raw Markdown, source ledgers and existing archives still require separate handling.
+
 ## 0.21.0-beta.2 — explicit memory workflow
 
 - Move model-facing memory instructions into a separate protocol context, available with an empty index and reporting scoped write-tool availability.
