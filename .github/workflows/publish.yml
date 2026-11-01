@@ -58,7 +58,13 @@ jobs:
           package-manager-cache: false
       - run: node --test ci/release.test.mjs
       - run: npm test
-      - run: npm run gate
+      - run: node ci/eval-gate.mjs
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: source-gates-${{ runner.os }}
+          path: release-gates/
+          if-no-files-found: error
+          retention-days: 7
 
   package:
     needs: [resolve, tests]
@@ -75,6 +81,10 @@ jobs:
           node-version: '24'
           package-manager-cache: false
       - run: npm install --global npm@11.21.1 --ignore-scripts
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          pattern: source-gates-*
+          path: source-gates/
       - run: node ci/release.mjs prepare
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
