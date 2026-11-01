@@ -25,12 +25,13 @@ After verification it creates the GitHub prerelease and updates the configured
 third-party market index on main. It does not claim central-market approval,
 stable semantic acceptance, actual user adoption, or historical data erasure.
 
-All correctness gates block on both platforms. The existing 5ms rendering budget
-remains mandatory on the macOS reference runner. The first Ubuntu hosted-runner
-measurement was 5.905ms at 300 entries; it is retained as a timing failure rather
-than called a pass. Linux timing is diagnostic until a hardware baseline is
-established. Each platform's gate receipt, including this limitation, is attached
-to the immutable release manifest. Linux is not performance-certified.
+All correctness gates block on both platforms. Shared Linux and Mac runners
+both showed absolute timing variation above the original local Mac 5ms budget.
+Hosted CI therefore compares three paired baseline/candidate runs on the same
+machine against the immutable beta.3 archive (SHA256 pinned in eval-gate.mjs).
+It blocks median regressions above 25 percent or 0.25ms scheduling allowance.
+Raw absolute 5ms misses remain explicit in release receipts; they are not called
+passes. The separate local Mac gate and its 5ms threshold remain unchanged.
 
 For a rehearsal, manually run **Publish npm beta** with `dry_run=true` and blank
 tag. No npm publish, GitHub release or market mutation occurs. For recovery,

@@ -1,3 +1,9 @@
+# 0.21.0-beta.4 — automated beta release infrastructure
+
+This maintenance version adds the repository release workflow, OIDC publishing support, immutable artifact checks and post-publish GitHub/market updates. Memory behavior and data formats are unchanged. Hosted workflow success and trusted-publisher validation must be checked in the release receipts; a workflow file alone does not establish them. Stable semantic acceptance and historical erasure remain outside this release.
+
+## Historical beta.3 release evidence
+
 # 0.21.0-beta.3 - private-memory exposure reduction
 
 Public beta. Conservative known-category filtering, not full privacy isolation or stable semantic acceptance.

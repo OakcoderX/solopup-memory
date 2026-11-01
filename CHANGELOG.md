@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.21.0-beta.4 - automated release infrastructure
+
+- Add a repository-scoped GitHub Actions workflow for npm trusted publishing via OIDC, with beta tag/version checks and a fixed source commit.
+- Test source on Linux/macOS and the actual archive; retain platform gate receipts, report shared-runner absolute timing misses, and require a fixed-beta.3 same-runner performance comparison. The original local Mac timing gate is unchanged.
+- Verify the public npm download before creating the GitHub prerelease and updating the configured market index. No stored npm write token is required.
+- No change to memory admission, retrieval, privacy classification, storage format or historical-erasure behavior. Actual hosted workflow/trust validation is recorded in release receipts, not assumed from this configuration.
+
 ## 0.21.0-beta.3 - private-memory exposure reduction
 
 - Exclude recognized personal profiles, birth details, health, intimate and private contact information from automatic index projection and unrelated capture/review context, including private source quotations.
