@@ -38,6 +38,13 @@ tag. No npm publish, GitHub release or market mutation occurs. For recovery,
 rerun the same release tag; do not delete a published npm version. A failed
 registry-propagation check requires status inspection, not another publish.
 
+Retries and manual recovery do not submit a publicly missing version again by
+default: 404 can mean registry scanning is still pending. Inspect authenticated
+npm version status first. Only if it confirms no submission, dispatch on the
+existing beta tag with `dry_run=false` and `confirm_unsubmitted=true`. An already
+public identical version is verified without another upload. Dispatch a release
+with the GitHub ref set to that beta tag; the npm environment refuses main refs.
+
 GitHub environment `npm` permits version tags, and the npm publisher must name
 that same environment. Only the publish job receives `id-token: write`; the
 separate GitHub/market job receives repository write permission. Account changes

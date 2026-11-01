@@ -21,6 +21,9 @@ export function checkDigest(bytes,manifest){
 export function checkFiles(files){
   if(!files.length||files.some(f=>!f.path||f.path.startsWith('/')||f.path.split('/').some(p=>p==='..')||/(^|\/)(research|node_modules|\.git|\.npmrc|\.env(?:\.[^/]+)?|MEMORY\.md|HANDOVER\.md)(\/|$)/.test(f.path)))throw Error('unexpected file in public archive')
 }
+export function maySubmit(event,attempt,confirmedUnsubmitted=false){
+  return event==='push'&&Number(attempt)===1||event==='workflow_dispatch'&&confirmedUnsubmitted
+}
 function output(name,value){if(process.env.GITHUB_OUTPUT)writeFileSync(process.env.GITHUB_OUTPUT,`${name}=${value}\n`,{flag:'a'})}
 function loadArtifact(){
   const m=json('release/manifest.json');releaseIdentity(m.version,m.tag)
@@ -83,7 +86,12 @@ async function publish(){
   if(!process.env.ACTIONS_ID_TOKEN_REQUEST_URL||!process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN)throw Error('GitHub OIDC identity is required; no long-lived-token fallback')
   const existing=await fetchJson(`${registry}/solopup-memory/${m.version}?preflight=${Date.now()}`)
   if(existing){if(existing.dist?.integrity!==m.integrity)throw Error('immutable public version differs from tested archive');console.log('Identical version already public; verifying without republishing')}
-  else run('npm',['publish',join('release',m.filename),'--tag','beta','--access','public','--ignore-scripts','--registry',registry],{stdio:'inherit',timeout:180000})
+  else{
+    if(!maySubmit(process.env.GITHUB_EVENT_NAME,process.env.GITHUB_RUN_ATTEMPT,process.env.RELEASE_CONFIRM_UNSUBMITTED==='true'))throw Error('Prior submission outcome must be inspected before another publish; a public 404 does not prove a version was never submitted')
+    writeFileSync('release/submission.json',JSON.stringify({version:m.version,sha256:m.sha256,phase:'attempting',at:new Date().toISOString()})+'\n')
+    run('npm',['publish',join('release',m.filename),'--tag','beta','--access','public','--ignore-scripts','--registry',registry],{stdio:'inherit',timeout:180000})
+    writeFileSync('release/submission.json',JSON.stringify({version:m.version,sha256:m.sha256,phase:'accepted-by-cli',at:new Date().toISOString()})+'\n')
+  }
   const verified=await verifyPublic(m),receipt={...m,...verified,publisher:'GitHub Actions OIDC',runUrl:`https://github.com/${repo}/actions/runs/${process.env.GITHUB_RUN_ID}`,publishedAt:new Date().toISOString()}
   writeFileSync('release/npm-receipt.json',JSON.stringify(receipt,null,2)+'\n');console.log(JSON.stringify(verified))
 }

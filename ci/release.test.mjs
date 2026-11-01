@@ -1,7 +1,13 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {createHash} from 'node:crypto'
-import {releaseIdentity,checkDigest,checkFiles} from './release.mjs'
+import {releaseIdentity,checkDigest,checkFiles,maySubmit} from './release.mjs'
+test('unknown prior submissions cannot be automatically repeated after a 404',()=>{
+  assert.equal(maySubmit('push',1),true)
+  assert.equal(maySubmit('push',2),false)
+  assert.equal(maySubmit('workflow_dispatch',1),false)
+  assert.equal(maySubmit('workflow_dispatch',1,true),true)
+})
 import {classifyGate,compareTiming} from './eval-gate.mjs'
 test('correctness failures and unknown exits cannot be waived as timing noise',()=>{
   const timing='[FAIL] C 渲染中位数 < 5 ms'
