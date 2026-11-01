@@ -13,6 +13,10 @@ on:
         description: 'Verify without publishing'
         type: boolean
         default: true
+      confirm_unsubmitted:
+        description: 'Recovery only: authenticated registry status confirms no prior submission'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -24,6 +28,7 @@ concurrency:
 env:
   RELEASE_REF: ${{ inputs.tag || github.ref_name }}
   RELEASE_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'true' || 'false' }}
+  RELEASE_CONFIRM_UNSUBMITTED: ${{ inputs.confirm_unsubmitted && 'true' || 'false' }}
 
 jobs:
   resolve:
@@ -118,6 +123,13 @@ jobs:
           name: tested-npm-release
           path: release/
       - run: node ci/release.mjs publish
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: submission-state-${{ github.run_attempt }}
+          path: release/submission.json
+          if-no-files-found: ignore
+          retention-days: 30
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: verified-published-release
