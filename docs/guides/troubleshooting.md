@@ -6,6 +6,6 @@
 
 Capture versions and diagnostic codes. Restart the intended profile. A long source may be refused; use a complete short statement. DSH proxy settings can differ from the operating system.
 
-公开测试版 / Public beta 0.21.0-beta.2.
+公开测试版 / Public beta 0.21.0-beta.3.
 
 [安装与限制](../../README.md) · [English](../../README.en.md) · [试用导航](../README.md)

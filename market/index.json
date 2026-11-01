@@ -56,6 +56,18 @@
       },
       "versions": [
         {
+          "version": "0.21.0-beta.3",
+          "publishTimestamp": 1793499898,
+          "engines": {
+            "dsh": ">=0.2.1-rc.0 <0.3.0"
+          },
+          "source": {
+            "type": "git",
+            "url": "https://github.com/OakcoderX/solopup-memory",
+            "commit": "d07cf4ea9bfe847c61688764d2702f7820bedd9e"
+          }
+        },
+        {
           "version": "0.21.0-beta.2",
           "publishTimestamp": 1793431388,
           "engines": {

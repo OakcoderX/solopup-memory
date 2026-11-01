@@ -6,6 +6,6 @@
 
 Try replacing one convention, then check both the current rule and its historical predecessor. Do not treat a stored old value as the present default.
 
-公开测试版 / Public beta 0.21.0-beta.2.
+公开测试版 / Public beta 0.21.0-beta.3.
 
 [安装与限制](../../README.md) · [English](../../README.en.md) · [试用导航](../README.md)

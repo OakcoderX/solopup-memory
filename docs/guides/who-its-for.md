@@ -6,6 +6,6 @@
 
 For DSH users who revisit projects and want source-linked decisions. Start with a non-sensitive convention. Text only; no embedding retrieval or general reliability guarantee.
 
-公开测试版 / Public beta 0.21.0-beta.2.
+公开测试版 / Public beta 0.21.0-beta.3.
 
 [安装与限制](../../README.md) · [English](../../README.en.md) · [试用导航](../README.md)

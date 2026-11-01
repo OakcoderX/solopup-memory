@@ -1,9 +1,9 @@
 # Installation choices / 安装方式
 
-Prefer an exact npm beta version for reproducibility:
+Install the pinned GitHub privacy update. npm beta.3 may follow later; check the registry and release notes before selecting npm:
 
 ```sh
-dsh plugin --profile desktop add solopup-memory@0.21.0-beta.2 --ignore-scripts
+dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.21.0-beta.3 --ignore-scripts
 ```
 
 `solopup-memory@beta` follows the beta tag and can change. The GitHub release also supplies a local archive; install it with the official manager using its absolute path and `--offline --ignore-scripts`. See the root README for the full command and upgrade precautions.

@@ -6,6 +6,6 @@
 
 Self-reports are claims, not independently verified facts. Assistant guesses are not owner confirmation. Use fictional, non-sensitive inputs for a demo.
 
-公开测试版 / Public beta 0.21.0-beta.2.
+公开测试版 / Public beta 0.21.0-beta.3.
 
 [安装与限制](../../README.md) · [English](../../README.en.md) · [试用导航](../README.md)

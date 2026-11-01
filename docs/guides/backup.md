@@ -6,6 +6,6 @@
 
 Stop all writers, create a full snapshot with the supplied backup script, and verify it. Restore is reviewed and preserves withdrawal controls; consult the root README for exact commands.
 
-公开测试版 / Public beta 0.21.0-beta.2.
+公开测试版 / Public beta 0.21.0-beta.3.
 
 [安装与限制](../../README.md) · [English](../../README.en.md) · [试用导航](../README.md)

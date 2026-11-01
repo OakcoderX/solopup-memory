@@ -6,6 +6,6 @@
 
 A same-chat answer can come from context. Test in a fresh conversation in the same project, then inspect project boundaries. These are suggested checks, not newly measured results.
 
-公开测试版 / Public beta 0.21.0-beta.2.
+公开测试版 / Public beta 0.21.0-beta.3.
 
 [安装与限制](../../README.md) · [English](../../README.en.md) · [试用导航](../README.md)

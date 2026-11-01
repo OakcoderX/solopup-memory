@@ -6,6 +6,6 @@
 
 Ask to remember one durable project convention. Inspect the native write result. Pending or rejected proposals are not effective memories. Model instructions do not guarantee compliance.
 
-公开测试版 / Public beta 0.21.0-beta.2.
+公开测试版 / Public beta 0.21.0-beta.3.
 
 [安装与限制](../../README.md) · [English](../../README.en.md) · [试用导航](../README.md)

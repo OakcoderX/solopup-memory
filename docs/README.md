@@ -1,6 +1,6 @@
 # SoloPup Memory — start here / 试用导航
 
-Public beta 0.21.0-beta.2 for DeepSeek Harness. MIT licensed; configured model services may charge.
+Public beta 0.21.0-beta.3 for DeepSeek Harness. MIT licensed; configured model services may charge.
 
 先从快速上手开始，再选择一个虚构案例验证。下列试用脚本不是已测结果。
 
