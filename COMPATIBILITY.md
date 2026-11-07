@@ -54,7 +54,7 @@ schema.properties.byType.additionalProperties must be a boolean
 3. `required` 里的字段必须出现在 `properties`
 4. 本机输出schema不接受`maxItems`、`maxLength`、`pattern`等额外约束关键字；dev.12原生加载曾因此明确失败，原日志保留。认识层schema使用已支持子集，数量、长度、维度与凭据检查由插件的实际输入校验器执行。
 
-`test-schema.mjs` 把这三条搬进测试；`scripts/probe-load.mjs` 用隔离实例验证真加载。
+`test/test-schema.mjs` 把这三条搬进测试；`scripts/probe-load.mjs` 用隔离实例验证真加载。
 
 ## 3. 运行时自检与降级
 
@@ -139,7 +139,7 @@ DSH 自带对话压缩，桌面 profile 里启用的是这四个（`dsh-base/cor
 
 | 接触面 | 会不会冲突 | 处理 |
 |---|---|---|
-| 运行时快照与压缩 | 快照会进入会话历史，可能被压缩；不能从provider重复渲染测试推断相反结论 | v0.11.0从当前库重建，按来源替换旧记忆节；既有普通摘要中的复述仍未清除。`test-compaction-compat.mjs`只验证provider和工具机制，实际请求另测 |
+| 运行时快照与压缩 | 快照会进入会话历史，可能被压缩；不能从provider重复渲染测试推断相反结论 | v0.11.0从当前库重建，按来源替换旧记忆节；既有普通摘要中的复述仍未清除。`test/test-compaction-compat.mjs`只验证provider和工具机制，实际请求另测 |
 | 注入体积 | **压缩救不了它**，它是每步都要付的固定税 | 索引硬上限 300 行 / 25 KB（`LIMITS`）；测试断言 1000 条时注入仍 < 27 KB |
 | 工具输出被修剪 | **会**——超过 8192 字符会在中间被截断，JSON 形状破坏 | search 输出 ≤4 KB；links 的入边/出边各截到 10 条并报总数；status < 2 KB |
 | 压缩后模型忘记自己写过 | **会**导致重复写入 | 写入侧幂等（逐字重复 → `duplicate`）、相似度闸、冲突提示 |
@@ -147,7 +147,7 @@ DSH 自带对话压缩，桌面 profile 里启用的是这四个（`dsh-base/cor
 ### 命名
 
 工具叫 `memory_prune` 而不是 `memory_compact`，避免与宿主 `/compact`（对话压缩）混淆。
-`test-compaction-compat.mjs` 里有一条断言守着这个命名。
+`test/test-compaction-compat.mjs` 里有一条断言守着这个命名。
 
 ### 结论
 
