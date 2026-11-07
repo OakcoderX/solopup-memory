@@ -1,0 +1,207 @@
+{
+  "kind": "synthetic-scripted-host-mechanics",
+  "at": "2026-11-07T11:00:13.635Z",
+  "version": "0.21.0-beta.4",
+  "scriptSha256": "9d666a62c85363172e71a6d196d35fb2e1d52c715b8fb653777294885a057326",
+  "environment": {
+    "platform": "linux",
+    "arch": "x64",
+    "node": "v24.22.1"
+  },
+  "realDshHost": false,
+  "realModel": false,
+  "networkRequests": 0,
+  "isolatedTemporaryHome": true,
+  "separateProcesses": 3,
+  "limitations": "Scripted validator approves this synthetic candidate. This verifies persistence, source return and project filtering only, not model judgment, real DSH schema registration, or natural fresh-chat recall.",
+  "lines": [
+    "synthetic user: 记住：本项目的交付说明统一用中文。",
+    "memory_write: recorded (scope=project, meaning=decision)",
+    "fresh process / memory_search(\"交付说明\"): 1 hit (scope=project)",
+    "current text: - [project] 本项目的交付说明统一用中文 — 索引摘要",
+    "history source: synthetic-demo-write:1; quote: 记住：本项目的交付说明统一用中文。",
+    "other project / current + history: 0 + 0 hits"
+  ],
+  "phases": {
+    "write": {
+      "sessionId": "synthetic-demo-write",
+      "ownerMessage": "记住：本项目的交付说明统一用中文。",
+      "args": {
+        "type": "project",
+        "scope": "project",
+        "summary": "本项目的交付说明统一用中文",
+        "meaning": {
+          "kind": "decision"
+        }
+      },
+      "result": {
+        "path": "/tmp/solopup-readme-demo-KIPBfK/home/memory/projects/v2-c78ff7e183cdb4e92fecd591480a0f95353e3d87cd0ccb6956e67702d60d6ebf/MEMORY.md",
+        "indexLine": "- [project] 本项目的交付说明统一用中文 — 索引摘要",
+        "duplicate": false,
+        "lineCount": 6,
+        "id": "a3bea2c1",
+        "related": [],
+        "status": "recorded"
+      },
+      "scriptedValidationCalls": 1
+    },
+    "recall": {
+      "sessionId": "synthetic-demo-recall",
+      "inheritedMessages": 0,
+      "args": {
+        "query": "交付说明",
+        "mode": "exact"
+      },
+      "current": {
+        "query": "交付说明",
+        "hits": [
+          {
+            "file": "MEMORY.md",
+            "line": 5,
+            "text": "- [project] 本项目的交付说明统一用中文 — 索引摘要",
+            "interpretation": {
+              "kind": "decision",
+              "conditions": [],
+              "except": [],
+              "alternatives": [],
+              "falsifiedBy": [],
+              "recordId": "b3517e8d4eda75b942def718ccefdfea1f97c6b2ff917f4c465ba9b35504b20a",
+              "epistemic": "reported-decision",
+              "applicability": "applicable",
+              "missing": [],
+              "sourceOrigin": "tool-context",
+              "sourceRoots": 1,
+              "advice": {
+                "action": "continue",
+                "reason": "no-decision-impact-declared",
+                "authority": "none"
+              }
+            },
+            "scope": "project"
+          }
+        ],
+        "truncated": false
+      },
+      "history": {
+        "query": "交付说明",
+        "hits": [
+          {
+            "file": ".episodes.json",
+            "line": 13,
+            "text": "【历史记录，非当前指令；current】\n- [project] 本项目的交付说明统一用中文 — 索引摘要\n\n记住：本项目的交付说明统一用中文。",
+            "scope": "project",
+            "history": {
+              "sequence": 1,
+              "recordedAt": "2026-11-07T11:00:13.424Z",
+              "observation": "published",
+              "state": "current",
+              "sourceSessionId": "synthetic-demo-write",
+              "sourceMessageIds": [
+                "synthetic-demo-write:1"
+              ]
+            },
+            "interpretation": {
+              "kind": "decision",
+              "conditions": [],
+              "except": [],
+              "alternatives": [],
+              "falsifiedBy": [],
+              "recordId": "b3517e8d4eda75b942def718ccefdfea1f97c6b2ff917f4c465ba9b35504b20a",
+              "epistemic": "reported-decision",
+              "applicability": "applicable",
+              "missing": [],
+              "sourceOrigin": "tool-context",
+              "sourceRoots": 1,
+              "advice": {
+                "action": "continue",
+                "reason": "historical-record-is-not-a-current-instruction",
+                "authority": "none"
+              }
+            }
+          }
+        ],
+        "truncated": false,
+        "historyCoverage": [
+          {
+            "exists": true,
+            "scope": "project",
+            "startedAt": "2026-11-07T11:00:13.424Z",
+            "latestSequence": 1,
+            "droppedEntries": 0,
+            "droppedThroughSequence": 0,
+            "droppedThroughAt": null,
+            "untrackedCurrentRows": 0,
+            "untrackedTransitions": 0,
+            "unreconciledEntries": 0,
+            "withdrawalBarriersPresent": false,
+            "complete": true
+          },
+          {
+            "exists": false,
+            "scope": "global",
+            "startedAt": null,
+            "latestSequence": 0,
+            "droppedEntries": 0,
+            "droppedThroughSequence": 0,
+            "droppedThroughAt": null,
+            "untrackedCurrentRows": 0,
+            "untrackedTransitions": 0,
+            "unreconciledEntries": 0,
+            "withdrawalBarriersPresent": false,
+            "complete": false
+          }
+        ]
+      },
+      "scriptedValidationCalls": 0
+    },
+    "other-project": {
+      "sessionId": "synthetic-demo-other-project",
+      "inheritedMessages": 0,
+      "args": {
+        "query": "交付说明",
+        "mode": "exact"
+      },
+      "current": {
+        "query": "交付说明",
+        "hits": [],
+        "truncated": false
+      },
+      "history": {
+        "query": "交付说明",
+        "hits": [],
+        "truncated": false,
+        "historyCoverage": [
+          {
+            "exists": false,
+            "scope": "project",
+            "startedAt": null,
+            "latestSequence": 0,
+            "droppedEntries": 0,
+            "droppedThroughSequence": 0,
+            "droppedThroughAt": null,
+            "untrackedCurrentRows": 0,
+            "untrackedTransitions": 0,
+            "unreconciledEntries": 0,
+            "withdrawalBarriersPresent": false,
+            "complete": false
+          },
+          {
+            "exists": false,
+            "scope": "global",
+            "startedAt": null,
+            "latestSequence": 0,
+            "droppedEntries": 0,
+            "droppedThroughSequence": 0,
+            "droppedThroughAt": null,
+            "untrackedCurrentRows": 0,
+            "untrackedTransitions": 0,
+            "unreconciledEntries": 0,
+            "withdrawalBarriersPresent": false,
+            "complete": false
+          }
+        ]
+      },
+      "scriptedValidationCalls": 0
+    }
+  }
+}

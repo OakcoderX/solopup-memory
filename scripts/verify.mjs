@@ -22,7 +22,7 @@ const ROOT = join(HERE, '..')
 const withAccept = !process.argv.includes('--no-accept')
 
 const testArgs=JSON.parse(readFileSync(join(ROOT,'package.json'),'utf8')).scripts.test.trim().split(/\s+/)
-if(testArgs[0]!=='node'||testArgs[1]!=='--test'||testArgs.slice(2).some(arg=>!/^test(?:-[a-z0-9-]+)?\.mjs$/.test(arg)&&!/^--test-concurrency=[1-9]\d*$/.test(arg)))throw Error('unsupported-test-command')
+if(testArgs[0]!=='node'||testArgs[1]!=='--test'||testArgs.slice(2).some(arg=>!/^test\/test(?:-[a-z0-9-]+)?\.mjs$/.test(arg)&&!/^--test-concurrency=[1-9]\d*$/.test(arg)))throw Error('unsupported-test-command')
 const SUITES=testArgs.slice(2).filter(arg=>arg.endsWith('.mjs'))
 
 function run(label, command, args) {

@@ -2,6 +2,8 @@
 
 当前会话能重复刚说过的话，不足以证明长期记忆工作。
 
+已有[三个独立进程的离线脚本实测](../runs/2026-11-07-source-recall.md)，可查看写入返回值、原话来源与项目隔离。它使用脚本化审查，不替代本页的实际 DSH / 模型验收。
+
 完成写入后开一个没有继承旧历史的新会话，在同一项目问“这个项目的交付说明用什么语言？”检查回答是否引用对应记忆；再换另一个项目，确认没有把这个约定说成通用规则。
 
 A same-chat answer can come from context. Test in a fresh conversation in the same project, then inspect project boundaries. These are suggested checks, not newly measured results.
