@@ -89,7 +89,7 @@ async function publish(){
   else{
     if(!maySubmit(process.env.GITHUB_EVENT_NAME,process.env.GITHUB_RUN_ATTEMPT,process.env.RELEASE_CONFIRM_UNSUBMITTED==='true'))throw Error('Prior submission outcome must be inspected before another publish; a public 404 does not prove a version was never submitted')
     writeFileSync('release/submission.json',JSON.stringify({version:m.version,sha256:m.sha256,phase:'attempting',at:new Date().toISOString()})+'\n')
-    run('npm',['publish',join('release',m.filename),'--tag','beta','--access','public','--ignore-scripts','--registry',registry],{stdio:'inherit',timeout:180000})
+    run('npm',['publish','./'+join('release',m.filename),'--tag','beta','--access','public','--ignore-scripts','--registry',registry],{stdio:'inherit',timeout:180000})
     writeFileSync('release/submission.json',JSON.stringify({version:m.version,sha256:m.sha256,phase:'accepted-by-cli',at:new Date().toISOString()})+'\n')
   }
   const verified=await verifyPublic(m),receipt={...m,...verified,publisher:'GitHub Actions OIDC',runUrl:`https://github.com/${repo}/actions/runs/${process.env.GITHUB_RUN_ID}`,publishedAt:new Date().toISOString()}

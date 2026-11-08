@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.22.0-beta.1 — detection layer, semantic pipeline gate, dream P0/P1
+## 0.22.0-beta.2 — detection layer, semantic pipeline gate, dream P0/P1
 
 - Add `detect.mjs` and `scripts/detect.mjs`: read-only L0 invariant checks over a store or the whole memory root (index format, projection consistency, anchors, withdrawal residue, duplicates/conflicts, budgets, scope, version drift, topic structure, duplicate stores). No model calls, no writes.
 - Expose a bounded `lint: { errors, warnings, checks[] }` summary in `memory_status` (single and scope=both); full details stay in the CLI.
@@ -12,6 +12,7 @@
 - Tighten I14: mid-file paragraphs ending with unfinished punctuation are flagged; colon lead-ins followed by a list are not.
 - Add `scripts/dream.mjs`: read-only P0 shadow planner (detection + telemetry → auditable ops, `applySupported:false`, zero model calls).
 - Add `scripts/security-check.mjs`: mechanical pre-release checks (zero dependencies/install hooks, runtime network/exec surface, shipped-file secrets and absolute paths, workflow action pins and permissions, package contents, license, engines, gitignore). Integrated into `scripts/verify.mjs`.
+- Fix the npm publish invocation: pass `./release/<tarball>` so npm 11 does not parse the relative path as a GitHub shorthand (previous `v0.22.0-beta.1` tag failed before any submission; no npm version was published).
 - Add `scripts/soak.mjs`: reliability test on the official offline install path — repeated real DSH host start/stop, SIGKILL recovery, two concurrent hosts on one store, data fingerprint stability and store permissions (0700/0600).
 - Add DETECTION.md (six-layer framework and its known blind spots) and DREAMING-DESIGN.md (next feature design; P0 implemented, P1+ not).
 

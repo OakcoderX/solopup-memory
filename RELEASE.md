@@ -1,6 +1,6 @@
-# 0.22.0-beta.1 — detection layer, semantic pipeline gate, dream P0/P1
+# 0.22.0-beta.2 — detection layer, semantic pipeline gate, dream P0/P1
 
-**Source update, not a published beta.** This commit adds engineering infrastructure and read-only/planning features; it does not claim stable semantic acceptance or publish to npm/market. Published version remains 0.21.0-beta.3.
+**Source update, not a published beta.** (v0.22.0-beta.1 tag failed before submission because npm 11 parsed the relative tarball path as a GitHub shorthand; no npm version was published. This beta.2 commit fixes the path and passes the same gates.) This commit adds engineering infrastructure and read-only/planning features; it does not claim stable semantic acceptance or publish to npm/market. Published version remains 0.21.0-beta.3.
 
 - L0 detection: `detect.mjs` + `scripts/detect.mjs` read-only invariant checks (index format, projection consistency, anchors, withdrawal residue, duplicates/conflicts, budgets, scope, version drift, topic structure, duplicate stores). `memory_status` exposes a bounded `lint` summary.
 - L2 pipeline-fidelity suite: 10 frozen cases (~190ms) checking that a correct or deliberately wrong candidate keeps its conditions/meaning/expiry/scope through write → projection → retrieval. `semanticTruthEvaluated` stays false (no real extraction model run).
