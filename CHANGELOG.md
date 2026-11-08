@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.22.0-beta.1 — detection layer, semantic pipeline gate, dream P0/P1
+
+- Add `detect.mjs` and `scripts/detect.mjs`: read-only L0 invariant checks over a store or the whole memory root (index format, projection consistency, anchors, withdrawal residue, duplicates/conflicts, budgets, scope, version drift, topic structure, duplicate stores). No model calls, no writes.
+- Expose a bounded `lint: { errors, warnings, checks[] }` summary in `memory_status` (single and scope=both); full details stay in the CLI.
+- Record `capture/skipped/short-session-below-threshold` when a session ends below the auto-capture turn threshold, so short sessions are observable instead of silently losing context.
+- Fix two stale comments that described the similarity gate as 0.95/0.85 while the constants are 0.90/0.80.
+- Add `scripts/telemetry.mjs`: L3 read-only metrics (capture success rate, zero-output days, stale pending candidates, short-session skips) with `--json`/`--check`.
+- Add `eval/semantic-suite.mjs` + `eval/semantic/cases.json`: 10 frozen L2 pipeline-fidelity cases (identity claim, conditional preference, project decision, inferred pending, verbatim-quote gate, scope gate, missing basis, supersede, condition-in-detail, expiry). Deterministic (~250ms); `semanticTruthEvaluated` stays false because it does not run a real extraction model.
+- Add `eval/bench-detect.mjs`: comparison experiment against the 2026-11-08 manual audit baseline (detector recall, declared blind spots) plus median latency of L0/L3 gates.
+- Tighten I14: mid-file paragraphs ending with unfinished punctuation are flagged; colon lead-ins followed by a list are not.
+- Add `scripts/dream.mjs`: read-only P0 shadow planner (detection + telemetry → auditable ops, `applySupported:false`, zero model calls).
+- Add DETECTION.md (six-layer framework and its known blind spots) and DREAMING-DESIGN.md (next feature design; P0 implemented, P1+ not).
+
 ## 0.21.0-beta.4 - automated release infrastructure
 
 - Add a repository-scoped GitHub Actions workflow for npm trusted publishing via OIDC, with beta tag/version checks and a fixed source commit.

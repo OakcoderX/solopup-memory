@@ -1,3 +1,15 @@
+# 0.22.0-beta.1 — detection layer, semantic pipeline gate, dream P0/P1
+
+**Source update, not a published beta.** This commit adds engineering infrastructure and read-only/planning features; it does not claim stable semantic acceptance or publish to npm/market. Published version remains 0.21.0-beta.3.
+
+- L0 detection: `detect.mjs` + `scripts/detect.mjs` read-only invariant checks (index format, projection consistency, anchors, withdrawal residue, duplicates/conflicts, budgets, scope, version drift, topic structure, duplicate stores). `memory_status` exposes a bounded `lint` summary.
+- L2 pipeline-fidelity suite: 10 frozen cases (~190ms) checking that a correct or deliberately wrong candidate keeps its conditions/meaning/expiry/scope through write → projection → retrieval. `semanticTruthEvaluated` stays false (no real extraction model run).
+- L3 telemetry: capture success rate, zero-output days, stale pending candidates, short-session skips.
+- Dream P0 shadow plan: read-only op list from L0+L3 with evidence, zero model calls. Dream P1 applies only `compact-index` (reuses deterministic `pruneStore`) behind `--reviewed <planHash>`, after a file backup, with post-apply L0 verification; every other op remains human-only.
+- Short sessions below the auto-capture turn threshold now emit `capture/skipped/short-session-below-threshold` instead of silently losing context.
+
+Known gaps: no real-model semantic acceptance; no per-memory usage counters; dream P1 does not apply merges, conflict arbitration or transcript-based corrections.
+
 # 0.21.0-beta.4 — automated beta release infrastructure
 
 This maintenance version adds the repository release workflow, OIDC publishing support, immutable artifact checks and post-publish GitHub/market updates. Memory behavior and data formats are unchanged. Hosted workflow success and trusted-publisher validation must be checked in the release receipts; a workflow file alone does not establish them. Stable semantic acceptance and historical erasure remain outside this release.

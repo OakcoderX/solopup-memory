@@ -890,7 +890,7 @@ function writeMemoryLocal({ type, dir, line, detail, summary, expires, supersede
     }
 
     // 相似度闸：改写同一件事却再叠一条，会让新旧两条同时被注入、给出矛盾信息。
-    // 0.95 以上直接拒绝并指出候选；0.85–0.95 放行但带警告（避免误伤「相似但不同」的条目）。
+    // 0.9 以上直接拒绝并指出候选；0.8–0.9 放行但带警告（避免误伤「相似但不同」的条目）。
     let similarWarning
     // 完全重复走 duplicate 分支（幂等返回），相似度闸只管「像但不是同一句」
     const alias = hasTopicDetail(cleanDetail) ? undefined : routeAlias(cleanLine, type)
@@ -1224,8 +1224,32 @@ function statusOfLocal(dir) {
 }
 
 /**
- * 在索引与主题文件里做子串检索。
- *
+ * L0 检测摘要：把 detect.mjs 的 findings 压成计数，避免状态输出膨胀。
+ * 动态导入是为了不形成 index ↔ detect 的静态循环（detect 依赖本文件的纯函数）。
+ */
+async function lintStatus(dir, scope) {
+  try {
+    const { detectStore } = await import('./detect.mjs')
+    const report = detectStore(dir, { scope })
+    const counts = new Map()
+    for (const finding of report.findings) {
+      if (finding.severity === 'info') continue
+      const row = counts.get(finding.id) ?? { id: finding.id, severity: finding.severity, count: 0 }
+      row.count += 1
+      counts.set(finding.id, row)
+    }
+    return {
+      errors: report.summary.errors,
+      warnings: report.summary.warnings,
+      checks: [...counts.values()].sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0)),
+    }
+  } catch {
+    // 检测器本身坏了不能伪装成“库没问题”。
+    return { errors: 0, warnings: 1, checks: [{ id: 'lint-unavailable', severity: 'warning', count: 1 }] }
+  }
+}
+
+/**
  * 存在的原因：索引超上限时，被省略的条目对模型完全不可见（`lookupLinks` 只查索引）。
  * 检索是确定性的：归一化后做子串匹配，不做正则、不做模糊。
  *
@@ -2151,6 +2175,29 @@ function defineStatusTool(ctx, sourceInputs) {
           expired: { type: 'integer' },
           duplicateGroups: { type: 'integer' },
           storeBytes: { type: 'integer' },
+          // L0 检测摘要：只给计数与检查项；明细走 `node scripts/detect.mjs --json`。
+          lint: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['errors', 'warnings', 'checks'],
+            properties: {
+              errors: { type: 'integer' },
+              warnings: { type: 'integer' },
+              checks: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: ['id', 'severity', 'count'],
+                  properties: {
+                    id: { type: 'string' },
+                    severity: { type: 'string', enum: ['error', 'warning'] },
+                    count: { type: 'integer' },
+                  },
+                },
+              },
+            },
+          },
           sourceLedger: { type: 'object', additionalProperties: false,
             required: ['available', 'fullLimit', 'pendingLimit', 'retiredLimit', 'byteLimit'],
             properties: { available: { type: 'boolean' }, fullRecords: { type: 'integer' }, retiredRecords: { type: 'integer' }, pending: { type: 'integer' }, bytes: { type: 'integer' }, fullLimit: { type: 'integer' }, pendingLimit: { type: 'integer' }, retiredLimit: { type: 'integer' }, byteLimit: { type: 'integer' }, reason: { type: 'string', enum: ['source-ledger-unavailable'] } } },
@@ -2177,7 +2224,8 @@ function defineStatusTool(ctx, sourceInputs) {
             text:
               `索引 ${value.index.lines}/${value.index.limitLines} 行、${value.index.bytes}/${value.index.limitBytes} 字节；` +
               `类型：${types}；过期 ${value.expired} 条；重复组 ${value.duplicateGroups}；` +
-              `主题文件：${topics || '无'}；库占用 ${(value.storeBytes / 1024).toFixed(1)}K。\n` +
+              `主题文件：${topics || '无'}；库占用 ${(value.storeBytes / 1024).toFixed(1)}K。` +
+              (value.lint ? `\n检测（L0）：error ${value.lint.errors}、warning ${value.lint.warnings}` + (value.lint.checks.length ? '；' + value.lint.checks.map((check) => `${check.id}×${check.count}`).join('、') : '') + '（明细：node scripts/detect.mjs）' : '') + '\n' +
               (value.sourceLedger?.available ? `来源记录 ${value.sourceLedger.fullRecords}/${value.sourceLedger.fullLimit}；历史来源凭据 ${value.sourceLedger.retiredRecords}/${value.sourceLedger.retiredLimit}；待审 ${value.sourceLedger.pending}/${value.sourceLedger.pendingLimit}；来源占用 ${(value.sourceLedger.bytes / 1024).toFixed(1)}/${value.sourceLedger.byteLimit / 1024}K。\n` : '来源账本待修复，容量状态未知。\n') + value.dir+(value.capture?'\n捕获诊断（全局保留作业）：'+(!value.capture.available?'账本不可用，未知':value.capture.latest?.diagnostic?value.capture.latest.diagnostic.classification+'；解析拒绝'+value.capture.latest.diagnostic.parserRejected+'，截断'+value.capture.latest.diagnostic.deferred+'，准入拒绝'+value.capture.latest.diagnostic.admissionRejected+'，写入失败'+value.capture.latest.diagnostic.writeFailures+'；不证明没有漏记':value.capture.latest?'旧作业无细分诊断或仍未完成，不能推断空结果':'尚无捕获作业记录；不能推断没有长期信息'):'')+(value.capture?.blockedInput?'\n自动整理未执行：用户来源不完整；没有从截断的前半段建立记忆。':'')+(value.executionObservations?'\n可引用执行结果（复制callId及原文）：\n'+value.executionObservations.items.map(item=>JSON.stringify(item)).join('\n')+'\n'+value.executionObservations.note+(value.executionObservations.truncated?'（列表有省略，优先核对最近结果）':''):'') ,
           },
         ]
@@ -2186,6 +2234,7 @@ function defineStatusTool(ctx, sourceInputs) {
     async execute(args, exec) {
       const dir = resolveStoreDir(ctx, exec, 'memory_status', args.scope)
       const value={...statusOf(dir),capture:managedRead(storeRoot(),()=>captureJobStatus(storeRoot()))}
+      value.lint = await lintStatus(dir, dir === storeRoot() ? 'global' : 'project')
       if(args.includeObservations!==undefined&&typeof args.includeObservations!=='boolean')throw Error('memory-observation-invalid-list-option')
       if(args.includeObservations===true){if(!captureSessionEligible(exec?.agent?.session))throw Error('memory-observation-source-unavailable');return{...value,executionObservations:sourceInputs.availableForExecution(exec)}}
       return value
@@ -2213,7 +2262,7 @@ function defineStatusTool(ctx, sourceInputs) {
     if(args.scope!=='both')return singleExecute(args,exec)
     if(args.includeObservations!==undefined&&typeof args.includeObservations!=='boolean')throw Error('memory-observation-invalid-list-option')
     const root=storeRoot()
-    return managedRead(root,()=>{
+    const result=managedRead(root,()=>{
       const stores=[{scope:'global',available:true,status:statusOf(root)}];let project
       if(!exec?.agent||typeof ctx.workingDirectory?.get!=='function')project={scope:'project',available:false,reason:'no-current-project'}
       else{
@@ -2229,10 +2278,14 @@ function defineStatusTool(ctx, sourceInputs) {
         }catch{project={scope:'project',available:false,reason:'project-status-unavailable'}}
       }
       stores.push(project)
-      const value={scope:'both',stores,capture:captureJobStatus(root)}
-      if(args.includeObservations===true){if(!captureSessionEligible(exec?.agent?.session))throw Error('memory-observation-source-unavailable');value.executionObservations=sourceInputs.availableForExecution(exec)}
-      return value
+      return {scope:'both',stores,capture:captureJobStatus(root)}
     })
+    for(const row of result.stores){
+      if(!row.available)continue
+      row.status.lint=await lintStatus(row.status.dir,row.scope)
+    }
+    if(args.includeObservations===true){if(!captureSessionEligible(exec?.agent?.session))throw Error('memory-observation-source-unavailable');result.executionObservations=sourceInputs.availableForExecution(exec)}
+    return result
   }
   return definition
 }
@@ -2740,7 +2793,19 @@ function setupAutoCapture(ctx, config) {
     rememberSession(session)
     scheduleRestore(session)
   })
-  ctx.on('session/disposed', session => { observedSessions.delete(session.id); sessions.delete(session.id) })
+  ctx.on('session/disposed', session => {
+    // 短会话在结构上永远到不了 everyTurns；把“没整理”记成可观测事件，而不是静默丢弃。
+    const state = sessions.get(session?.id)
+    if (state && state.turns > 0 && state.turns < options.everyTurns && !state.running) {
+      try {
+        appendAudit(storeRoot(), { op: 'capture', outcome: 'skipped', reason: 'short-session-below-threshold', sessionId: session.id, turns: state.turns, everyTurns: options.everyTurns })
+      } catch {
+        /* 状态卸载路径上的审计是尽力而为，不能阻断 */
+      }
+    }
+    observedSessions.delete(session.id)
+    sessions.delete(session.id)
+  })
 
   queryService = watchOptionalService(ctx, 'sessionQuery', state => {
     const available = typeof state.value?.observeSession === 'function'

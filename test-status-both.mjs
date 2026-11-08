@@ -40,3 +40,11 @@ test('restoration guard produces only unavailable source control for either stat
 test('both metadata never turns observation discovery into cross-session access',()=>box(async f=>{
  const before=fingerprint(f.data);await assert.rejects(f.status.execute({scope:'both',includeObservations:'yes'},f.exec),/invalid-list-option/);assert.deepEqual(fingerprint(f.data),before);await assert.rejects(f.status.execute({scope:'both',includeObservations:true},f.exec),/source-unavailable/)
 }))
+test('status exposes a bounded L0 lint summary',()=>box(async f=>{
+ writeFileSync(join(f.data,'MEMORY.md'),'# 索引\n\n## user\n\n- [nope] 坏类型 — user.md\n')
+ const r=await f.status.execute({scope:'global'},f.exec)
+ assert.ok(r.lint.errors>=1)
+ assert.ok(r.lint.checks.some((check)=>check.id==='I1-invalid-index-line'))
+ const text=f.status.output.render({scope:'global'},r).map((item)=>item.text).join('\n')
+ assert.match(text,/检测（L0）/)
+}))

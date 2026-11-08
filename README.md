@@ -101,6 +101,10 @@ MIT License，Copyright © 2026 oakfilm。产品品牌：SoloPup Memory。
 
 ```sh
 npm test
+node scripts/detect.mjs --check   # L0 不变量检测（只读）；有 error 退出码 1
+node eval/semantic-suite.mjs     # L2 管道保真层（10 条冻结用例）
+node eval/bench-detect.mjs       # 对比实验：检测器召回与耗时
+node scripts/dream.mjs           # 做梦 P0 影子计划（只读）
 node scripts/verify.mjs --no-accept
 node accept.mjs --profile desktop
 ```

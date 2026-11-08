@@ -1,0 +1,387 @@
+[
+  {
+    "id": "identity-claim",
+    "tags": [
+      "write",
+      "meaning"
+    ],
+    "title": "用户自述长期身份：存成 claim，不是已核实事实",
+    "messages": [
+      {
+        "id": "m1",
+        "role": "user",
+        "text": "我是做电视剧剧本的，长期负责剧本结构。"
+      }
+    ],
+    "gold": {
+      "type": "user",
+      "scope": "global",
+      "basis": "explicit",
+      "summary": "长期做电视剧剧本，负责剧本结构",
+      "meaning": {
+        "kind": "claim"
+      }
+    },
+    "expect": {
+      "status": "eligible",
+      "meaningMatches": true,
+      "search": [
+        {
+          "query": "电视剧剧本",
+          "hits": 1
+        }
+      ]
+    }
+  },
+  {
+    "id": "conditional-preference",
+    "tags": [
+      "write",
+      "conditions"
+    ],
+    "title": "有听众条件的偏好：条件必须落库，并在检索时过滤",
+    "messages": [
+      {
+        "id": "m1",
+        "role": "user",
+        "text": "给儿童讲解的时候先举例，其他场合不用这样。"
+      }
+    ],
+    "gold": {
+      "type": "user",
+      "scope": "global",
+      "basis": "explicit",
+      "summary": "给儿童讲解时先举例",
+      "meaning": {
+        "kind": "preference",
+        "conditions": [
+          {
+            "dimension": "audience",
+            "value": "children"
+          }
+        ]
+      }
+    },
+    "expect": {
+      "status": "eligible",
+      "meaningMatches": true,
+      "search": [
+        {
+          "query": "举例",
+          "context": {
+            "audience": "children"
+          },
+          "hits": 1
+        },
+        {
+          "query": "举例",
+          "context": {
+            "audience": "adult"
+          },
+          "hits": 0
+        }
+      ]
+    }
+  },
+  {
+    "id": "project-decision-detail",
+    "tags": [
+      "write",
+      "project"
+    ],
+    "title": "项目决定 + 正文细节：索引摘要与主题正文都要在",
+    "messages": [
+      {
+        "id": "m1",
+        "role": "user",
+        "text": "这个项目就按 26 集、每集 20 分钟来做。"
+      }
+    ],
+    "gold": {
+      "type": "project",
+      "scope": "project",
+      "basis": "explicit",
+      "summary": "项目固定 26 集、每集 20 分钟",
+      "detail": "硬格式：每集 20 分钟；不是 12 集 × 45 分钟。",
+      "meaning": {
+        "kind": "decision"
+      }
+    },
+    "expect": {
+      "status": "eligible",
+      "meaningMatches": true,
+      "detailContains": [
+        "每集 20 分钟"
+      ],
+      "search": [
+        {
+          "query": "26 集",
+          "hits": 1
+        }
+      ]
+    }
+  },
+  {
+    "id": "inferred-stays-pending",
+    "tags": [
+      "gate",
+      "attribution"
+    ],
+    "title": "推断出来的偏好只能进待审，不能直接发布",
+    "messages": [
+      {
+        "id": "m1",
+        "role": "user",
+        "text": "我最近晚上写东西比较多。"
+      }
+    ],
+    "gold": {
+      "type": "user",
+      "scope": "global",
+      "basis": "inferred",
+      "summary": "可能偏好夜间写作",
+      "meaning": {
+        "kind": "belief",
+        "alternatives": [
+          "只是最近任务较轻"
+        ]
+      }
+    },
+    "expect": {
+      "status": "candidate",
+      "reason": "inference-needs-review",
+      "published": false
+    }
+  },
+  {
+    "id": "quote-must-be-verbatim",
+    "tags": [
+      "gate",
+      "provenance"
+    ],
+    "title": "引文不是用户原话逐字子串：整条拒绝",
+    "messages": [
+      {
+        "id": "m1",
+        "role": "user",
+        "text": "我负责剪辑和声音。"
+      }
+    ],
+    "gold": {
+      "type": "user",
+      "scope": "global",
+      "basis": "explicit",
+      "summary": "负责剪辑与声音",
+      "meaning": {
+        "kind": "claim"
+      },
+      "evidence": [
+        {
+          "messageId": "m1",
+          "quote": "我负责剪辑、声音和配乐。"
+        }
+      ]
+    },
+    "expect": {
+      "status": "rejected",
+      "reason": "invalid-user-evidence",
+      "published": false
+    }
+  },
+  {
+    "id": "project-decision-cannot-be-global",
+    "tags": [
+      "gate",
+      "scope"
+    ],
+    "title": "项目约定写到 global：拒绝（scope 闸）",
+    "messages": [
+      {
+        "id": "m1",
+        "role": "user",
+        "text": "这个项目以后都用双栏格式。"
+      }
+    ],
+    "gold": {
+      "type": "project",
+      "scope": "global",
+      "basis": "explicit",
+      "summary": "项目使用双栏格式",
+      "meaning": {
+        "kind": "preference"
+      }
+    },
+    "expect": {
+      "status": "rejected",
+      "reason": "project-global",
+      "published": false
+    }
+  },
+  {
+    "id": "missing-basis",
+    "tags": [
+      "gate",
+      "attribution"
+    ],
+    "title": "没有 basis 的候选：拒绝",
+    "messages": [
+      {
+        "id": "m1",
+        "role": "user",
+        "text": "我习惯先看完所有素材再动笔。"
+      }
+    ],
+    "gold": {
+      "type": "user",
+      "scope": "global",
+      "summary": "先看完素材再动笔",
+      "meaning": {
+        "kind": "preference"
+      }
+    },
+    "expect": {
+      "status": "rejected",
+      "reason": "missing-basis",
+      "published": false
+    }
+  },
+  {
+    "id": "supersede-old-rule",
+    "tags": [
+      "write",
+      "supersede"
+    ],
+    "title": "更正旧规则：旧行消失、新行生效、历史留痕",
+    "messages": [
+      {
+        "id": "m1",
+        "role": "user",
+        "text": "改稿别直接给结论，先说理由再说结论。"
+      }
+    ],
+    "setup": [
+      {
+        "type": "feedback",
+        "line": "- [feedback] 改稿先给结论 — feedback.md"
+      }
+    ],
+    "supersedes": "- [feedback] 改稿先给结论 — feedback.md",
+    "gold": {
+      "type": "feedback",
+      "scope": "project",
+      "basis": "explicit",
+      "summary": "改稿先说理由再说结论",
+      "meaning": {
+        "kind": "preference"
+      }
+    },
+    "expect": {
+      "status": "eligible",
+      "meaningMatches": true,
+      "indexContains": [
+        "改稿先说理由再说结论"
+      ],
+      "indexExcludes": [
+        "- [feedback] 改稿先给结论 — feedback.md"
+      ],
+      "superseded": true,
+      "search": [
+        {
+          "query": "改稿理由",
+          "hits": 1
+        }
+      ]
+    }
+  },
+  {
+    "id": "condition-in-detail",
+    "tags": [
+      "write",
+      "conditions"
+    ],
+    "title": "任务条件写进摘要与正文，检索按条件过滤",
+    "messages": [
+      {
+        "id": "m1",
+        "role": "user",
+        "text": "审稿的时候只看结构，不看错别字；其他场合不看结构。"
+      }
+    ],
+    "gold": {
+      "type": "feedback",
+      "scope": "project",
+      "basis": "explicit",
+      "summary": "审稿时只看结构，不看错别字",
+      "detail": "审稿任务适用；其他任务不适用。",
+      "meaning": {
+        "kind": "preference",
+        "conditions": [
+          {
+            "dimension": "task",
+            "value": "review"
+          }
+        ]
+      }
+    },
+    "expect": {
+      "status": "eligible",
+      "meaningMatches": true,
+      "detailContains": [
+        "审稿任务适用"
+      ],
+      "search": [
+        {
+          "query": "只看结构",
+          "context": {
+            "task": "review"
+          },
+          "hits": 1
+        },
+        {
+          "query": "只看结构",
+          "context": {
+            "task": "draft"
+          },
+          "hits": 0
+        }
+      ]
+    }
+  },
+  {
+    "id": "expired-not-retrievable",
+    "tags": [
+      "lifecycle",
+      "expiry"
+    ],
+    "title": "过期条目保留在索引，但检索不返回",
+    "messages": [
+      {
+        "id": "m1",
+        "role": "user",
+        "text": "下周的内部活动只对内部开放。"
+      }
+    ],
+    "gold": {
+      "type": "reference",
+      "scope": "global",
+      "basis": "explicit",
+      "summary": "内部活动只对内部开放",
+      "expires": "2000-01-01",
+      "meaning": {
+        "kind": "reference"
+      }
+    },
+    "expect": {
+      "status": "eligible",
+      "indexContains": [
+        "(exp:2000-01-01)"
+      ],
+      "search": [
+        {
+          "query": "内部活动",
+          "hits": 0
+        }
+      ]
+    }
+  }
+]
