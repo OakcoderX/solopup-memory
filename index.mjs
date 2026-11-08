@@ -2881,8 +2881,14 @@ export function apply(ctx, config = {}) {
     }
   }
 
+  const history = setupMemoryHistory(ctx, renderForRuntime)
+  // The host waits for apply(): no contexts, tools or success marker are
+  // published until an asynchronous projection registration has succeeded.
+  return typeof history?.then === 'function' ? history.then(activate) : activate(history)
+
+  function activate(memoryHistory) {
+  if (ctx.fiber?.uid === null) return
   let calls = 0
-  const memoryHistory = setupMemoryHistory(ctx, renderForRuntime)
 
   ctx.systemPrompt.context({
     name: 'memory:protocol', order: CONTEXT_ORDER - 1, required: true,
@@ -2986,6 +2992,7 @@ export function apply(ctx, config = {}) {
     }
   } catch {
     /* 写不出来就算了：注入不依赖这两个文件 */
+  }
   }
 }
 

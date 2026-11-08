@@ -2,7 +2,7 @@
 
 Public beta 0.21.0-beta.3 for DeepSeek Harness. MIT licensed; configured model services may charge.
 
-先从快速上手开始，再选择一个虚构案例验证。下列试用脚本不是已测结果。
+先从快速上手开始，再选择一个虚构案例验证。下列试用脚本不是已测结果。另见[离线脚本实测记录及局限](runs/2026-11-07-source-recall.md)，不要把它当成真实模型或 DSH 聊天验收。
 
 - [快速上手 / Quick start](guides/quickstart.md)
 - [适合谁 / Who it is for](guides/who-its-for.md)

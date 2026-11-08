@@ -1,0 +1,51 @@
+name: DSH compatibility
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+    inputs:
+      source_ref:
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  host:
+    strategy:
+      fail-fast: false
+      matrix:
+        dsh: [0.2.1-rc.5, 0.2.2-rc.1]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ inputs.source_ref || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install official isolated DSH host
+        run: npm install --prefix "$RUNNER_TEMP/dsh-host" --ignore-scripts --no-audit --no-fund "@deepseek-ai/dsh@${{ matrix.dsh }}"
+      - run: node --test ci/release.test.mjs
+      - run: node scripts/security-check.mjs
+      - run: npm test
+      - run: node ci/eval-gate.mjs
+      - name: Verify actual archive and host contract
+        env:
+          DSH_CLI: ${{ runner.temp }}/dsh-host/node_modules/.bin/dsh
+        run: |
+          mkdir -p compatibility-evidence
+          node scripts/probe-package.mjs --report compatibility-evidence/package.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: dsh-compatibility-${{ matrix.dsh }}
+          path: compatibility-evidence/
+          if-no-files-found: ignore
+          retention-days: 14
