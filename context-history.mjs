@@ -90,8 +90,25 @@ export function assertCurrentMemoryRequest(messages,currentText) {
 
 export function setupMemoryHistory(ctx,render) {
   const projections = optionalService(ctx, 'sessionProjections')
-  if(typeof projections?.register!=='function'||typeof projections?.stateOf!=='function')return{available:false,observe:()=>{}}
-  projections.register(memoryContextProjection())
+  if(typeof projections?.register!=='function')return{available:false,observe:()=>{}}
+  const registration=projections.register(memoryContextProjection())
+  // DSH 0.2.2 returns a callable thenable. Await it before publishing hooks,
+  // while retaining synchronous support for the older registry API.
+  const ready=handle=>{
+    // Disposal can win after the host resolves registration but before this
+    // continuation runs. The owning fiber already releases its registration.
+    if(ctx.fiber?.uid===null)return{available:false,observe:()=>{}}
+    return installMemoryHistory(ctx,render,typeof handle?.stateOf==='function'
+      ? session=>handle.stateOf(session)
+      : typeof projections.stateOf==='function'
+        ? session=>projections.stateOf(session,HISTORY_PROJECTION_KEY)
+        : undefined)
+  }
+  return typeof registration?.then==='function'?Promise.resolve(registration).then(ready):ready(registration)
+}
+
+function installMemoryHistory(ctx,render,stateOf) {
+  if(!stateOf)fail('memory-context-reader-unavailable')
   const sessions=new Map()
   const cwdFor=(session,fallback)=>typeof ctx.workingDirectory?.get==='function'?ctx.workingDirectory.get(session):fallback
   const refresh=(input,next)=>{
@@ -99,7 +116,7 @@ export function setupMemoryHistory(ctx,render) {
     if(!session)fail('memory-context-session-unavailable')
     const cwd=cwdFor(session)
     sessions.set(session.id,{ref:new WeakRef(session),cwd})
-    reconcileMemoryContext(session,projections.stateOf(session,HISTORY_PROJECTION_KEY),render(cwd))
+    reconcileMemoryContext(session,stateOf(session),render(cwd))
     return next()
   }
   // Run before pre-step consumers (including summarizers), then recheck at

@@ -1,3 +1,9 @@
+# 0.22.0-beta.3 — DSH 0.2.2 compatibility and first-run integration
+
+**Source candidate, not a published beta.** This version integrates the unmerged onboarding/test-layout work with current main and waits for DSH asynchronous Session Projection registration before exposing dependent features. New hosts use retained projection handles; older hosts retain their registry-reader path. Existing beta tags and the published registry version are not rewritten.
+
+The isolated Linux host checks use the official npm CLI distributions for DSH 0.2.1-rc.5 and 0.2.2-rc.1, synthetic Sessions, no user profile or credentials, and no model calls. They cover six-tool activation, live projection state, exact removal of obsolete memory sections while preserving other content, cold replay, rejected registrations and owner disposal. This is not real-model semantic acceptance or daily desktop verification. See [COMPATIBILITY.md](COMPATIBILITY.md) and the integration receipt for exact results and remaining gates.
+
 # 0.22.0-beta.2 — detection layer, semantic pipeline gate, dream P0/P1
 
 **Source update, not a published beta.** (v0.22.0-beta.1 tag failed before submission because npm 11 parsed the relative tarball path as a GitHub shorthand; no npm version was published. This beta.2 commit fixes the path and passes the same gates.) This commit adds engineering infrastructure and read-only/planning features; it does not claim stable semantic acceptance or publish to npm/market. Published version remains 0.21.0-beta.3.

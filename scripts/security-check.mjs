@@ -120,8 +120,8 @@ check('workflow-pins', () => {
   const file = join(ROOT, '.github', 'workflows', 'publish.yml')
   if (!existsSync(file)) return '未包含发布工作流'
   const body = text(file)
-  const uses = [...body.matchAll(/^\s*uses:\s*(\S+)/gm)].map((match) => match[1])
-  const unpinned = uses.filter((value) => !/@[0-9a-f]{40}$/.test(value))
+  const uses = [...body.matchAll(/^\s*(?:-\s*)?uses:\s*(\S+)/gm)].map((match) => match[1])
+  const unpinned = uses.filter((value) => !value.startsWith('./.github/workflows/') && !/@[0-9a-f]{40}$/.test(value))
   assert(unpinned.length === 0, `未按 commit pin 的 action：${unpinned.join(',')}`)
   assert(/permissions:\s*\n\s*contents:\s*read/.test(body), '工作流权限不是 contents: read')
   assert(!/secrets\.[A-Za-z0-9_]+/.test(body), '工作流引用了 secrets（优先 OIDC/可信发布）')

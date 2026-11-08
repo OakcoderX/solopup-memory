@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.22.0-beta.3 — DSH 0.2.2 compatibility and first-run integration
+
+- Await callable asynchronous Session Projection registrations before publishing tools, prompt contributions or the successful load marker. Retain the new handle and use its `stateOf(session)`; preserve the legacy registry reader for older hosts. Registration rejection fails activation.
+- Integrate PR #2 first-run instructions, source-recall example and test-directory organization with the current detection, telemetry, dream planner and lock-contention fixes. All tests, including the newer main-branch suites, remain in the package and npm test.
+- Add real CLI/Loader history-contract probes covering activation, live Session projection, scoped history replacement, cold replay, registration rejection and disposal, using isolated homes and synthetic input without model calls. The actual archive runs these checks too.
+- This is a new source candidate, not a claim of npm publication, desktop semantic acceptance or production-data testing. Existing beta tags are unchanged.
+
 ## 0.22.0-beta.2 — detection layer, semantic pipeline gate, dream P0/P1
 
 - Add `detect.mjs` and `scripts/detect.mjs`: read-only L0 invariant checks over a store or the whole memory root (index format, projection consistency, anchors, withdrawal residue, duplicates/conflicts, budgets, scope, version drift, topic structure, duplicate stores). No model calls, no writes.

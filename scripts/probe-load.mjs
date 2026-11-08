@@ -84,5 +84,5 @@ if (missing.length > 0) {
   console.error(`[FAIL] 少注册了工具：${missing.join('、')}`)
   process.exit(1)
 }
-if (stamp.sourceControl?.state !== 'managed' || stamp.degraded?.length) { console.error('[FAIL] 工具存在但来源控制未就绪'); process.exit(1) }
+if (stamp.sourceControl?.state !== 'managed' || stamp.degraded?.length || stamp.memoryHistory?.available !== true) { console.error('[FAIL] 工具存在但来源控制未就绪'); process.exit(1) }
 console.log(`[PASS] 隔离实例加载成功：v${stamp.version}，${stamp.tools.length} 个工具，pid ${stamp.pid}`)

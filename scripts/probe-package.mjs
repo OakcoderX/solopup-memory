@@ -49,6 +49,10 @@ try {
   report.lockContention = testOutput.split('\n').filter((line) => /accepted=40; lock-busy retries=/.test(line))
   if (!Number.isInteger(report.packagedTests) || report.packagedTests < 1) throw new Error('package-probe-test-count-missing')
 
+  const historyOutput = run(process.execPath, ['scripts/probe-history.mjs'], unpacked, { env: { ...cleanEnv, DSH_CLI: CLI } })
+  report.historyContract = JSON.parse(historyOutput.trim().split('\n').at(-1))
+  if (!report.historyContract.passed) throw new Error('package-probe-history-contract-failed')
+
   // Entire profile is authored here; no copy of the user's desktop configuration.
   const home = join(root, 'home'); const profile = join(home, 'profiles', 'clean')
   mkdirSync(profile, { recursive: true })
@@ -71,8 +75,8 @@ try {
   }
   if (!stamp) throw new Error(`package-probe-host-load-failed:${hostError ?? host.exitCode ?? 'timeout'}`)
   const expected = ['memory_write', 'memory_forget', 'memory_links', 'memory_search', 'memory_prune', 'memory_status']
-  if (stamp.version !== pkg.version || expected.some((tool) => !stamp.tools.includes(tool)) || stamp.degraded.length || stamp.sourceControl?.state !== 'managed') throw new Error('package-probe-host-registration-failed')
-  report.hostLoad = { version: stamp.version, node: stamp.node, tools: stamp.tools, cleanHome: true, profileCopied: false, sourceControl: stamp.sourceControl,
+  if (stamp.version !== pkg.version || expected.some((tool) => !stamp.tools.includes(tool)) || stamp.degraded.length || stamp.sourceControl?.state !== 'managed' || stamp.memoryHistory?.available !== true) throw new Error('package-probe-host-registration-failed')
+  report.hostLoad = { version: stamp.version, node: stamp.node, tools: stamp.tools, cleanHome: true, profileCopied: false, sourceControl: stamp.sourceControl, memoryHistory: stamp.memoryHistory,
     environmentAllowlist: Object.keys(cleanEnv).sort(), parentEnvironmentInherited: false }
   const retained = join(home, 'memory', 'MEMORY.md')
   const syntheticMemory = '- [user] 合成验收偏好只用于打包检查 — user.md\n'

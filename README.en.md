@@ -6,6 +6,33 @@
 
 Source-linked, layered **text memory** for DeepSeek Harness. **Public beta, not a stable release.** See the npm beta tag and GitHub releases for the currently published version. See [RELEASE.md](RELEASE.md) for tested scope and known gaps.
 
+## Quick install
+
+Requires an installed DeepSeek Harness and Node >=24.9. For the desktop profile:
+
+```sh
+dsh plugin --profile desktop add solopup-memory@beta --ignore-scripts
+```
+
+Restart that profile's host, then use `memory_status` to check the loaded version and status. If upgrading from `dsh-memory`, back up and remove the old plugin first; do not enable both. See [installation details](#install-in-dsh) for exact versions, legacy-store review and removal.
+
+## What does a source-linked result look like?
+
+These are **actual offline script results from Linux x64 / Node v24.22.1 on 2026-11-07**. They use a fictional message and production tool handlers in a scripted host, with a stubbed approval response. Write, same-project recall and other-project recall run in three separate Node processes; neither reader inherits old messages. **This is not a real DSH conversation or a real-model semantic evaluation.**
+
+```text
+synthetic user: 记住：本项目的交付说明统一用中文。
+memory_write: recorded (scope=project, meaning=decision)
+fresh process / memory_search("交付说明"): 1 hit (scope=project)
+current text: - [project] 本项目的交付说明统一用中文 — 索引摘要
+history source: synthetic-demo-write:1; quote: 记住：本项目的交付说明统一用中文。
+other project / current + history: 0 + 0 hits
+```
+
+The Chinese message asks to keep this project's delivery notes in Chinese. Current search returns its effective summary. A separate `memory_search({query: "交付说明", mode: "exact", view: "history"})` returns the original quote and message identity; historical content is not a current instruction. The six lines summarize tool results. See the [full receipt and limitations](docs/runs/2026-11-07-source-recall.md), or run `node scripts/demo-source-recall.mjs` from the checkout. [Natural fresh-chat acceptance](docs/guides/fresh-chat.md) still needs a separate DSH run.
+
+## What it keeps
+
 - Separate global preferences from project decisions.
 - Keep original owner-message citations, conditions, exceptions and optional expiry.
 - Review native writes and automatic capture before making new records effective.
@@ -15,9 +42,7 @@ Source-linked, layered **text memory** for DeepSeek Harness. **Public beta, not 
 
 ## Install in DSH
 
-```sh
-dsh plugin --profile desktop add solopup-memory@beta --ignore-scripts
-```
+Use the official plugin-manager command in [Quick install](#quick-install).
 
 The beta tag follows verified public beta releases. For an exact version, choose a published version from the release page, for example `solopup-memory@0.21.0-beta.3`. Git installation remains available with `github:OakcoderX/solopup-memory#v0.21.0-beta.3`; the release page supplies a full commit SHA for an immutable Git pin. This package ships executable ESM and has no dependency installation or build scripts. Alternatively download its release tarball and install the local file with `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.21.0-beta.3.tgz --offline --ignore-scripts`.
 
@@ -49,7 +74,7 @@ Verified locally on macOS with DSH Node 24. Other runtime/platform results must 
 
 ## Development
 
-Requires Node >=24.9. No npm dependencies are needed for the test suite.
+Requires Node >=24.9. No npm dependencies are needed for the test suite. Tests live in `test/`; runtime modules retain their existing paths. The full explicit test set is preserved in both `npm test` and the package archive.
 
 ```sh
 npm test

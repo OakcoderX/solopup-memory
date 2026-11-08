@@ -8,6 +8,31 @@
 
 把用户明确表达的长期偏好、项目决定、可查证线索和暂定信念保存下来，在后续对话中按项目与适用条件找回。首次公开版本只处理文字。
 
+## 先试起来
+
+需要已安装 DeepSeek Harness，Node >=24.9。以下以 desktop profile 为例：
+
+```sh
+dsh plugin --profile desktop add solopup-memory@beta --ignore-scripts
+```
+
+重启该 profile 的宿主后，用 `memory_status` 确认插件版本与状态。升级旧名 `dsh-memory` 前先完整备份并移除旧插件，不能同时启用两个插件；固定版本、旧库检查和卸载见[安装与卸载](#安装与卸载)。
+
+## 原话来源会怎样返回？
+
+下面是 **2026-11-07 在 Linux x64 / Node v24.22.1 实际执行的离线示例输出**，使用虚构消息、生产工具处理函数和脚本化宿主；审查回复由测试桩固定通过。写入、同项目检索、另一项目检索分别在三个新 Node 进程中运行，后两者不继承旧消息。**这不是实际 DSH 聊天或真实模型的语义验收。**
+
+```text
+synthetic user: 记住：本项目的交付说明统一用中文。
+memory_write: recorded (scope=project, meaning=decision)
+fresh process / memory_search("交付说明"): 1 hit (scope=project)
+current text: - [project] 本项目的交付说明统一用中文 — 索引摘要
+history source: synthetic-demo-write:1; quote: 记住：本项目的交付说明统一用中文。
+other project / current + history: 0 + 0 hits
+```
+
+当前查询返回有效摘要；另一次 `memory_search({query: "交付说明", mode: "exact", view: "history"})` 返回原话及消息来源，历史内容不能当作当前指令。以上六行是工具结果摘要，完整返回值和局限见[运行记录](docs/runs/2026-11-07-source-recall.md)。在源码目录运行 `node scripts/demo-source-recall.mjs` 可复现；真正的[换聊天验收](docs/guides/fresh-chat.md)仍需在 DSH 中另做。
+
 ## 个人资料与按需读取
 
 已识别的生日、性别、健康、亲密关系和私人联系方式默认不进入自动索引投影，也不作为无关后台整理或写入审查的旧记忆发送。普通 `memory_search` 默认隐藏这些内容；用户询问相关资料时，才明确使用 `includePrivate: true`。主题文件含有未分段的敏感内容时，普通搜索会保守跳过整个主题文件，安全的索引摘要仍可检索。
@@ -47,11 +72,7 @@ Markdown 索引和主题正文便于阅读；来源、候选、历史与调用�
 
 ## 安装与卸载
 
-使用 DeepSeek Harness 官方插件管理器安装。代码为可直接执行的 ESM，无安装时构建脚本，也不需要 npm 账户。以下以 desktop profile 为例。
-
-```sh
-dsh plugin --profile desktop add solopup-memory@beta --ignore-scripts
-```
+使用上方[先试起来](#先试起来)的 DeepSeek Harness 官方插件管理器命令安装。代码为可直接执行的 ESM，无安装时构建脚本，也不需要 npm 账户。
 
 `beta` 标签跟随已公开并完成下载核验的测试版。需要固定版本时，从发行页选择准确版本号，例如 `solopup-memory@0.21.0-beta.3`；Git 安装也可用 `dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.21.0-beta.3 --ignore-scripts`，需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。也可下载发行页的 `.tgz`，使用 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.21.0-beta.3.tgz --offline --ignore-scripts`。
 
@@ -98,6 +119,8 @@ node /absolute/plugin/scripts/backup.mjs restore --root /absolute/memory --snaps
 MIT License，Copyright © 2026 oakfilm。产品品牌：SoloPup Memory。
 
 ## 开发验证
+
+测试集中在 `test/`，运行时模块保持原路径。`npm test` 和安装包都保留完整的显式测试集合。
 
 ```sh
 npm test

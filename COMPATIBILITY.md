@@ -17,7 +17,8 @@
 
 | 组件 | 版本 | 说明 |
 |---|---|---|
-| DeepSeek Harness（桌面） | **0.2.1-rc.3** | 从 `runtime/primary-runtime/runtime.json` 读到 |
+| DeepSeek Harness（桌面，历史验收） | **0.2.1-rc.3** | 既有桌面记录；不是本候选的新桌面验收 |
+| DeepSeek Harness（Linux 隔离 CLI） | **0.2.1-rc.5、0.2.2-rc.1** | 官方 npm 分发；真实 Loader、Session 与投影生命周期，合成输入、零模型调用 |
 | Node | 24.21.0 | 宿主内置；本机另装 v25.8.1 用于跑测试 |
 | `engines.dsh` | `>=0.2.1-rc.0 <0.3.0` | package.json 声明；0.3 需要重新验证 |
 
@@ -29,7 +30,7 @@
 | context 的 `text(context)` **同步**调用 | 返回字符串；异步会拿到 Promise 对象 | `resolveContext()` 直接调用 `entry.text(context)` |
 | `context` 参数含 `{ agent, scope, signal }` | 从中取 `context.agent.session` | `dsh-agent/lib/types/dispatch.js` 的 `assembleContextFor` |
 | **每步会再调 `refreshContext()`** | 它会按 provider 重新解析每条 context，覆盖装配钩子里的改写 | `dsh-agent-loop/lib/index.js` 调用点；`dsh-system-prompt` 的 `refreshContext` |
-| `sessionProjections.register/stateOf` | host-only纯投影保存旧记忆快照的消息身份/序号，冷重建及替换/压缩时跟随事件更新 | `dsh-session-projection` README与当前安装源码；不调用已弃用的同步读原始事件方法 |
+| `await sessionProjections.register()` → `handle.stateOf(session)` | 等注册成功后才发布上下文、工具和成功标记；新宿主持有句柄；旧式返回值保留 registry `stateOf` 回退 | [0.2.2-rc.1 升级契约](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.2-rc.1/docs/upgrade-guide/v0.2.1-rc.2/session-projection-handles/guide.md)；两个官方 CLI 的真实加载、读取、冷重放、拒绝和释放测试 |
 | `session.append(..., {surfaceOp:{op:'replace',startSeq:seq,endSeq:seq},sourceEventSeqs:[seq]})` | 只替换旧运行时快照，替换消息须含`role:'user'`；过滤命名记忆节并保留其他来源，原始事件不删除 | 当前`dsh-session`协议及实际宿主请求探针 |
 | `ctx.workingDirectory.get(session)` | 同步返回绝对路径 | `dsh-working-directory/lib/index.js` |
 | `sessionQuery.observeSession(id,{projectionMode:"none"})` | 经异步读平面取得只读事件观察，用后释放`Symbol.dispose`，结合活动surface及`isOwnSeq`核对来源；缺服务无持久恢复保证 | 当前`dsh-session-query`观察租约实现；不新增调用已弃用同步原始事件读接口 |
@@ -54,7 +55,7 @@ schema.properties.byType.additionalProperties must be a boolean
 3. `required` 里的字段必须出现在 `properties`
 4. 本机输出schema不接受`maxItems`、`maxLength`、`pattern`等额外约束关键字；dev.12原生加载曾因此明确失败，原日志保留。认识层schema使用已支持子集，数量、长度、维度与凭据检查由插件的实际输入校验器执行。
 
-`test-schema.mjs` 把这三条搬进测试；`scripts/probe-load.mjs` 用隔离实例验证真加载。
+`test/test-schema.mjs` 把这三条搬进测试；`scripts/probe-load.mjs` 用隔离实例验证真加载。
 
 ## 3. 运行时自检与降级
 
@@ -82,6 +83,8 @@ npm run gate
 
 # 4. 真实加载：用一个隔离实例加载插件（不碰用户 profile）
 node scripts/probe-load.mjs
+#    真实 Session / Projection 注册和历史契约（合成输入、无模型调用）：
+node scripts/probe-history.mjs
 #    更严格的离线打包、全新 home 验证：node scripts/probe-package.mjs
 #    成功标志：隔离目录的 .loaded.json 版本与六工具注册匹配
 
@@ -139,7 +142,7 @@ DSH 自带对话压缩，桌面 profile 里启用的是这四个（`dsh-base/cor
 
 | 接触面 | 会不会冲突 | 处理 |
 |---|---|---|
-| 运行时快照与压缩 | 快照会进入会话历史，可能被压缩；不能从provider重复渲染测试推断相反结论 | v0.11.0从当前库重建，按来源替换旧记忆节；既有普通摘要中的复述仍未清除。`test-compaction-compat.mjs`只验证provider和工具机制，实际请求另测 |
+| 运行时快照与压缩 | 快照会进入会话历史，可能被压缩；不能从provider重复渲染测试推断相反结论 | v0.11.0从当前库重建，按来源替换旧记忆节；既有普通摘要中的复述仍未清除。`test/test-compaction-compat.mjs`只验证provider和工具机制，实际请求另测 |
 | 注入体积 | **压缩救不了它**，它是每步都要付的固定税 | 索引硬上限 300 行 / 25 KB（`LIMITS`）；测试断言 1000 条时注入仍 < 27 KB |
 | 工具输出被修剪 | **会**——超过 8192 字符会在中间被截断，JSON 形状破坏 | search 输出 ≤4 KB；links 的入边/出边各截到 10 条并报总数；status < 2 KB |
 | 压缩后模型忘记自己写过 | **会**导致重复写入 | 写入侧幂等（逐字重复 → `duplicate`）、相似度闸、冲突提示 |
@@ -147,7 +150,7 @@ DSH 自带对话压缩，桌面 profile 里启用的是这四个（`dsh-base/cor
 ### 命名
 
 工具叫 `memory_prune` 而不是 `memory_compact`，避免与宿主 `/compact`（对话压缩）混淆。
-`test-compaction-compat.mjs` 里有一条断言守着这个命名。
+`test/test-compaction-compat.mjs` 里有一条断言守着这个命名。
 
 ### 结论
 

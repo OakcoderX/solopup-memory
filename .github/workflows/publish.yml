@@ -71,8 +71,14 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  compatibility:
+    needs: resolve
+    uses: ./.github/workflows/compatibility.yml
+    with:
+      source_ref: ${{ needs.resolve.outputs.commit }}
+
   package:
-    needs: [resolve, tests]
+    needs: [resolve, tests, compatibility]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
