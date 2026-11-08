@@ -68,7 +68,9 @@ function openDb(paths,{write=false,requireExisting=false}={}){
  }
  const before=lstatSync(path);let db
  try{
-  db=new DatabaseSync(path,{readOnly:!write});db.exec('PRAGMA trusted_schema=OFF; PRAGMA busy_timeout=0;')
+  // Managed reads share the writer lock. Let brief contention clear without
+  // releasing transaction ownership or waiting indefinitely.
+  db=new DatabaseSync(path,{readOnly:!write});db.exec('PRAGMA trusted_schema=OFF; PRAGMA busy_timeout=750;')
   const now=lstatSync(path);if(now.isSymbolicLink()||now.ino!==before.ino||now.dev!==before.dev)fail('changed-database-file')
   if(created){db.exec('BEGIN IMMEDIATE; '+SCHEMA+'; PRAGMA application_id='+APPLICATION_ID+'; PRAGMA user_version=1; COMMIT;')}
   schema(db)

@@ -4,6 +4,8 @@ import {mkdtempSync,mkdirSync,readFileSync,writeFileSync,rmSync,cpSync,readdirSy
 import {join} from 'node:path'
 import {tmpdir} from 'node:os'
 import {createHash} from 'node:crypto'
+import {once} from 'node:events'
+import {Worker} from 'node:worker_threads'
 import {writeMemory,indexLine,searchStore,lookupLinks,statusOf,storeRevision,withdrawManagedSource,recoverMemoryPublication,initializeManagedMemory,managedMemoryStatus,adoptCandidate,apply,storeDirFor} from './index.mjs'
 import {candidateSnapshot,listCandidates,stageCandidate,withdrawSource,withdrawalPolicy} from './candidates.mjs'
 import {legacyProjectSlug,inspectProjectStore,migrateProjectStore,projectStoreDir} from './project-stores.mjs'
@@ -19,6 +21,28 @@ function begin(f,cleanup=false){const plan=withdrawManagedSource(f.data,'managed
 test('a read never creates a missing control database or invokes the data callback',()=>box(f=>{
  let read=false;assert.throws(()=>withManagedRead(f.data,'.',()=>{read=true}),/control-missing/)
  assert.equal(read,false);assert.equal(existsSync(f.data+'.control/state.sqlite'),false)
+}))
+test('a managed read recovers after a brief control database lock',()=>box(async f=>{
+ seeded(f);initialize(f)
+ const worker=new Worker(`
+  const {DatabaseSync}=require('node:sqlite')
+  const {parentPort,workerData}=require('node:worker_threads')
+  const db=new DatabaseSync(workerData)
+  try{
+   db.exec('BEGIN IMMEDIATE')
+   parentPort.postMessage('locked')
+   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,220)
+   db.exec('ROLLBACK')
+  }finally{db.close()}
+ `,{eval:true,workerData:f.data+'.control/state.sqlite'})
+ const finished=once(worker,'exit')
+ try{
+  await once(worker,'message')
+  assert.ok(searchStore(f.data,'jade9876').hits.length>0)
+ }finally{
+  const [code]=await finished
+  assert.equal(code,0)
+ }
 }))
 test('transaction identity rejection happens before fresh-source and data callbacks',()=>box(f=>{
  seeded(f);initialize(f);let fresh=false,read=false
