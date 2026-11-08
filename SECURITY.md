@@ -75,3 +75,10 @@
 ## beta.3 privacy boundary
 
 Recognized private records, including their quoted evidence, are omitted from automatic projection and unrelated saved-memory contexts. The classifier is heuristic and incomplete; explicit [private] or [private:category] text is conservatively treated as on-demand. Searches default to excluding recognized private content; includePrivate=true is a disclosure control, not a user authentication boundary. Other tools can read the raw files. Private facts explicitly present in the current conversation or prior ordinary messages remain in that conversation. Existing append-only archives, caches, exports, backups and provider-side copies are not purged. Never claim that hiding an index or memory_forget erases those copies. Physical raw-index migration and reviewed local erasure are separate work.
+
+## 发版前机械自查（0.22.0-beta.1 起）
+
+`node scripts/security-check.mjs` 只读检查发行面的机械项：零运行时依赖与安装钩子、运行时无网络/监听面、唯一子进程是 `restore.mjs` 以固定参数调用 `tar`（无 shell）、发行文件无密钥与机器绝对路径、工作流 action 按 commit pin 且权限为 `contents: read`、无 `secrets.*`/`pull_request_target`、发行包不含研究目录与日志、MIT 许可与引擎声明。
+
+这不是独立安全审计，也不覆盖：依赖供应链以外的攻击、宿主自身的模型/网络行为、物理访问、已知的隐私分类器不完整、以及“记忆被用户自己手工编辑”的情形。可靠性验证见 `node scripts/soak.mjs`（官方离线安装 + 真实宿主多轮启停 + SIGKILL 恢复 + 并发宿主 + 数据指纹不变）。
+

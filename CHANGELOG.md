@@ -11,6 +11,8 @@
 - Add `eval/bench-detect.mjs`: comparison experiment against the 2026-11-08 manual audit baseline (detector recall, declared blind spots) plus median latency of L0/L3 gates.
 - Tighten I14: mid-file paragraphs ending with unfinished punctuation are flagged; colon lead-ins followed by a list are not.
 - Add `scripts/dream.mjs`: read-only P0 shadow planner (detection + telemetry → auditable ops, `applySupported:false`, zero model calls).
+- Add `scripts/security-check.mjs`: mechanical pre-release checks (zero dependencies/install hooks, runtime network/exec surface, shipped-file secrets and absolute paths, workflow action pins and permissions, package contents, license, engines, gitignore). Integrated into `scripts/verify.mjs`.
+- Add `scripts/soak.mjs`: reliability test on the official offline install path — repeated real DSH host start/stop, SIGKILL recovery, two concurrent hosts on one store, data fingerprint stability and store permissions (0700/0600).
 - Add DETECTION.md (six-layer framework and its known blind spots) and DREAMING-DESIGN.md (next feature design; P0 implemented, P1+ not).
 
 ## 0.21.0-beta.4 - automated release infrastructure

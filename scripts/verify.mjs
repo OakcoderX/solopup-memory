@@ -47,6 +47,7 @@ if (missing.length > 0) {
   process.exit(1)
 }
 
+results.push(run('安全自查', process.execPath, ['scripts/security-check.mjs']))
 results.push(run('测试', process.execPath, testArgs.slice(1)))
 results.push(run('加载探针', process.execPath, ['scripts/probe-load.mjs']))
 results.push(run('评测门禁', process.execPath, ['eval/run-eval.mjs', '--check']))

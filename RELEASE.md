@@ -7,6 +7,8 @@
 - L3 telemetry: capture success rate, zero-output days, stale pending candidates, short-session skips.
 - Dream P0 shadow plan: read-only op list from L0+L3 with evidence, zero model calls. Dream P1 applies only `compact-index` (reuses deterministic `pruneStore`) behind `--reviewed <planHash>`, after a file backup, with post-apply L0 verification; every other op remains human-only.
 - Short sessions below the auto-capture turn threshold now emit `capture/skipped/short-session-below-threshold` instead of silently losing context.
+- Add a mechanical security self-check (`scripts/security-check.mjs`, wired into `verify`): zero runtime dependencies and install hooks; no runtime network calls or listening sockets; the single subprocess is `restore.mjs` invoking fixed-argument `tar` without a shell; no secrets or machine absolute paths in shipped files; workflow actions pinned to commit SHAs with `contents: read`, no `secrets.*` and no `pull_request_target`; package contents exclude research/logs/tarballs; MIT license, engines and `.gitignore` present.
+- Add a reliability test (`scripts/soak.mjs`) on the official offline install path: repeated real DSH host start/stop, SIGKILL recovery with no leftover `.write.lock`/`.publication.json`, two concurrent hosts on one store followed by a clean reload, unchanged memory content files across cycles, and store permissions 0700 (files 0600).
 
 Known gaps: no real-model semantic acceptance; no per-memory usage counters; dream P1 does not apply merges, conflict arbitration or transcript-based corrections.
 

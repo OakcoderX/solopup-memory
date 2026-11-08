@@ -189,7 +189,9 @@
     "detect": "node scripts/detect.mjs",
     "telemetry": "node scripts/telemetry.mjs",
     "dream": "node scripts/dream.mjs",
-    "semantic": "node eval/semantic-suite.mjs --verbose"
+    "semantic": "node eval/semantic-suite.mjs --verbose",
+    "security": "node scripts/security-check.mjs",
+    "soak": "node scripts/soak.mjs"
   },
   "dshMemoryRestoreProtocol": 1,
   "dshMemoryDataSchemas": {
