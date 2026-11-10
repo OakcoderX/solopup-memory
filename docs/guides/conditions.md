@@ -6,6 +6,6 @@
 
 Test both the ordinary case and the exception. Conditions and exceptions must preserve the original meaning; schema checks cannot certify that meaning.
 
-公开测试版 / Public beta 0.21.0-beta.3.
+公开测试版 / Public beta 0.22.0-beta.3.
 
 [安装与限制](../../README.md) · [English](../../README.en.md) · [试用导航](../README.md)

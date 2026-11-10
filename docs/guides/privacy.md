@@ -6,7 +6,7 @@
 
 Local storage does not make model-assisted review offline. The MIT plugin has no license fee; configured model services may charge. Withdrawal cannot erase unknown copies or remote history.
 
-公开测试版 / Public beta 0.21.0-beta.3.
+公开测试版 / Public beta 0.22.0-beta.3.
 
 [安装与限制](../../README.md) · [English](../../README.en.md) · [试用导航](../README.md)
 

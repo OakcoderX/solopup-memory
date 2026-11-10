@@ -5,7 +5,7 @@
 - Await callable asynchronous Session Projection registrations before publishing tools, prompt contributions or the successful load marker. Retain the new handle and use its `stateOf(session)`; preserve the legacy registry reader for older hosts. Registration rejection fails activation.
 - Integrate PR #2 first-run instructions, source-recall example and test-directory organization with the current detection, telemetry, dream planner and lock-contention fixes. All tests, including the newer main-branch suites, remain in the package and npm test.
 - Add real CLI/Loader history-contract probes covering activation, live Session projection, scoped history replacement, cold replay, registration rejection and disposal, using isolated homes and synthetic input without model calls. The actual archive runs these checks too.
-- This is a new source candidate, not a claim of npm publication, desktop semantic acceptance or production-data testing. Existing beta tags are unchanged.
+- Published as public beta `0.22.0-beta.3` to npm (dist-tag `beta`) and GitHub Releases; the npm tarball sha256 matches the release checksum. This is still not a claim of desktop semantic acceptance or production-data testing, and existing beta tags are unchanged.
 
 ## 0.22.0-beta.2 — detection layer, semantic pipeline gate, dream P0/P1
 

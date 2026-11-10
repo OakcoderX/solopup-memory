@@ -3,7 +3,7 @@
 Install the exact public npm privacy update; its archive matches the tested GitHub release:
 
 ```sh
-dsh plugin --profile desktop add solopup-memory@0.21.0-beta.3 --ignore-scripts
+dsh plugin --profile desktop add solopup-memory@0.22.0-beta.3 --ignore-scripts
 ```
 
 `solopup-memory@beta` follows the beta tag and can change. The GitHub release also supplies a local archive; install it with the official manager using its absolute path and `--offline --ignore-scripts`. See the root README for the full command and upgrade precautions.

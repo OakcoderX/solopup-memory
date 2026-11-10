@@ -4,7 +4,7 @@
 
 **记住重要的事，跟上你的改变。** · [English](README.en.md)
 
-这是文字记忆公开测试版，尚未通过稳定版验收。当前发行版本以 [npm beta 标签](https://www.npmjs.com/package/solopup-memory) 与 [GitHub 发行页](https://github.com/OakcoderX/solopup-memory/releases) 为准。已验证范围和已知问题见 [RELEASE.md](RELEASE.md)。
+当前公开测试版：**0.22.0-beta.3**（npm `beta` 标签 / GitHub Release）。这是文字记忆公开测试版，尚未通过稳定版验收。当前发行版本以 [npm beta 标签](https://www.npmjs.com/package/solopup-memory) 与 [GitHub 发行页](https://github.com/OakcoderX/solopup-memory/releases) 为准。已验证范围和已知问题见 [RELEASE.md](RELEASE.md)。
 
 把用户明确表达的长期偏好、项目决定、可查证线索和暂定信念保存下来，在后续对话中按项目与适用条件找回。首次公开版本只处理文字。
 
@@ -74,7 +74,7 @@ Markdown 索引和主题正文便于阅读；来源、候选、历史与调用�
 
 使用上方[先试起来](#先试起来)的 DeepSeek Harness 官方插件管理器命令安装。代码为可直接执行的 ESM，无安装时构建脚本，也不需要 npm 账户。
 
-`beta` 标签跟随已公开并完成下载核验的测试版。需要固定版本时，从发行页选择准确版本号，例如 `solopup-memory@0.21.0-beta.3`；Git 安装也可用 `dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.21.0-beta.3 --ignore-scripts`，需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。也可下载发行页的 `.tgz`，使用 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.21.0-beta.3.tgz --offline --ignore-scripts`。
+`beta` 标签跟随已公开并完成下载核验的测试版。需要固定版本时，从发行页选择准确版本号，例如 `solopup-memory@0.22.0-beta.3`；Git 安装也可用 `dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.22.0-beta.3 --ignore-scripts`，需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。也可下载发行页的 `.tgz`，使用 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.22.0-beta.3.tgz --offline --ignore-scripts`。
 
 已安装旧名 `dsh-memory` 时，先完成完整备份、关闭使用该库的宿主，用官方管理器移除旧包，再安装新包；不要同时启用两个记忆插件。新名字继续使用原记忆库和控制格式。
 
