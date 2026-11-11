@@ -2,12 +2,12 @@ import {prepareMountedFixture} from '../fixture-host.mjs'
 import {realpathSync} from 'node:fs'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync, symlinkSync, linkSync, existsSync, utimesSync } from 'node:fs'
-import { spawnSync } from 'node:child_process'
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync, symlinkSync, linkSync, existsSync, utimesSync, renameSync } from 'node:fs'
+import { spawn, spawnSync, execFileSync } from 'node:child_process'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
-import { projectStoreDir, projectIdentity, legacyProjectSlug, inspectProjectStore, migrateProjectStore, recoverProjectStore } from '../project-stores.mjs'
+import { projectStoreDir, projectIdentity, legacyProjectSlug, inspectProjectStore, migrateProjectStore, recoverProjectStore, linkWorktreeProject, unlinkWorktreeProject } from '../project-stores.mjs'
 import { storeDirFor, writeMemory, indexLine, searchStore, apply } from '../index.mjs'
 
 function box(run) {
@@ -226,3 +226,121 @@ test('an old but live migration lock is not stolen by another apply attempt', ()
   assert.throws(() => migrateProjectStore(box.store, box.a, options), /migration-busy/)
   assert.equal(readFileSync(lock, 'utf8'), raw)
 }))
+
+
+test('explicit same-repository worktree link shares an existing owner store without merging other stores', () => box(({ root, store }) => {
+  const repo = join(root, 'repo'), worker = join(root, 'worker'), conflicting = join(root, 'conflicting'), foreign = join(root, 'foreign')
+  const env = { PATH: process.env.PATH, HOME: root, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1', GIT_TERMINAL_PROMPT: '0' }
+  const git = (...args) => execFileSync('git', args, { env, stdio: 'pipe' })
+  mkdirSync(repo); git('init', '-q', repo)
+  git('-C', repo, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--allow-empty', '-qm', 'fixture')
+  git('-C', repo, 'worktree', 'add', '-qb', 'worker', worker)
+  git('-C', repo, 'worktree', 'add', '-qb', 'conflicting', conflicting)
+  mkdirSync(foreign); git('init', '-q', foreign)
+  const original = storeDirFor('project', repo), separate = storeDirFor('project', worker)
+  assert.notEqual(original, separate)
+  writeMemory({ type: 'project', dir: original, line: indexLine('project', 'Synthetic shared project violet775', undefined, false) })
+  writeMemory({ type: 'project', dir: storeDirFor('project', conflicting), line: indexLine('project', 'Synthetic preexisting project', undefined, false) })
+  assert.throws(() => linkWorktreeProject(store, foreign, repo), /worktree-not-same-repository/)
+  assert.throws(() => linkWorktreeProject(store, conflicting, repo), /worktree-link-conflict/)
+  const preview = linkWorktreeProject(store, worker, repo)
+  assert.equal(preview.applied, false); assert.notEqual(storeDirFor('project', worker), original)
+  assert.throws(() => linkWorktreeProject(store, worker, repo, { apply: true, reviewed: 'stale' }), /stale-worktree-link-review/)
+  assert.equal(linkWorktreeProject(store, worker, repo, { apply: true, reviewed: preview.reviewed }).applied, true)
+  assert.equal(storeDirFor('project', worker), original)
+  const inspected = inspectProjectStore(store, worker)
+  assert.equal(inspected.targetDir, original, 'inspection must report the store actually used by the worker')
+  assert.equal(inspected.linkedOwner, realpathSync(repo))
+  assert.throws(() => migrateProjectStore(store, worker), /worktree-unlink-before-migration/)
+  assert.throws(() => recoverProjectStore(store, worker), /worktree-unlink-before-migration/)
+  assert.equal(searchStore(storeDirFor('project', worker), 'violet775').hits.length, 1)
+  mkdirSync(separate, { recursive: true })
+  assert.throws(() => storeDirFor('project', worker), /worktree-link-conflict/, 'a later independently created store cannot be silently hidden')
+  const unlink = unlinkWorktreeProject(store, worker)
+  assert.throws(() => unlinkWorktreeProject(store, worker, { apply: true, reviewed: 'stale' }), /stale-worktree-link-review/)
+  assert.equal(unlinkWorktreeProject(store, worker, { apply: true, reviewed: unlink.reviewed }).memoryDeleted, false)
+  assert.equal(storeDirFor('project', worker), separate)
+  // A previously resolved directory is an ordinary local path, not an access token.
+  assert.equal(searchStore(original, 'violet775').hits.length, 1, 'unlink does not revoke an already resolved owner path')
+  const cliworker = join(root, 'cliworker'); git('-C', repo, 'worktree', 'add', '-qb', 'cliworker', cliworker)
+  const cli = fileURLToPath(new URL('../scripts/projects.mjs', import.meta.url)), cliEnv = { ...env, DSH_HOME: root }
+  const runCli = (...args) => spawnSync(process.execPath, [cli, ...args], { env: cliEnv, encoding: 'utf8' })
+  const cliPreview = runCli('link', '--cwd', cliworker, '--owner', repo)
+  assert.equal(cliPreview.status, 0, cliPreview.stderr)
+  const cliApplied = runCli('link', '--cwd', cliworker, '--owner', repo, '--apply', '--reviewed-link', JSON.parse(cliPreview.stdout).reviewed)
+  assert.equal(cliApplied.status, 0, cliApplied.stderr)
+  assert.equal(storeDirFor('project', cliworker), original)
+  const cliInspect = runCli('inspect', '--cwd', cliworker)
+  assert.equal(cliInspect.status, 0, cliInspect.stderr)
+  assert.equal(JSON.parse(cliInspect.stdout).targetDir, original)
+  assert.equal(JSON.parse(cliInspect.stdout).linkedOwner, realpathSync(repo))
+  const cliMigrate = runCli('migrate', '--cwd', cliworker)
+  assert.notEqual(cliMigrate.status, 0); assert.match(cliMigrate.stderr, /worktree-unlink-before-migration/)
+  const moved = join(root, 'moved-worker'); git('-C', repo, 'worktree', 'move', cliworker, moved)
+  assert.throws(() => storeDirFor('project', cliworker), /worktree-unavailable/, 'a moved worktree does not retain a stale mapping')
+  assert.notEqual(storeDirFor('project', moved), original, 'moving requires an explicit new registration')
+  const cliUnlink = runCli('unlink', '--cwd', cliworker)
+  assert.equal(cliUnlink.status, 0, cliUnlink.stderr)
+  const cliRemoved = runCli('unlink', '--cwd', cliworker, '--apply', '--reviewed-link', JSON.parse(cliUnlink.stdout).reviewed)
+  assert.equal(cliRemoved.status, 0, cliRemoved.stderr)
+  assert.notEqual(storeDirFor('project', cliworker), original)
+  const autoworker = join(root, 'autoworker'); git('-C', repo, 'worktree', 'add', '-qb', 'autoworker', autoworker)
+  const helper = fileURLToPath(new URL('../scripts/superagent-worktree.mjs', import.meta.url))
+  const runHelper = (worktree, ...args) => spawnSync(process.execPath, [helper, ...args], { env: { ...cliEnv, ...(worktree === undefined ? {} : { DSH_SUPERAGENT_DIR: worktree }) }, encoding: 'utf8' })
+  assert.notEqual(runHelper(undefined, '--owner', repo, '--apply').status, 0)
+  assert.notEqual(runHelper(autoworker, '--owner', repo).status, 0)
+  assert.notEqual(runHelper(foreign, '--owner', repo, '--apply').status, 0)
+  const helperResult = runHelper(autoworker, '--owner', repo, '--apply')
+  assert.equal(helperResult.status, 0, helperResult.stderr)
+  assert.equal(storeDirFor('project', autoworker), original)
+  assert.equal(runHelper(autoworker, '--owner', repo, '--apply').status, 0, 'preparing the same registered worktree is idempotent')
+}))
+
+
+test('a different repository recreated at the same paths cannot inherit a worktree link', () => box(({ root, store }) => {
+  const repo = join(root, 'repo-replaced'), worker = join(root, 'worker-replaced')
+  const env = { PATH: process.env.PATH, HOME: root, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1', GIT_TERMINAL_PROMPT: '0' }
+  const git = (...args) => execFileSync('git', args, { env, stdio: 'pipe' })
+  mkdirSync(repo); git('init', '-q', repo)
+  git('-C', repo, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--allow-empty', '-qm', 'original')
+  git('-C', repo, 'worktree', 'add', '-qb', 'old-worker', worker)
+  const original = storeDirFor('project', repo)
+  writeMemory({ type: 'project', dir: original, line: indexLine('project', 'Synthetic old decision plum749', undefined, false) })
+  const plan = linkWorktreeProject(store, worker, repo)
+  linkWorktreeProject(store, worker, repo, { apply: true, reviewed: plan.reviewed })
+  assert.equal(storeDirFor('project', worker), original)
+  git('-C', repo, 'worktree', 'remove', '--force', worker)
+  renameSync(join(repo, '.git'), join(root, 'old-git-preserved'))
+  git('init', '-q', repo)
+  git('-C', repo, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--allow-empty', '-qm', 'different')
+  git('-C', repo, 'worktree', 'add', '-qb', 'new-worker', worker)
+  assert.throws(() => storeDirFor('project', worker), /worktree-link-changed/)
+}))
+
+
+test('independent processes cannot both apply conflicting previews to an unmanaged store', async () => {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'dsh-project-link-race-'))), store = join(root, 'memory'), repo = join(root, 'repo'), a = join(root, 'a'), b = join(root, 'b')
+  const env = { PATH: process.env.PATH, HOME: root, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1', GIT_TERMINAL_PROMPT: '0' }
+  const git = (...args) => execFileSync('git', args, { env, stdio: 'pipe' })
+  const children = []
+  try {
+    mkdirSync(repo); git('init', '-q', repo)
+    git('-C', repo, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--allow-empty', '-qm', 'fixture')
+    git('-C', repo, 'worktree', 'add', '-qb', 'a', a); git('-C', repo, 'worktree', 'add', '-qb', 'b', b)
+    writeMemory({ type: 'project', dir: projectStoreDir(store, repo), line: indexLine('project', 'Synthetic concurrent project', undefined, false) })
+    const reviews = [linkWorktreeProject(store, a, repo).reviewed, linkWorktreeProject(store, b, repo).reviewed]
+    const moduleUrl = new URL('../project-stores.mjs', import.meta.url).href
+    const source = `import {linkWorktreeProject} from ${JSON.stringify(moduleUrl)}; const [store,worker,owner,review]=process.argv.slice(1); process.send({ready:true}); process.on('message',()=>{try { const result=linkWorktreeProject(store,worker,owner,{apply:true,reviewed:review});process.send({status:result.applied?'applied':'other'}); } catch(error) {process.send({status:'denied',message:String(error.message)});} process.disconnect()})`
+    const results = [a, b].map((worker, index) => {
+      const child = spawn(process.execPath, ['--input-type=module', '-e', source, store, worker, repo, reviews[index]], { env, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] }); children.push(child)
+      let result, errors = ''; child.stderr.on('data', data => { errors += data })
+      return { child, ready: new Promise((resolve, reject) => { child.on('message', message => { if (message.ready) resolve(); else result = message }); child.on('error', reject); child.on('exit', code => { if (code && !result) reject(Error(errors)) }) }), done: new Promise((resolve, reject) => { child.on('exit', code => code === 0 && result ? resolve(result) : reject(Error(errors || `child exited ${code}`))); child.on('error', reject) }) }
+    })
+    await Promise.all(results.map(item => item.ready)); results.forEach(item => item.child.send('go'))
+    const settled = await Promise.all(results.map(item => item.done))
+    assert.equal(settled.filter(item => item.status === 'applied').length, 1, JSON.stringify(settled))
+    assert.equal(settled.filter(item => item.status === 'denied' && /migration-busy|stale-worktree-link-review|memory-lock-busy|另一个写入占用/.test(item.message)).length, 1, JSON.stringify(settled))
+    const owner = projectStoreDir(store, repo)
+    assert.equal([a, b].filter(path => projectStoreDir(store, path) === owner).length, 1)
+  } finally { children.forEach(child => { if (child.exitCode === null) child.kill('SIGKILL') }); rmSync(root, { recursive: true, force: true }) }
+})

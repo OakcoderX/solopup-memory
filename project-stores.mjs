@@ -1,7 +1,8 @@
 import {managedProjectOperation,registerManagedDestination} from './managed-access.mjs'
 /** Collision-resistant project identity and reviewed, recoverable legacy copying. */
 import { createHash, randomUUID } from 'node:crypto'
-import { constants, lstatSync, openSync, fstatSync, readFileSync, closeSync, readdirSync, renameSync, mkdirSync, rmSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { constants, lstatSync, openSync, fstatSync, readFileSync, closeSync, readdirSync, renameSync, mkdirSync, rmSync, realpathSync } from 'node:fs'
 import { join, resolve, dirname } from 'node:path'
 import { readSafely, writeSafely, ensureStoreDir, withLock } from './security.mjs'
 import { assertPublicationClear } from './publication.mjs'
@@ -102,9 +103,76 @@ function migrationLock(dir, run) {
   return withLock(dir, run, { timeoutMs: 0 })
 }
 
+// Explicit, same-local-Git-worktree mapping. This does not merge existing stores.
+const WORKTREE_LINKS = '.worktree-links.json'
+function worktreeIdentity(root) {
+  try {
+    const env = { PATH: process.env.PATH, HOME: process.env.HOME, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1', GIT_TERMINAL_PROMPT: '0' }
+    const output = execFileSync('git', ['-C', root, 'rev-parse', '--path-format=absolute', '--show-toplevel', '--git-common-dir'], { env, encoding: 'utf8', timeout: 5000, stdio: ['ignore', 'pipe', 'pipe'] }).trim().split('\n')
+    if (output.length !== 2) fail('worktree-unavailable')
+    const [worktree, common] = output.map(path => realpathSync(path))
+    if (realpathSync(root) !== worktree) fail('worktree-root-required')
+    const commonStat = lstatSync(common, { bigint: true })
+    if (!commonStat.isDirectory() || commonStat.isSymbolicLink()) fail('worktree-unavailable')
+    const commonId = hash(`${commonStat.dev}:${commonStat.ino}:${commonStat.birthtimeNs}`)
+    return { worktree, common, commonId }
+  } catch (error) { if (error.message?.startsWith('project-store-')) throw error; fail('worktree-unavailable') }
+}
+function readWorktreeLinks(store) {
+  safeAncestors(join(store, 'projects'), store)
+  const file = join(store, 'projects', WORKTREE_LINKS)
+  let raw
+  try { raw = readPrivateFile(file).toString('utf8') } catch (error) { if (error.code === 'ENOENT') return { links: [], revision: digest(null) }; throw error }
+  let body
+  try { body = JSON.parse(raw) } catch { fail('worktree-links-corrupt') }
+  if (body?.schema !== 1 || !Array.isArray(body.links) || body.links.length > 128 || body.links.some(row => !row || Object.keys(row).sort().join('|') !== 'common|commonId|owner|worktree' || !hex(row.commonId) || !['common','owner','worktree'].every(key => typeof row[key] === 'string' && row[key].startsWith('/') && resolve(row[key]) === row[key])) || new Set(body.links.map(row => row.worktree)).size !== body.links.length) fail('worktree-links-corrupt')
+  return { links: body.links, revision: hash(raw) }
+}
+function linkedRoot(store, root) {
+  const links = readWorktreeLinks(store).links, physical = (() => { try { return realpathSync(root) } catch { return resolve(root) } })()
+  const link = links.find(row => row.worktree === physical)
+  if (!link) return root
+  const worker = worktreeIdentity(link.worktree), owner = worktreeIdentity(link.owner)
+  if (worker.common !== link.common || owner.common !== link.common || worker.commonId !== link.commonId || owner.commonId !== link.commonId || links.some(row => row.worktree === link.owner)) fail('worktree-link-changed')
+  const old = paths(store, link.worktree)
+  if (directory(old.target) || directory(old.legacy) || readClaim(old).value) fail('worktree-link-conflict')
+  return link.owner
+}
+function unlinkWorktreeLocal(store, worktree, options = {}) {
+  if (options.apply !== undefined && typeof options.apply !== 'boolean') fail('invalid-apply')
+  let physical
+  try { physical = realpathSync(worktree) } catch { physical = resolve(worktree) }
+  const current = readWorktreeLinks(store), row = current.links.find(link => link.worktree === physical)
+  if (!row) fail('worktree-link-not-found')
+  const review = digest({ revision: current.revision, unlink: row })
+  if (options.apply !== true) return { applied: false, worktree: row.worktree, owner: row.owner, reviewed: review }
+  if (options.reviewed !== review) fail('stale-worktree-link-review')
+  writeSafely(join(store, 'projects', WORKTREE_LINKS), JSON.stringify({ schema: 1, links: current.links.filter(link => link.worktree !== physical) }) + '\n')
+  return { applied: true, worktree: row.worktree, owner: row.owner, memoryDeleted: false }
+}
+function linkWorktreeLocal(store, worktree, owner, options = {}) {
+  if (options.apply !== undefined && typeof options.apply !== 'boolean') fail('invalid-apply')
+  const a = worktreeIdentity(worktree), b = worktreeIdentity(owner)
+  if (a.worktree === b.worktree || a.common !== b.common || a.commonId !== b.commonId) fail('worktree-not-same-repository')
+  const links = readWorktreeLinks(store), prior = links.links.find(row => row.worktree === a.worktree)
+  if (links.links.some(row => row.worktree === b.worktree) || links.links.some(row => row.owner === a.worktree)) fail('worktree-link-chain')
+  if (prior && (prior.owner !== b.worktree || prior.common !== a.common || prior.commonId !== a.commonId)) fail('worktree-link-conflict')
+  const old = paths(store, a.worktree), ownerPaths = paths(store, b.worktree)
+  if (directory(old.target) || directory(old.legacy) || readClaim(old).value) fail('worktree-link-conflict')
+  if (!directory(ownerPaths.target)) fail('worktree-owner-store-missing')
+  projectStoreDirLocal(store, b.worktree)
+  const review = digest({ revision: links.revision, worktree: a, owner: b })
+  if (options.apply !== true) return { applied: false, worktree: a.worktree, owner: b.worktree, reviewed: review, alreadyLinked: Boolean(prior) }
+  if (options.reviewed !== review) fail('stale-worktree-link-review')
+  if (prior) return { applied: false, alreadyLinked: true, worktree: a.worktree, owner: b.worktree }
+  ensureStoreDir(join(store, 'projects'))
+  writeSafely(join(store, 'projects', WORKTREE_LINKS), JSON.stringify({ schema: 1, links: [...links.links, { worktree: a.worktree, owner: b.worktree, common: a.common, commonId: a.commonId }] }) + '\n')
+  return { applied: true, worktree: a.worktree, owner: b.worktree }
+}
+
 /** No mkdir or metadata writes on normal lookup. Never read an ambiguous old store. */
 function projectStoreDirLocal(store, root) {
-  const p = paths(store, root), claim = readClaim(p).value
+  const p = paths(store, linkedRoot(store, root)), claim = readClaim(p).value
   if (directory(p.target) && lstatExists(join(p.target, IDENTITY)) && !identityMatches(p)) fail('identity-mismatch')
   if (claim?.projectId === p.id) {
     if (claim.state !== 'complete') fail('migration-needs-recovery')
@@ -120,9 +188,10 @@ function lstatExists(path) {
 }
 
 function inspectProjectStoreLocal(store, root) {
-  const p = paths(store, root), claim = readClaim(p), source = tree(p.legacy), targetExists = directory(p.target)
+  const effectiveRoot = linkedRoot(store, root)
+  const p = paths(store, effectiveRoot), claim = readClaim(p), source = tree(p.legacy), targetExists = directory(p.target)
   if (source) assertPublicationClear(p.legacy)
-  return { applied: false, projectId: p.id, legacyDir: p.legacy, targetDir: p.target, reviewedClaim: claim.revision,
+  return { applied: false, ...(effectiveRoot !== root ? { linkedWorktree: resolve(root), linkedOwner: effectiveRoot } : {}), projectId: p.id, legacyDir: p.legacy, targetDir: p.target, reviewedClaim: claim.revision,
     reviewedTree: source?.sha256, files: source?.files.length ?? 0, bytes: source?.bytes ?? 0, targetExists,
     state: claim.value ? claim.value.projectId !== p.id ? 'legacy-owned-by-another-project' : claim.value.state === 'prepared' ? 'needs-recovery' : 'migrated' : source ? 'legacy-needs-review' : 'fresh',
     sourceChangedSinceMigration: claim.value?.projectId === p.id && source ? source.sha256 !== claim.value.sourceHash : false }
@@ -130,6 +199,7 @@ function inspectProjectStoreLocal(store, root) {
 
 /** Copies, never merges or deletes the old library. Both revisions are required. */
 function migrateProjectStoreLocal(store, root, options = {}) {
+  if (linkedRoot(store, root) !== root) fail('worktree-unlink-before-migration')
   if (options.apply !== undefined && typeof options.apply !== 'boolean') fail('invalid-apply')
   if (options.apply !== true) return inspectProjectStore(store, root)
   const p = paths(store, root)
@@ -179,6 +249,7 @@ function migrateProjectStoreLocal(store, root, options = {}) {
 }
 
 function recoverProjectStoreLocal(store, root, options = {}) {
+  if (linkedRoot(store, root) !== root) fail('worktree-unlink-before-migration')
   if (options.apply !== undefined && typeof options.apply !== 'boolean') fail('invalid-apply')
   const p = paths(store, root), claim = readClaim(p)
   if (!claim.value || claim.value.projectId !== p.id) fail('no-owned-migration')
@@ -220,3 +291,11 @@ export function projectStoreDir(store,...args){return managedProjectOperation(st
 export function inspectProjectStore(store,...args){return managedProjectOperation(store,()=>inspectProjectStoreLocal(store,...args))}
 export function migrateProjectStore(store,root,options={}){return managedProjectOperation(store,()=>options.apply===true?finishManagedMigration(store,root,()=>migrateProjectStoreLocal(store,root,options)):migrateProjectStoreLocal(store,root,options),{write:options.apply===true})}
 export function recoverProjectStore(store,root,options={}){return managedProjectOperation(store,()=>options.apply===true?finishManagedMigration(store,root,()=>recoverProjectStoreLocal(store,root,options)):recoverProjectStoreLocal(store,root,options),{write:options.apply===true})}
+
+function changeWorktreeLinks(store, run) {
+  const dir = join(store, 'projects')
+  safeAncestors(dir, store); ensureStoreDir(dir)
+  return migrationLock(dir, run)
+}
+export function linkWorktreeProject(store,worktree,owner,options={}){return managedProjectOperation(store,()=>options.apply===true?changeWorktreeLinks(store,()=>linkWorktreeLocal(store,worktree,owner,options)):linkWorktreeLocal(store,worktree,owner,options),{write:options.apply===true})}
+export function unlinkWorktreeProject(store,worktree,options={}){return managedProjectOperation(store,()=>options.apply===true?changeWorktreeLinks(store,()=>unlinkWorktreeLocal(store,worktree,options)):unlinkWorktreeLocal(store,worktree,options),{write:options.apply===true})}

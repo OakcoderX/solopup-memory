@@ -4,7 +4,7 @@
 
 **记住重要的事，跟上你的改变。** · [English](README.en.md)
 
-当前公开测试版：**0.22.0-beta.3**（npm `beta` 标签 / GitHub Release）。这是文字记忆公开测试版，尚未通过稳定版验收。当前发行版本以 [npm beta 标签](https://www.npmjs.com/package/solopup-memory) 与 [GitHub 发行页](https://github.com/OakcoderX/solopup-memory/releases) 为准。已验证范围和已知问题见 [RELEASE.md](RELEASE.md)。
+这是文字记忆公开测试版，尚未通过稳定版验收。当前发行版本以 [npm beta 标签](https://www.npmjs.com/package/solopup-memory) 与 [GitHub 发行页](https://github.com/OakcoderX/solopup-memory/releases) 为准。已验证范围和已知问题见 [RELEASE.md](RELEASE.md)。
 
 把用户明确表达的长期偏好、项目决定、可查证线索和暂定信念保存下来，在后续对话中按项目与适用条件找回。首次公开版本只处理文字。
 
@@ -69,6 +69,37 @@ Markdown 索引和主题正文便于阅读；来源、候选、历史与调用�
 改同一条约定的值时，`supersedes` 指向唯一现行旧行，默认保留原来的归属、认识类型、条件、例外和期限及其来源。改变这些边界时使用完整重述路径 `revisionMode=replace`，由本轮用户来源支持全部新内容。仅确认“其他项目也一样”不应再建副本。兼容补充不自动变成一般规则的例外。
 
 条件全部成立才满足 `conditions`；任何一个例外成立就命中 `except`。同一条件不能既必须成立又必须排除。来源上限超出时明确拒绝，不截掉必要来源来凑数。
+
+## 跨 worktree 项目记忆（0.23 测试版）
+
+以下功能从 0.23.0-beta.1 开始提供，不属于 0.22.0-beta.3。默认各工作目录仍使用各自的项目库。若主 Agent 与 Worker 使用同一 Git 仓库的不同 worktree，可在源码或安装包目录中通过本地命令显式关联：
+
+```sh
+node scripts/projects.mjs link --cwd /path/to/worker-worktree --owner /path/to/project-worktree
+# 核对预览后，将返回的 reviewed 填入：
+node scripts/projects.mjs link --cwd /path/to/worker-worktree --owner /path/to/project-worktree --apply --reviewed-link <reviewed>
+```
+
+来源目录须已有项目库；Worker 若已有独立项目库，命令会拒绝，不会合并或覆盖。关联会检查本地仓库身份，不自动关联克隆；仓库或文件系统迁移后可能需要重新登记。取消关联同样先预览、再使用 `reviewed` 执行，且不删除记忆：
+
+```sh
+node scripts/projects.mjs unlink --cwd /path/to/worker-worktree
+node scripts/projects.mjs unlink --cwd /path/to/worker-worktree --apply --reviewed-link <reviewed>
+```
+
+取消关联只改变之后的目录解析，不是运行中任务的即时撤权：已解析出的项目库路径、正在处理的捕获任务及已进入会话的内容不会因此自动失效或删除。需要停止使用该共享关系时，先停止相关 Worker 和记忆捕获，再取消关联；历史副本须另行检查。
+
+超级 Agent 的准备命令可以在创建 worktree **之后**，显式追加以下命令，自动登记该次 Worker 目录。请将路径替换为本机的绝对路径；这是一项用户主动配置，不会自动改写超级 Agent 设置。若创建或登记失败，本次启动会停止；超级 Agent 原型重试时可能因目录已存在而跳过准备命令，不能直接重试，须先检查残留目录并确保准备步骤会重新执行。
+
+```sh
+node /absolute/path/to/solopup-memory/scripts/superagent-worktree.mjs --owner /absolute/path/to/project-worktree --apply
+```
+
+该命令读取超级 Agent 提供的 `DSH_SUPERAGENT_DIR`，仍执行同仓库和已有独立库检查；`--apply` 表示用户在准备配置中授权执行关联。
+
+在测试的超级 Agent 原型中，Worker 的默认工具限制不开放 `memory_search` 或 `memory_write`。关联可以让已登记的项目记忆进入 Worker 上下文，但不表示 Worker 可直接调用这些记忆工具；不要将其视为 Worker 主动写入记忆的支持。
+
+关联不会清除已发送给模型或保存在普通会话中的副本。真实模型语义质量和全部跨平台环境尚未验收。
 
 ## 安装与卸载
 

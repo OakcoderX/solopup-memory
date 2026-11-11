@@ -19,7 +19,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { VERSION } from '../version.mjs'
 
@@ -30,6 +30,7 @@ const TOOLS = ['memory_write', 'memory_forget', 'memory_links', 'memory_search',
 const DATA_FILES = /^(MEMORY\.md|(user|feedback|project|reference)\.md|\.candidates\.json|\.episodes\.json|\.history\.jsonl)$/
 const hash = (file) => createHash('sha256').update(readFileSync(file)).digest('hex')
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms))
+const activeHosts = new Set()
 
 function dataFingerprint(memoryRoot) {
   const out = []
@@ -73,6 +74,8 @@ async function startHost(home, profile) {
     env: { PATH: process.env.PATH, HOME: home, USERPROFILE: home, DSH_HOME: home, TMPDIR: join(home, 'tmp') },
     stdio: ['ignore', 'pipe', 'pipe'],
   })
+  activeHosts.add(child)
+  child.once('exit', () => activeHosts.delete(child))
   let output = ''
   child.stdout.on('data', (chunk) => (output += chunk))
   child.stderr.on('data', (chunk) => (output += chunk))
@@ -189,13 +192,14 @@ export async function soak({ cycles = 3 } = {}) {
     report.passed = false
     report.error = error.message
   } finally {
+    await Promise.all([...activeHosts].filter(child => child.exitCode === null && child.signalCode === null).map(stopHost))
     rmSync(base, { recursive: true, force: true })
   }
   report.finishedAt = new Date().toISOString()
   return report
 }
 
-if (process.argv[1] !== undefined && import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(realpathSync(resolve(process.argv[1]))).href) {
   const argv = process.argv.slice(2)
   const cyclesAt = argv.indexOf('--cycles')
   const cycles = cyclesAt >= 0 ? Number(argv[cyclesAt + 1]) : 3

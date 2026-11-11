@@ -83,7 +83,7 @@ check('runtime-network', () => {
 })
 
 check('runtime-exec', () => {
-  const allowed = new Set(['restore.mjs'])
+  const allowed = new Set(['restore.mjs', 'project-stores.mjs'])
   const hits = []
   for (const file of runtimeFiles) {
     if (!/child_process|\bexecSync\b|\bspawnSync\b/.test(text(file))) continue
@@ -93,7 +93,11 @@ check('runtime-exec', () => {
   const restore = text(join(ROOT, 'restore.mjs'))
   assert(/spawnSync\('tar',\s*\[/.test(restore), 'restore.mjs 的子进程不是固定的 tar 参数调用')
   assert(!/shell:\s*true/.test(restore), 'restore.mjs 启用了 shell')
-  return 'restore.mjs 仅以固定参数调用 tar（无 shell）'
+  const projects = text(join(ROOT, 'project-stores.mjs'))
+  assert(/execFileSync\('git',\s*\['-C',\s*root,\s*'rev-parse',\s*'--path-format=absolute',\s*'--show-toplevel',\s*'--git-common-dir'\]/.test(projects), 'project-stores.mjs 的子进程不是固定的 git rev-parse 参数调用')
+  assert(!/shell:\s*true/.test(projects) && !/\b(?:spawn|exec|execSync|spawnSync)\s*\(/.test(projects), 'project-stores.mjs 出现非允许的子进程调用')
+  assert(/GIT_CONFIG_GLOBAL:\s*'\/dev\/null'/.test(projects) && /GIT_CONFIG_NOSYSTEM:\s*'1'/.test(projects) && /GIT_TERMINAL_PROMPT:\s*'0'/.test(projects), 'worktree 身份检查未隔离 Git 全局配置或交互')
+  return 'restore 固定调用 tar；project-stores 固定调用 git rev-parse；均无 shell'
 })
 
 check('secrets-shipped', () => {

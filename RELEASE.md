@@ -1,3 +1,13 @@
+# 0.23.0-beta.1 — project memory across worktrees
+
+This version adds opt-in, reviewed linking between worktrees of the same local Git repository. If a Super Agent prepare command fails after creating the directory, its prototype can skip preparation on retry and start the worker without the intended link; inspect the leftover directory and do not retry until preparation will run again. It does not automatically merge pre-existing project stores or link clones. Review the worktree identity, performance and recovery limits before use. G1 remains unpassed; real-model semantics and cross-platform operation have not been validated. Existing conversation or provider copies are not erased.
+
+Unlink changes future directory resolution and is not an immediate revocation barrier for already resolved paths or in-flight capture. Stop affected Workers and capture before unlinking and review retained copies.
+
+The tested Super Agent prototype does not expose `memory_search` or `memory_write` to Workers by default. Linking enables project context injection; it does not establish direct Worker memory tool access.
+
+A local candidate was installed and loaded in one daily DSH profile; its health check detected pre-existing pending withdrawal cleanup. Real-model semantic acceptance remains outstanding. The npm beta tag and GitHub Releases identify versions that have actually been published.
+
 # 0.22.0-beta.3 — DSH 0.2.2 compatibility and first-run integration
 
 **Published public beta.** Published to npm as `0.22.0-beta.3` (dist-tag `beta`) and to GitHub Releases on 2026-11-09; the npm tarball sha256 `621bf9c0d21e39d769377a421e80330402c7d9d5840745209b8500a11c9f2fe2` matches the release `SHA256SUMS`. `memory_status` should report `0.22.0-beta.3` after a clean restart. This version integrates the onboarding/test-layout work with current main and waits for DSH asynchronous Session Projection registration before exposing dependent features. New hosts use retained projection handles; older hosts retain their registry-reader path. Existing beta tags and the published registry version are not rewritten.

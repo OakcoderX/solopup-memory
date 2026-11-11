@@ -47,7 +47,7 @@ import { captureSessionEligible, captureInputDescriptor, enqueueCaptureInput, bi
 import { join, resolve, relative } from 'node:path'
 import { DEFAULT_AUTO_CAPTURE, normalizePluginConfig } from './plugin-config.mjs'
 import { optionalService } from './host-services.mjs'
-import { projectStoreDir, inspectProjectStore, migrateProjectStore, recoverProjectStore } from './project-stores.mjs'
+import { projectStoreDir, inspectProjectStore, migrateProjectStore, recoverProjectStore, linkWorktreeProject, unlinkWorktreeProject } from './project-stores.mjs'
 import { watchOptionalService } from './service-readiness.mjs'
 export { Config } from './plugin-config.mjs'
 
@@ -131,6 +131,8 @@ export function storeDirFor(scope, cwd) {
   return ensureManagedProject(root,projectStoreDir(root, findProjectRoot(cwd)))
 }
 
+export const unlinkProjectWorktree = (worktree, options) => unlinkWorktreeProject(storeRoot(), findProjectRoot(worktree), options)
+export const linkProjectWorktree = (worktree, owner, options) => linkWorktreeProject(storeRoot(), findProjectRoot(worktree), findProjectRoot(owner), options)
 export const reviewProjectStore = cwd => inspectProjectStore(storeRoot(), findProjectRoot(cwd))
 export const migrateLegacyProjectStore = (cwd, options) => migrateProjectStore(storeRoot(), findProjectRoot(cwd), options)
 export const recoverLegacyProjectStore = (cwd, options) => recoverProjectStore(storeRoot(), findProjectRoot(cwd), options)

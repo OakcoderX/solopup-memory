@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.23.0-beta.1 — project memory across worktrees
+
+- Add an explicit, review-before-apply link between worktrees of the same local Git repository so a worker can use an existing project memory store. Existing independent stores are not merged or overwritten; linking is disabled until explicitly configured.
+- Add a reviewed unlink operation, local repository replacement detection, and concurrent registration protection.
+- The tested Super Agent prototype does not expose memory search or write tools to workers by default. A failed prepare can be skipped on retry; inspect the leftover directory and ensure preparation reruns before retrying.
+- Unlinking affects future path resolution, not in-flight work or existing conversation copies. Full G1, real-model semantics, cross-platform behavior, and all concurrency cases are not certified.
+
+
 ## 0.22.0-beta.3 — DSH 0.2.2 compatibility and first-run integration
 
 - Await callable asynchronous Session Projection registrations before publishing tools, prompt contributions or the successful load marker. Retain the new handle and use its `stateOf(session)`; preserve the legacy registry reader for older hosts. Registration rejection fails activation.

@@ -4,7 +4,7 @@
 
 **Remember what matters. Keep up when you change your mind.** · [中文](README.md)
 
-Current public beta: **0.22.0-beta.3** (npm `beta` tag / GitHub Release). Source-linked, layered **text memory** for DeepSeek Harness. **Public beta, not a stable release.** See the npm beta tag and GitHub releases for the currently published version. See [RELEASE.md](RELEASE.md) for tested scope and known gaps.
+Source-linked, layered **text memory** for DeepSeek Harness. **Public beta, not a stable release.** See the npm beta tag and GitHub releases for the currently published version. See [RELEASE.md](RELEASE.md) for tested scope and known gaps.
 
 ## Quick install
 
@@ -71,6 +71,37 @@ Automatic capture normally attempts every four turns. Native `memory_write` also
 Retrieval uses lexical matching, not embeddings; cross-language and synonym recall are limited. A user message must fit the current 2,000-character complete-source window. Long sources are refused rather than silently shortened into memory. Withdrawal covers tracked managed projections, not original chats, remote services, external backups or unknown copies. Memory does not authorize sending messages, buying, deleting or publishing. This is not a full probabilistic POMDP solver.
 
 Verified locally on macOS with DSH Node 24. Other runtime/platform results must be read from actual CI and release receipts; registration or unit tests alone do not establish semantic quality or sustained-use acceptance.
+
+## Project memory across worktrees (0.23 beta)
+
+This feature starts in 0.23.0-beta.1 and is not part of 0.22.0-beta.3. Project stores remain separate by default. To explicitly link a worker worktree to an existing project store in the same local Git repository, run from the source or installed package directory:
+
+```sh
+node scripts/projects.mjs link --cwd /path/to/worker-worktree --owner /path/to/project-worktree
+# Inspect the preview and use its reviewed value:
+node scripts/projects.mjs link --cwd /path/to/worker-worktree --owner /path/to/project-worktree --apply --reviewed-link <reviewed>
+```
+
+The owner must already have a project store. Linking refuses an existing separate worker store; it does not merge or overwrite it. Clones are not linked automatically, and moving or restoring a repository can require registration again. Unlink using the same preview-then-apply process; it does not delete memory:
+
+```sh
+node scripts/projects.mjs unlink --cwd /path/to/worker-worktree
+node scripts/projects.mjs unlink --cwd /path/to/worker-worktree --apply --reviewed-link <reviewed>
+```
+
+Unlinking changes subsequent directory resolution; it is not immediate revocation for running work. Previously resolved store paths, in-flight capture jobs, and content already in sessions are not automatically invalidated or deleted. Stop the affected Workers and memory capture before unlinking, and review existing copies separately.
+
+To opt in from a Super Agent prepare command, append the following **after** the worktree creation command, replacing paths with local absolute paths. The plugin does not alter the Super Agent configuration. If creating or linking fails, this launch stops. The Super Agent prototype can skip preparation on retry when the directory remains; do not retry until the leftover directory is inspected and preparation is certain to run again.
+
+```sh
+node /absolute/path/to/solopup-memory/scripts/superagent-worktree.mjs --owner /absolute/path/to/project-worktree --apply
+```
+
+The helper reads `DSH_SUPERAGENT_DIR` supplied by the Super Agent and retains same-repository and existing-store checks. `--apply` records the user’s opt-in through the trusted prepare configuration.
+
+In the tested Super Agent prototype, default Worker tool restrictions do not expose `memory_search` or `memory_write`. A linked project can supply memory context to the Worker, but this does not enable direct use of those tools or establish Worker-initiated memory writes.
+
+Linking does not remove copies already sent to a model or stored in ordinary session history. Real-model semantic quality and all platforms have not been validated.
 
 ## Development
 
