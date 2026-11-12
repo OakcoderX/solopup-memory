@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.23.0-beta.2 — conflict-aware memory guidance
+
+- Guide agents to compare sources, scope and time when task history and long-term memory disagree, follow explicit current user corrections, and ask when evidence is insufficient.
+- Report whether `memory_search` is available to the current session; when it is unavailable or cannot be verified, do not claim a search was performed or that missing memory does not exist.
+- Preserve task history and existing memory admission rules; this guidance does not erase historical copies or guarantee model behavior. Super Agent workers still require explicit worktree setup and do not have memory tools by default.
+- The tested Super Agent prototype can skip preparation on retry after a failed preparation, causing a worker to start without project memory. Inspect the leftover workspace and ensure preparation reruns before retrying; this release does not fix the prototype.
+- Candidate validation and release status must be verified against release artifacts; no claim of real Super Agent semantic acceptance is implied.
+
 ## 0.23.0-beta.1 — project memory across worktrees
 
 - Add an explicit, review-before-apply link between worktrees of the same local Git repository so a worker can use an existing project memory store. Existing independent stores are not merged or overwritten; linking is disabled until explicitly configured.

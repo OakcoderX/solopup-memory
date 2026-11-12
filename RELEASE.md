@@ -1,3 +1,12 @@
+# 0.23.0-beta.2 — memory conflict guidance (candidate)
+
+This candidate adds a short instruction to the existing SoloPup memory protocol: compare source, scope and time when task history and long-term memory disagree; follow a current explicit user correction; ask when the evidence is insufficient; do not silently rewrite memory from guesses or historical retellings.
+
+The existing explicit same-repository worktree link remains opt-in. The tested Super Agent prototype does not expose memory search or write tools to workers by default. A failed prepare may be skipped on retry: inspect the leftover workspace and ensure preparation runs before retrying. This candidate does not repair that upstream behavior.
+
+The instruction is guidance for a model, not a guarantee. It does not delete task history, old conversations, prior model requests or external copies, nor does it guarantee immediate revocation in those copies. It does not add multi-user memory support. Real-model comparison and end-to-end Super Agent acceptance must be reported separately from automated tests.
+
+Publication status and final artifact verification are tracked by npm, GitHub Releases and release automation.
 # 0.23.0-beta.1 — project memory across worktrees
 
 This version adds opt-in, reviewed linking between worktrees of the same local Git repository. If a Super Agent prepare command fails after creating the directory, its prototype can skip preparation on retry and start the worker without the intended link; inspect the leftover directory and do not retry until preparation will run again. It does not automatically merge pre-existing project stores or link clones. Review the worktree identity, performance and recovery limits before use. G1 remains unpassed; real-model semantics and cross-platform operation have not been validated. Existing conversation or provider copies are not erased.
