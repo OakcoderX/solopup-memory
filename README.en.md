@@ -19,12 +19,13 @@ For a project, you might record a travel budget or an agreed character detail fo
 
 ## How does memory help?
 
-```mermaid
-flowchart TD
-    A["① You share something worth remembering"] --> B["② SoloPup checks and attempts to save it"]
-    B --> C["③ Later, DSH receives a summary or searches memory"]
-    C --> D["④ The AI considers it alongside the current task"]
-```
+**① You share something worth remembering**<br>
+↓<br>
+**② SoloPup checks and attempts to save it**<br>
+↓<br>
+**③ Later, DSH receives a summary or searches memory**<br>
+↓<br>
+**④ The AI considers it alongside the current task**
 
 Memory is context for the AI, and may not be saved, recalled, or interpreted correctly. You can also inspect sources and request revisions; see [storage and limitations](#storage-and-limitations).
 
