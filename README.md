@@ -4,7 +4,7 @@
 
 SoloPup 是 DeepSeek Harness（DSH） 的文字记忆插件。它尝试保存值得长期保留的信息，帮助 DSH 在后续工作中找回并参考。**公开测试版**，记忆可能保存或召回失败，重要内容请核对。
 
-[快速上手](docs/guides/quickstart.md) · [安装](#先试起来) · [更多示意案例](docs/README.md) · [常见问题](docs/faq.md) · [English](README.en.md)
+[快速上手](docs/guides/quickstart.md) · [安装](#先试起来) · [0.24 做梦复核](docs/dream-review.md) · [更多示意案例](docs/README.md) · [常见问题](docs/faq.md) · [English](README.en.md)
 
 ## 用起来是什么感觉？
 
@@ -17,6 +17,14 @@ SoloPup 是 DeepSeek Harness（DSH） 的文字记忆插件。它尝试保存值
 **DSH：** 如果成功找回偏好，可能写出：“感谢今天的交流，期待接下来的合作！”
 
 项目中也可以记住约定：例如做旅行计划时记录预算，或者写故事时记录已经确定的人物设定。记忆是否生效，需要看实际保存和召回结果；重要决定仍应核对原话。
+
+## 0.24 新增闲置做梦复核
+
+你原来约定「样片交付说明默认用中文」，后来明确改用英文。开启做梦并选好项目后，SoloPup 会等 DSH 闲置，核对旧记忆和更正原话，再生成一份建议。你确认并正式写入后，新会话才会从记忆里取得英文默认值。
+
+**记住旧约定 → 闲置时回查原话 → 打开复核报告 → 你确认并更新 → 新会话使用新约定**
+
+普通 DSH 可以独立完成这个流程。已配置 Super Agent 的用户可切换到实验模式，由隔离的 Worker 负责复核。两种方式共用项目记忆、队列和报告，切换会等当前工作结束。功能默认关闭。 [开启与切换](docs/dream-review.md) · [实测结果和限制](docs/runs/2026-11-13-dream-review-beta1.md)
 
 ## 记忆如何帮上忙？
 
@@ -151,7 +159,7 @@ node /absolute/path/to/solopup-memory/scripts/superagent-worktree.mjs --owner /a
 
 使用上方[先试起来](#先试起来)的 DeepSeek Harness 官方插件管理器命令安装。代码为可直接执行的 ESM，无安装时构建脚本，也不需要 npm 账户。
 
-`beta` 标签跟随已公开并完成下载核验的测试版。需要固定版本时，从发行页选择准确版本号，例如 `solopup-memory@0.22.0-beta.3`；Git 安装也可用 `dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.22.0-beta.3 --ignore-scripts`，需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。也可下载发行页的 `.tgz`，使用 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.22.0-beta.3.tgz --offline --ignore-scripts`。
+`beta` 标签跟随已公开并完成下载核验的测试版。固定到本版可指定 `solopup-memory@0.24.0-beta.2`。Git 安装可用 `dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.24.0-beta.2 --ignore-scripts`，需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。也可下载 `.tgz` 后运行 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.24.0-beta.2.tgz --offline --ignore-scripts`。 [发行页与校验值](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.24.0-beta.2)
 
 已安装旧名 `dsh-memory` 时，先完成完整备份、关闭使用该库的宿主，用官方管理器移除旧包，再安装新包；不要同时启用两个记忆插件。新名字继续使用原记忆库和控制格式。
 

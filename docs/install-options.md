@@ -1,15 +1,15 @@
 # Installation choices / 安装方式
 
-Install the exact public npm privacy update; its archive matches the tested GitHub release:
+Pin the public beta from npm for the desktop profile.
 
 ```sh
-dsh plugin --profile desktop add solopup-memory@0.22.0-beta.3 --ignore-scripts
+dsh plugin --profile desktop add solopup-memory@0.24.0-beta.2 --ignore-scripts
 ```
 
-`solopup-memory@beta` follows the beta tag and can change. The GitHub release also supplies a local archive; install it with the official manager using its absolute path and `--offline --ignore-scripts`. See the root README for the full command and upgrade precautions.
+`solopup-memory@beta` follows the beta tag and can change. The GitHub release also supplies a local archive. Install it with the official manager using its absolute path and `--offline --ignore-scripts`. See the root README for the full command and upgrade precautions.
 
 Custom plugin markets users can add `https://raw.githubusercontent.com/OakcoderX/solopup-memory/main/market/index.json` in Discover → Add index source after enabling the experimental feature. This is a self-hosted source, not an official endorsement.
 
 重启同一 profile 并核对 memory_status。卸载保留数据；从旧名 dsh-memory 迁移时先完整备份、关闭宿主、移除旧包，避免两个插件同时启用。
 
-[Quick start](guides/quickstart.md) · [Compatibility](../COMPATIBILITY.md)
+[Quick start](guides/quickstart.md) · [Compatibility](../COMPATIBILITY.md) · [Optional idle review](dream-review.md) · [Test results and limits](runs/2026-11-13-dream-review-beta1.md)

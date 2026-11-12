@@ -1,3 +1,9 @@
+# 0.24.0-beta.2 — idle project memory review
+
+Public beta. SoloPup can review a selected project's memory after DSH has been idle, reopen a bounded source quote and prepare a report for the user. The reviewed change enters project memory through the existing confirmed write flow. Ordinary DSH can run the review on its own. A supported macOS Super Agent companion can run the same review through an isolated Worker.
+
+The release archive SHA-256 is `869c0d879a738056c5cd8557ed7e54e69950b781124d1ba2301a12942211499f`. The beta.2 build adds the missing next-session test to the packaging and source gate after beta.1 stopped before publication. See the exact runtime combination, results and limits in the acceptance record. [GitHub Release](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.24.0-beta.2) · [npm](https://www.npmjs.com/package/solopup-memory/v/0.24.0-beta.2) · [Setup](docs/dream-review.md) · [Acceptance record](docs/runs/2026-11-13-dream-review-beta1.md)
+
 # 0.23.0-beta.2 — memory conflict guidance (candidate)
 
 This candidate adds a short instruction to the existing SoloPup memory protocol: compare source, scope and time when task history and long-term memory disagree; follow a current explicit user correction; ask when the evidence is insufficient; do not silently rewrite memory from guesses or historical retellings.

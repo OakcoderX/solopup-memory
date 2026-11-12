@@ -1,8 +1,10 @@
 # SoloPup Memory — start here / 试用导航
 
-Public beta 0.22.0-beta.3 for DeepSeek Harness. MIT licensed; configured model services may charge.
+DeepSeek Harness 公开测试版 `0.24.0-beta.2`，采用 MIT 许可。配置的模型服务可能计费。
 
-先从快速上手开始，再选择一个虚构案例验证。下列试用脚本不是已测结果。另见[离线脚本实测记录及局限](runs/2026-11-07-source-recall.md)，不要把它当成真实模型或 DSH 聊天验收。
+第一次使用可以从快速上手开始，用一个虚构项目试试保存和回忆。想让 DSH 在闲置后检查哪些约定已经变了，可开启 0.24 的做梦复核。 [做梦设置](dream-review.md) · [0.24 宿主与真实模型验收](runs/2026-11-13-dream-review-beta1.md)
+
+下列案例提供操作步骤。历史离线样例的实际结果见其记录。 [离线来源回查记录](runs/2026-11-07-source-recall.md)
 
 - [快速上手 / Quick start](guides/quickstart.md)
 - [适合谁 / Who it is for](guides/who-its-for.md)

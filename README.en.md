@@ -52,12 +52,22 @@ In one isolated test using a fictional project, a real model saw both a Chinese-
 
 After a prepare failure, the prototype can retry without project memory. Workers do not necessarily have memory search or write tools by default. Withdrawing a memory does not erase old session copies. [Setup, tests and limitations](docs/runs/2026-11-12-superagent-examples.md).
 
+## Review project memory while DSH is idle
+
+The 0.24 beta adds an optional idle review. Suppose you first say “Deliver reports as plain text” and later explicitly switch to PDF. A review can surface both statements and suggest a correction for you to check.
+
+1. Enable `dream` for the projects you choose and select a configured model. Keep DSH running. By default, it checks after 20 minutes of foreground inactivity, with up to two model requests per day.
+2. In a fresh session for the same project, ask DSH to open the latest dream report. SoloPup rechecks the cited sources and displays suggestions it can still verify.
+3. Use the usual memory write flow to confirm a correction and make it effective in future sessions.
+
+Ordinary DSH can run the entire review. An optional Super Agent Worker can run it with the same queue, evidence rules and reports. That mode was tested on macOS with DSH `0.2.2-rc.1` and a pinned Super Agent prototype. The beta tests used fictional projects. In one fresh-session probe without the original messages, the adopted correction changed the answer. A separate test with the original messages attached fell short of its preset improvement criterion. [Enable idle review](docs/dream-review.md) · [Test results and limits](docs/runs/2026-11-13-dream-review-beta1.md)
+
 ## Quick install
 
 Requires an installed DeepSeek Harness and Node >=24.9. For the desktop profile:
 
 ```sh
-dsh plugin --profile desktop add solopup-memory@beta --ignore-scripts
+dsh plugin --profile desktop add solopup-memory@0.24.0-beta.2 --ignore-scripts
 ```
 
 Restart that profile's host, then use `memory_status` to check the loaded version and status. If upgrading from `dsh-memory`, back up and remove the old plugin first; do not enable both. See [installation details](#install-in-dsh) for exact versions, legacy-store review and removal.
@@ -90,7 +100,7 @@ The Chinese message asks to keep this project's delivery notes in Chinese. Curre
 
 Use the official plugin-manager command in [Quick install](#quick-install).
 
-The beta tag follows verified public beta releases. For an exact version, choose a published version from the release page, for example `solopup-memory@0.22.0-beta.3`. Git installation remains available with `github:OakcoderX/solopup-memory#v0.22.0-beta.3`; the release page supplies a full commit SHA for an immutable Git pin. This package ships executable ESM and has no dependency installation or build scripts. Alternatively download its release tarball and install the local file with `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.22.0-beta.3.tgz --offline --ignore-scripts`.
+`solopup-memory@beta` follows the public beta tag. Git installation is available with `github:OakcoderX/solopup-memory#v0.24.0-beta.2`. The release page supplies a full commit SHA for an immutable Git pin. This package ships executable ESM and has no dependency installation or build scripts. You can also download the release tarball and install it with `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.24.0-beta.2.tgz --offline --ignore-scripts`.
 
 Restart the profile and use `memory_status`. Existing legacy stores may require explicit local review. Do not delete control files to bypass that review. If upgrading from `dsh-memory`, create a full private backup, stop the hosts using that data, remove the old package, then install SoloPup Memory. Do not run both packages together. The data location and legacy format identifiers are intentionally retained.
 
