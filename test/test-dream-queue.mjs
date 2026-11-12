@@ -87,6 +87,22 @@ test('only one owner can claim, reserve, and commit the same batch and its item 
   assert.equal(reopened.wasReviewed('test-project', 'entry-v1'), false)
 })
 
+test('only selected projects compete for the next batch and a waiting project goes first', t => {
+  const env = fixture(t, { autoIntervalMs: 1 })
+  const q = env.queue
+  enqueue(q, 'unapproved', 'unapproved')
+  enqueue(q, 'first', 'project-a')
+  assert.equal(q.claim({ owner: 'none', projectIds: [] }), undefined)
+  const first = q.claim({ owner: 'runtime', projectIds: ['project-a', 'project-b'] })
+  assert.equal(first.projectId, 'project-a')
+  assert.equal(q.beginDispatch(first, { reservedTokens: 300 }).status, 'dispatching')
+  assert.equal(q.finish(first, { status: 'completed', report: { items: [] }, usedTokens: 100 }).status, 'completed')
+  env.advance(2)
+  enqueue(q, 'second', 'project-a')
+  enqueue(q, 'waiting', 'project-b')
+  assert.equal(q.claim({ owner: 'runtime', projectIds: ['project-a', 'project-b'] }).projectId, 'project-b')
+})
+
 test('prepared handoff preserves the batch ID and fences the old claim', (t) => {
   const { queue } = fixture(t)
   const { runId } = enqueue(queue, 'transfer')

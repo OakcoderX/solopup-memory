@@ -116,6 +116,13 @@ function itemKeys(value) {
   return value
 }
 
+function projectFilter(projectIds) {
+  if (projectIds === undefined) return null
+  if (!Array.isArray(projectIds) || projectIds.length > 16 || new Set(projectIds).size !== projectIds.length) fail('invalid-project-filter')
+  for (const id of projectIds) identifier(id, 'project-id')
+  return JSON.stringify(projectIds)
+}
+
 function inspectFile(path) {
   let info
   try { info = lstatSync(path) } catch (error) {
@@ -335,8 +342,9 @@ export function openDreamQueue(dataRoot, {
     }
   }
 
-  function nextAutomaticAt({ reservedTokens = 1 } = {}) {
+  function nextAutomaticAt({ reservedTokens = 1, projectIds } = {}) {
     integer(reservedTokens, 1, 100_000_000, 'reserved-tokens')
+    const projectList = projectFilter(projectIds)
     if (reservedTokens > maxDailyTokens) return undefined
     const row = active()
     if (row) return row.lease_until ?? undefined
@@ -344,7 +352,8 @@ export function openDreamQueue(dataRoot, {
     const pending = db.prepare(`
       SELECT min(max(runs.available_at, coalesce(projects.last_auto_attempt_at + ?, 0))) AS ready_at
       FROM runs JOIN projects ON projects.id=runs.project_id WHERE runs.status='queued'
-    `).get(autoIntervalMs)
+        AND (? IS NULL OR runs.project_id IN (SELECT value FROM json_each(?)))
+    `).get(autoIntervalMs, projectList, projectList)
     if (pending.ready_at === null) return undefined
     const at = time()
     const budget = budgetAt(at)
@@ -383,10 +392,11 @@ export function openDreamQueue(dataRoot, {
     })
   }
 
-  function claim({ owner, manual = false, projectId, runId } = {}) {
+  function claim({ owner, manual = false, projectId, projectIds, runId } = {}) {
     identifier(owner, 'owner')
     if (typeof manual !== 'boolean') fail('invalid-manual')
     if (projectId !== undefined) identifier(projectId, 'project-id')
+    const projectList = projectFilter(projectIds)
     if (runId !== undefined) identifier(runId, 'run-id')
     return write(() => {
       const at = time()
@@ -399,11 +409,12 @@ export function openDreamQueue(dataRoot, {
         SELECT runs.id FROM runs JOIN projects ON projects.id=runs.project_id
         WHERE runs.status='queued' AND runs.available_at<=?
           AND (? IS NULL OR runs.project_id=?)
+          AND (? IS NULL OR runs.project_id IN (SELECT value FROM json_each(?)))
           AND (? IS NULL OR runs.id=?)
           AND (? OR projects.last_auto_attempt_at IS NULL OR projects.last_auto_attempt_at<=?)
         ORDER BY coalesce(projects.last_completed_at, -1), runs.queued_at, runs.id
         LIMIT 1
-      `).get(at, projectId ?? null, projectId ?? null, runId ?? null, runId ?? null,
+      `).get(at, projectId ?? null, projectId ?? null, projectList, projectList, runId ?? null, runId ?? null,
         Number(manual), at - autoIntervalMs)
       if (!row) return undefined
       db.prepare(`

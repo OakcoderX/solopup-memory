@@ -101,7 +101,7 @@ export function createDreamRuntime({ options, queue, readProject, executors, now
     finally { limit.dispose() }
   }
 
-  async function process(claim, path, executor, signal) {
+  async function process(claim, path, executor, signal, projectIds) {
     const limit = deadline(signal, options.timeoutMs)
     let dispatched = false, returned = false, completed = false
     let usage, reservedTokens
@@ -151,7 +151,7 @@ export function createDreamRuntime({ options, queue, readProject, executors, now
       if (!dispatched && (limit.signal.aborted || error?.message === 'dream-dispatch-not-admitted')) {
         queue.release(claim)
         last = limit.signal.aborted ? 'deferred' : 'dispatch-not-admitted'
-        if (!limit.signal.aborted) return { retryAt: queue.nextAutomaticAt({ reservedTokens }) ?? null }
+        if (!limit.signal.aborted) return { retryAt: queue.nextAutomaticAt({ reservedTokens, projectIds }) ?? null }
       } else {
         const status = !dispatched || returned ? 'invalidated' : 'uncertain'
         const finished = queue.finish(claim, { status, usedTokens: usage?.totalTokens, confirmedUnsent: !dispatched })
@@ -192,18 +192,18 @@ export function createDreamRuntime({ options, queue, readProject, executors, now
           queue.enqueue({ projectId, inputHash: selected.inputHash, policyVersion: REVIEW_POLICY, metadata: selected.metadata })
         })
       }
-      for (const [projectId, path] of locations) {
-        const claim = queue.claim({ owner, projectId })
-        if (!claim) continue
+      const projectIds = [...locations.keys()]
+      const claim = queue.claim({ owner, projectIds })
+      if (claim) {
         // A change after the readiness probe may have assigned a different executor.
         if (claim.mode !== state.mode) { queue.release(claim); return { nextAt: now() + 1000 } }
         last = 'running'
-        const outcome = await process(claim, path, executor, limit.signal)
+        const outcome = await process(claim, locations.get(claim.projectId), executor, limit.signal, projectIds)
         if (outcome?.retryAt === null) return
         return { nextAt: Math.max(now() + 1000, outcome?.retryAt ?? 0) }
       }
       last = locations.size ? 'no-eligible-batch' : 'no-authorized-project'
-      const nextAt = queue.nextAutomaticAt()
+      const nextAt = queue.nextAutomaticAt({ projectIds })
       return nextAt > now() ? { nextAt } : undefined
     } finally { limit.dispose() }
   }
