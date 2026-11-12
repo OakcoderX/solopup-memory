@@ -2,7 +2,7 @@
 
 DeepSeek Harness 公开测试版 `0.24.0-beta.2`，采用 MIT 许可。配置的模型服务可能计费。
 
-第一次使用可以从快速上手开始，用一个虚构项目试试保存和回忆。想让 DSH 在闲置后检查哪些约定已经变了，可开启 0.24 的做梦复核。 [做梦设置](dream-review.md) · [0.24 宿主与真实模型验收](runs/2026-11-13-dream-review-beta1.md)
+第一次使用可以从快速上手开始，用一个虚构项目试试保存和回忆。想让 DSH 在闲置后检查哪些约定已经变了，可开启 0.24 的做梦复核。 [交互演示](https://oakcoderx.github.io/solopup-memory/dreaming/) · [做梦设置](dream-review.md) · [0.24 宿主与真实模型验收](runs/2026-11-13-dream-review-beta1.md)
 
 下列案例提供操作步骤。历史离线样例的实际结果见其记录。 [离线来源回查记录](runs/2026-11-07-source-recall.md)
 

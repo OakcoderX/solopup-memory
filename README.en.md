@@ -60,7 +60,7 @@ The 0.24 beta adds an optional idle review. Suppose you first say “Deliver rep
 2. In a fresh session for the same project, ask DSH to open the latest dream report. SoloPup rechecks the cited sources and displays suggestions it can still verify.
 3. Use the usual memory write flow to confirm a correction and make it effective in future sessions.
 
-Ordinary DSH can run the entire review. An optional Super Agent Worker can run it with the same queue, evidence rules and reports. That mode was tested on macOS with DSH `0.2.2-rc.1` and a pinned Super Agent prototype. The beta tests used fictional projects. In one fresh-session probe without the original messages, the adopted correction changed the answer. A separate test with the original messages attached fell short of its preset improvement criterion. [Enable idle review](docs/dream-review.md) · [Test results and limits](docs/runs/2026-11-13-dream-review-beta1.md)
+Ordinary DSH can run the entire review. An optional Super Agent Worker can run it with the same queue, evidence rules and reports. That mode was tested on macOS with DSH `0.2.2-rc.1` and a pinned Super Agent prototype. The beta tests used fictional projects. In one fresh-session probe without the original messages, the adopted correction changed the answer. A separate test with the original messages attached fell short of its preset improvement criterion. [Interactive demo in Chinese](https://oakcoderx.github.io/solopup-memory/dreaming/) · [Enable idle review](docs/dream-review.md) · [Test results and limits](docs/runs/2026-11-13-dream-review-beta1.md)
 
 ## Quick install
 
