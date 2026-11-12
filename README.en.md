@@ -32,6 +32,20 @@ Memory is context for the AI, and may not be saved, recalled, or interpreted cor
 
 ## Can Super Agent use it?
 
+Super Agent organizes and advances tasks; SoloPup attempts to provide saved project decisions for the AI doing the work to consider.
+
+**Illustrative flow:**
+
+You ask Super Agent to continue a project<br>
+↓<br>
+Super Agent assigns a task to an AI Worker<br>
+↓<br>
+With the required setup, the Worker may receive a SoloPup project memory summary<br>
+↓<br>
+The AI considers the memory alongside the current task and continues working
+
+This simplified illustration does not mean every task automatically receives memory or that the AI will always use it correctly.
+
 **With the required setup**, Super Agent tasks can receive project context: worktrees in the same repository must first be explicitly linked, after which a Worker may receive a project memory summary.
 
 In one isolated test using a fictional project, a real model saw both a Chinese-by-default project decision and an old English-language task record; it chose Chinese and flagged the old record for checking. A separate Super Agent prototype test also observed a Worker using the project summary. **Both are single observations; the latter used test doubles for some orchestration and was not full production acceptance.**
