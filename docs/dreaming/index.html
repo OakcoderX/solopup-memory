@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="互动演示 SoloPup Memory 0.24 如何在 DSH 闲置时核对项目记忆，生成报告，并由你确认修订。">
+  <title>DSH 闲下来时，记忆怎么复核？ · SoloPup Memory</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f7f6f0;
+      --ink: #172621;
+      --muted: #505f57;
+      --line: #d3d9cc;
+      --green: #245646;
+      --green-light: #e2eee5;
+      --amber: #834c23;
+      --amber-light: #f5e8d5;
+      --white: #fffefa;
+      --shadow: 0 20px 70px #23433816;
+      font-family: "DM Sans", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      line-height: 1.65;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--paper); }
+    a { color: var(--green); text-underline-offset: .22em; }
+    a:hover { color: #143a2d; }
+    button, select { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: default; }
+    a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visible {
+      outline: 3px solid #bc7838;
+      outline-offset: 3px;
+    }
+    .wrap { width: min(1120px, calc(100% - 64px)); margin-inline: auto; }
+    .masthead { border-bottom: 1px solid var(--line); }
+    .masthead .wrap {
+      min-height: 66px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .masthead nav { display: flex; flex-wrap: wrap; column-gap: 22px; font-size: .88rem; }
+    .wordmark { display: flex; align-items: center; gap: 9px; color: var(--ink); text-decoration: none; font-weight: 750; }
+    .wordmark::before { content: ""; width: 14px; height: 14px; border: 4px solid var(--green); border-radius: 50% 50% 20% 50%; transform: rotate(-16deg); }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 315px;
+      align-items: end;
+      gap: 42px;
+      padding-block: clamp(40px, 6vw, 78px) clamp(34px, 5vw, 55px);
+    }
+    .release-label, .eyebrow { font-size: .8rem; font-weight: 750; letter-spacing: .035em; color: var(--green); margin: 0 0 8px; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1, h2 {
+      font-family: "Instrument Serif", "Songti SC", "Noto Serif CJK SC", "SimSun", Georgia, serif;
+      font-weight: 750;
+      letter-spacing: -.045em;
+      line-height: 1.16;
+    }
+    h1 { font-size: clamp(2.3rem, 5.2vw, 4.6rem); margin-bottom: 16px; }
+    h2 { font-size: clamp(1.9rem, 3.3vw, 3rem); margin-bottom: 14px; }
+    h3 { line-height: 1.35; }
+    .hero p:last-child { margin-bottom: 0; max-width: 44ch; color: var(--muted); font-size: 1.03rem; }
+    .overview { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
+    .overview li {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px;
+      border-top: 1px solid var(--line);
+      padding: 8px 2px;
+      color: var(--muted);
+      font-size: .86rem;
+    }
+    .overview strong { color: var(--ink); }
+    .demo {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      overflow: hidden;
+      background: var(--white);
+      box-shadow: var(--shadow);
+    }
+    .demo-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 18px;
+      padding: 24px 28px 18px;
+    }
+    .demo-head h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); margin-bottom: 4px; }
+    .demo-head p { margin: 0; color: var(--muted); font-size: .9rem; }
+    .scenario { display: grid; gap: 3px; font-size: .84rem; color: var(--muted); }
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 7px 10px;
+      background: var(--paper);
+      color: var(--ink);
+    }
+    .modebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      padding: 0 28px 16px;
+    }
+    .mode-group { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+    .mode-label { margin-right: 4px; font-size: .83rem; color: var(--muted); }
+    .mode-group button {
+      border: 1px solid var(--line);
+      padding: 5px 11px;
+      border-radius: 999px;
+      background: var(--white);
+      color: var(--ink);
+      font-size: .84rem;
+    }
+    .mode-group button[aria-pressed="true"] { border-color: var(--green); background: var(--green-light); color: #153b2e; font-weight: 700; }
+    .mode-status { font-size: .82rem; color: var(--green); margin: 0; max-width: 51ch; }
+    .timeline {
+      margin: 0;
+      padding: 16px 28px;
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      background: #eef2e9;
+      border-block: 1px solid #d9e0d4;
+    }
+    .timeline li { position: relative; padding: 17px 0 0; font-size: .81rem; color: var(--muted); }
+    .timeline li::before {
+      position: absolute;
+      top: 3px;
+      left: 0;
+      right: 0;
+      content: "";
+      height: 4px;
+      border-radius: 999px;
+      background: #c8d4c9;
+      transition: background-color .25s ease;
+    }
+    .timeline li.is-past::before { background: #71a392; }
+    .timeline li[aria-current="step"] { color: #143e31; font-weight: 780; }
+    .timeline li[aria-current="step"]::before { background: var(--green); animation: mark .45s ease both; transform-origin: left; }
+    @keyframes mark { from { transform: scaleX(.23); } to { transform: scaleX(1); } }
+    .demo-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, .8fr);
+      min-height: 286px;
+    }
+    .stage { padding: 24px 28px 18px; min-width: 0; }
+    .stage.reveal { animation: appear .35s ease both; }
+    @keyframes appear { from { transform: translateY(7px); opacity: .55; } to { transform: translateY(0); opacity: 1; } }
+    .stage h3 { font-size: clamp(1.23rem, 2.2vw, 1.62rem); margin-bottom: 8px; }
+    .stage p { margin-bottom: 11px; color: var(--muted); font-size: .93rem; }
+    .stage .eyebrow { margin-bottom: 5px; color: var(--green); font-size: .78rem; }
+    .quote, .result {
+      margin: 0 0 10px;
+      padding: 10px 12px;
+      border-left: 3px solid #6c9e8d;
+      border-radius: 0 8px 8px 0;
+      background: var(--green-light);
+      font-size: .94rem;
+    }
+    .result strong { color: var(--green); }
+    .result.uncertain { border-color: #be7f49; background: var(--amber-light); }
+    .result.uncertain strong { color: var(--amber); }
+    .stage details { margin: 8px 0; font-size: .87rem; }
+    .stage summary { color: var(--green); cursor: pointer; }
+    .stage details blockquote { margin-top: 6px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .button {
+      border: 1px solid var(--green);
+      background: var(--green);
+      color: #fff;
+      padding: 7px 13px;
+      border-radius: 9px;
+      font-size: .89rem;
+      font-weight: 700;
+    }
+    .button:hover { background: #193f32; }
+    .button.secondary { border-color: var(--line); background: var(--white); color: var(--ink); }
+    .button.secondary:hover { background: var(--green-light); }
+    .button:disabled { opacity: .45; }
+    .ledger { display: grid; align-content: start; gap: 14px; margin: 0; padding: 23px 23px 21px; background: #1d3b32; color: #f0f5e9; }
+    .ledger div + div { border-top: 1px solid #638477; padding-top: 13px; }
+    .ledger dt { color: #bbd4c9; font-size: .78rem; margin-bottom: 3px; }
+    .ledger dd { margin: 0; font-size: .91rem; line-height: 1.55; }
+    .ledger dd strong { font-size: 1.16rem; color: #fff; }
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 9px 16px;
+      flex-wrap: wrap;
+      padding: 13px 28px;
+      border-top: 1px solid var(--line);
+    }
+    .controls div { display: flex; flex-wrap: wrap; gap: 8px; }
+    .controls p { font-size: .82rem; color: var(--muted); margin: 0; }
+    .reading { width: min(850px, 100%); margin: 65px auto 0; }
+    .reading > p { max-width: 68ch; color: var(--muted); }
+    .compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 20px 0; }
+    .compare article { border: 1px solid var(--line); border-radius: 15px; padding: 19px 20px; background: var(--white); }
+    .compare h3 { font-size: 1.1rem; margin-bottom: 12px; }
+    .compare ol { margin: 0 0 14px; padding-left: 1.35rem; }
+    .compare li + li { margin-top: 6px; }
+    .compare p { color: var(--muted); font-size: .89rem; margin: 0; }
+    .evidence-section { border-top: 1px solid var(--line); margin-top: 37px; padding-top: 29px; }
+    .evidence { margin: 18px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .evidence div { border-top: 2px solid #86a99b; padding-top: 7px; }
+    .evidence dt { color: var(--muted); font-size: .82rem; }
+    .evidence dd { margin: 0; font-size: clamp(1.3rem, 3vw, 1.85rem); font-weight: 750; }
+    .sources { font-size: .86rem; }
+    footer { border-top: 1px solid var(--line); margin-top: 57px; padding: 18px 0 25px; color: var(--muted); font-size: .83rem; }
+    @media (max-width: 740px) {
+      .wrap { width: calc(100% - 34px); }
+      .hero { grid-template-columns: 1fr; gap: 23px; }
+      .overview { max-width: 500px; }
+      .demo-head { grid-template-columns: 1fr; gap: 11px; }
+      .demo-head, .modebar, .timeline, .stage, .controls { padding-inline: 16px; }
+      .timeline { gap: 4px 7px; }
+      .timeline li { padding-top: 13px; font-size: .72rem; }
+      .demo-body { grid-template-columns: 1fr; min-height: auto; }
+      .stage { min-height: 212px; }
+      .ledger { padding: 13px 16px; gap: 9px; }
+      .ledger div { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: baseline; gap: 9px; }
+      .ledger div + div { padding-top: 8px; }
+      .reading { margin-top: 47px; }
+      .compare { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 400px) {
+      .masthead .wrap { min-height: 58px; }
+      .masthead nav { column-gap: 10px; font-size: .78rem; }
+      .wordmark { font-size: .91rem; }
+      .timeline { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px 9px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="wrap">
+      <a class="wordmark" href="https://github.com/OakcoderX/solopup-memory">SoloPup Memory</a>
+      <nav aria-label="相关文档">
+        <a href="https://github.com/OakcoderX/solopup-memory/blob/main/docs/dream-review.md">设置</a>
+        <a href="https://github.com/OakcoderX/solopup-memory/blob/main/docs/runs/2026-11-13-dream-review-beta1.md">验收报告</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="hero" aria-labelledby="title">
+      <div>
+        <p class="release-label">0.24.0-beta.2 · DSH 闲置复核</p>
+        <h1 id="title">DSH 闲下来时，<br>记忆怎么复核？</h1>
+        <p>约定改过以后，SoloPup 回查前后两段原话，给你一份修订建议。你确认写入后，下次工作就能用上新约定。</p>
+      </div>
+      <ul class="overview" aria-label="做梦复核的三份信息">
+        <li><strong>会话原话</strong><span>事情是怎么说的</span></li>
+        <li><strong>有效记忆</strong><span>下一会话能用什么</span></li>
+        <li><strong>复核报告</strong><span>有哪些建议要你确认</span></li>
+      </ul>
+    </section>
+
+    <section class="demo" id="demo" data-step="0" data-mode="ordinary" data-decision="pending" aria-labelledby="demo-title">
+      <div class="demo-head">
+        <div>
+          <h2 id="demo-title">试一次记忆更新</h2>
+          <p>按步骤操作，也可以播放。演示沿用验收中的虚构项目。</p>
+        </div>
+        <label class="scenario" for="scenario">试用案例
+          <select id="scenario">
+            <option value="language">样片交付语言改了</option>
+            <option value="expiry">旧模板到期，新模板待定</option>
+          </select>
+        </label>
+      </div>
+      <div class="modebar">
+        <div class="mode-group" role="group" aria-label="执行方式">
+          <span class="mode-label">由谁复核</span>
+          <button type="button" id="mode-ordinary" data-mode="ordinary" aria-pressed="true">普通 DSH</button>
+          <button type="button" id="mode-superagent" data-mode="superagent" aria-pressed="false">Super Agent</button>
+        </div>
+        <p class="mode-status" id="mode-status" role="status"></p>
+      </div>
+      <ol class="timeline" id="timeline" aria-label="复核流程">
+        <li aria-current="step">记住约定</li>
+        <li>后来更正</li>
+        <li>等待闲置</li>
+        <li>回查原话</li>
+        <li>打开报告</li>
+        <li>下次使用</li>
+      </ol>
+      <div class="demo-body">
+        <div class="stage" id="stage"></div>
+        <dl class="ledger" aria-label="当前项目的记忆状态">
+          <div><dt>当前项目</dt><dd id="project-value"></dd></div>
+          <div><dt>有效记忆</dt><dd id="record-value"></dd></div>
+          <div><dt>复核报告</dt><dd id="report-value"></dd></div>
+          <div><dt>共用队列</dt><dd id="queue-value"></dd></div>
+        </dl>
+      </div>
+      <div class="controls">
+        <div>
+          <button class="button" type="button" id="next">下一步</button>
+          <button class="button secondary" type="button" id="play" aria-pressed="false">播放</button>
+          <button class="button secondary" type="button" id="reset">重新开始</button>
+        </div>
+        <p>本页只演示流程，无模型请求。</p>
+      </div>
+      <p id="announcement" role="status" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap"></p>
+    </section>
+
+    <section class="reading" aria-labelledby="brain-title">
+      <p class="eyebrow">设计来源</p>
+      <h2 id="brain-title">为什么挑在闲置时复核？</h2>
+      <p>做当前任务时先保留记录，空出时间再回头整理。这个分工借鉴了记忆研究，也出现在 Anthropic 对代理记忆的讨论里。 [<a href="https://www.anthropic.com/research/components-of-agent-memory">The components of agent memory</a>]</p>
+      <div class="compare">
+        <article>
+          <h3>大脑在睡眠中重现活动</h3>
+          <ol>
+            <li>清醒时学习或探索。</li>
+            <li>慢波睡眠中，部分相关神经活动再次出现。</li>
+            <li>实验发现，特定线索可帮助一些记忆在醒来后保留。</li>
+          </ol>
+          <p>大鼠实验记录到海马活动的重现。人类实验用与学习有关的气味作提示，观察到特定任务的记忆保留有所改善。研究测的是神经活动和任务表现，主观梦境是另一种现象。 [<a href="https://pubmed.ncbi.nlm.nih.gov/8036517/">Wilson 与 McNaughton，1994</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/17347444/">Rasch 等，2007</a>]</p>
+        </article>
+        <article>
+          <h3>SoloPup 在闲置时核对记录</h3>
+          <ol>
+            <li>会话留下原话，已采纳的约定进入项目记忆。</li>
+            <li>DSH 闲置后，模型按项目核对有限的原话。</li>
+            <li>你审阅建议并确认写入，新会话才获得修订值。</li>
+          </ol>
+          <p>Anthropic 的 Dreams API 可读取既有记忆库及会话并生成整理后的新库。SoloPup 0.24 先生成一份可回查的报告，把正式写入留给你。 [<a href="https://platform.claude.com/docs/en/managed-agents/dreams">Claude Dreams 文档</a>]</p>
+        </article>
+      </div>
+      <p>普通模式由 DSH 执行复核。配置 Super Agent 后，你可改由隔离 Worker 处理同一批证据。宿主持有模型连接，Worker 只获得本次任务输入和所需运行文件。SoloPup 管理项目范围、队列、预算和报告。功能默认关闭，开启后默认等前台连续闲置 20 分钟。</p>
+
+      <section class="evidence-section" aria-labelledby="evidence-title">
+        <h2 id="evidence-title">实际测到了什么</h2>
+        <dl class="evidence">
+          <div><dt>普通 DSH · 冻结十例</dt><dd>9/10</dd></div>
+          <div><dt>Super Agent · 冻结十例</dt><dd>10/10</dd></div>
+          <div><dt>各阶段真实模型调用</dt><dd>40 次</dd></div>
+        </dl>
+        <p>冻结案例经匿名 AI 评分，两种模式均无关键错误。最终归档各跑两道留出题，各通过两道。带完整原话时，指定语言题的新旧记忆组都答对，未测出修订的额外收益。</p>
+        <p>新会话只带项目记忆时，旧记忆、只生成报告、正式采纳三组依次答中文、中文、英文。Super Agent 实验模式验证于 macOS、DSH <code>0.2.2-rc.1</code> 和固定原型。 [<a href="https://github.com/OakcoderX/solopup-memory/blob/main/docs/runs/2026-11-13-dream-review-beta1.md">完整测试与局限</a>]</p>
+      </section>
+    </section>
+  </main>
+  <footer><div class="wrap">SoloPup Memory · <a href="https://github.com/OakcoderX/solopup-memory/releases/tag/v0.24.0-beta.2">0.24.0-beta.2 发布页</a></div></footer>
+
+  <script>
+    'use strict';
+    const scenes = {
+      language: {
+        project: '样片交付',
+        old: '中文',
+        revised: '英文',
+        original: '样片的正式交付说明默认用中文。',
+        update: '更正：从今天起，样片的正式交付说明默认用英文，取代前天定的中文默认值。',
+        reason: '后一次原话明确替换了样片正式交付说明的默认语言。',
+        question: '样片正式交付说明现在默认用什么语言？'
+      },
+      expiry: {
+        project: '测试记录',
+        old: '沿用 R 模板的旧记录',
+        original: 'R 模板只用到 11 月 11 日。下一轮测试记录用哪套模板，等我确认。',
+        update: '今天 11 月 13 日开始了新一轮测试。我还没有定下新一轮的模板。',
+        reason: 'R 模板已到期。新一轮的模板尚未确认，报告需要你补充证据。',
+        question: '新一轮测试记录是否继续用 R 模板？'
+      }
+    };
+    const labels = { ordinary: '普通 DSH', superagent: 'Super Agent' };
+    const $ = id => document.getElementById(id);
+    const demo = $('demo');
+    const stage = $('stage');
+    const timeline = [...$('timeline').children];
+    const modes = [$('mode-ordinary'), $('mode-superagent')];
+    const next = $('next');
+    const play = $('play');
+    const scene = () => scenes[$('scenario').value];
+    let step = 0;
+    let mode = 'ordinary';
+    let dispatched = null;
+    let reportMode = null;
+    let decision = 'pending';
+    let playing = false;
+    let timer;
+
+    function sourceQuotes(item) {
+      return `<details><summary>查看两段引用原话</summary>
+        <blockquote class="quote"><strong>旧约定原话</strong><br>${item.original}</blockquote>
+        <blockquote class="quote"><strong>后来原话</strong><br>${item.update}</blockquote></details>`;
+    }
+
+    function renderMode() {
+      const inFlight = step === 3;
+      const pending = inFlight && mode !== dispatched;
+      demo.dataset.mode = mode;
+      demo.dataset.pendingMode = pending ? mode : '';
+      modes.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mode === mode)));
+      $('mode-status').textContent = pending
+        ? `当前由 ${labels[dispatched]} 完成，下一批切到 ${labels[mode]}。`
+        : step >= 4 && reportMode !== mode
+          ? `本报告由 ${labels[reportMode]} 生成，下一批使用 ${labels[mode]}。`
+          : `选择了 ${labels[mode]}，两种方式共用同一个复核队列。`;
+      $('queue-value').textContent = inFlight
+        ? pending ? '当前任务继续 · 新方式排队' : `${labels[dispatched]} 执行中`
+        : step >= 4 ? `此任务结束 · 下一批用 ${labels[mode]}` : '待派发';
+    }
+
+    function render() {
+      const item = scene();
+      const hasReplacement = Boolean(item.revised);
+      const current = decision === 'accepted' ? item.revised : item.old;
+      const needsChoice = step === 4 && hasReplacement && decision === 'pending';
+      const actualNext = hasReplacement ? current : '新模板尚未确认';
+      const headline = [
+        ['记住约定', '把已经确定的约定写入记忆', '原话留在会话里，正式记忆保存可供下次使用的摘要。', `<blockquote class="quote">${item.original}</blockquote>`],
+        ['后来更正', hasReplacement ? '用户给出了新的默认值' : '新的默认值还没确定', '后续会话留下可回查的证据，此时正式记忆仍是原来的值。', `<blockquote class="quote">${item.update}</blockquote>`],
+        ['等待闲置', '等前台工作结束', '功能开启后，默认连续闲置 20 分钟才检查。演示把等待压缩成几秒。', ''],
+        ['回查原话', '只核对当前项目的证据', `${labels[dispatched]} 正在核对旧记忆和两段原话。试试现在切换执行方式。`, sourceQuotes(item)],
+        ['打开报告', hasReplacement ? '有明确的新约定，可以建议修订' : '报告标出缺失的证据', item.reason,
+          sourceQuotes(item) + (hasReplacement
+            ? `<p class="result">建议写入 <strong>${item.revised}</strong>${decision === 'accepted' ? ' · 你已确认并完成正式写入' : decision === 'deferred' ? ' · 你选择暂不采纳' : ''}</p>`
+            : '<p class="result uncertain"><strong>需要补充证据</strong> · 暂无可采纳的替代模板</p>')],
+        ['下次使用', '新会话拿到当前有效记忆', hasReplacement ? item.question : '如果此时问新一轮模板，仍需要你确认。旧记录继续保留。',
+          `<p class="result${hasReplacement ? '' : ' uncertain'}">${hasReplacement ? '本次演示回答' : '待确认'} <strong id="reply-value">${actualNext}</strong></p>`]
+      ][step];
+
+      demo.dataset.step = String(step);
+      demo.dataset.decision = decision;
+      demo.dataset.reportMode = reportMode ?? '';
+      stage.innerHTML = `<p class="eyebrow">${headline[0]}</p><h3 id="stage-title">${headline[1]}</h3><p>${headline[2]}</p>${headline[3]}`;
+      if (needsChoice) {
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+        actions.innerHTML = '<button class="button" type="button" id="accept">确认并写入</button><button class="button secondary" type="button" id="defer">暂不采纳</button>';
+        stage.append(actions);
+      }
+      stage.classList.remove('reveal');
+      requestAnimationFrame(() => stage.classList.add('reveal'));
+      timeline.forEach((entry, index) => {
+        entry.classList.toggle('is-past', index < step);
+        if (index === step) entry.setAttribute('aria-current', 'step');
+        else entry.removeAttribute('aria-current');
+      });
+      $('project-value').textContent = item.project;
+      $('record-value').innerHTML = `<strong>${current}</strong>`;
+      $('report-value').textContent = step < 4 ? '尚未生成' : hasReplacement
+        ? `${labels[reportMode]} · ${decision === 'accepted' ? '已采纳' : decision === 'deferred' ? '暂不采纳' : '待确认'}`
+        : `${labels[reportMode]} · 等待新证据`;
+      $('announcement').textContent = headline[1];
+      next.disabled = needsChoice || step === 5;
+      play.disabled = needsChoice || step === 5;
+      play.textContent = playing ? '暂停' : '播放';
+      play.setAttribute('aria-pressed', String(playing));
+      renderMode();
+    }
+
+    function stop() {
+      clearTimeout(timer);
+      playing = false;
+    }
+
+    function advance() {
+      if (next.disabled) return;
+      step += 1;
+      if (step === 3) dispatched = mode;
+      if (step === 4) {
+        reportMode = dispatched;
+        stop();
+      }
+      if (step === 5) stop();
+      render();
+      schedule();
+    }
+
+    function schedule() {
+      clearTimeout(timer);
+      if (playing) timer = setTimeout(advance, step === 2 ? 2100 : step === 3 ? 3300 : 1750);
+    }
+
+    function reset() {
+      stop();
+      step = 0;
+      decision = 'pending';
+      dispatched = null;
+      reportMode = null;
+      render();
+    }
+
+    stage.addEventListener('click', event => {
+      if (event.target.id !== 'accept' && event.target.id !== 'defer') return;
+      decision = event.target.id === 'accept' ? 'accepted' : 'deferred';
+      render();
+      next.focus();
+    });
+    modes.forEach(button => button.addEventListener('click', () => {
+      mode = button.dataset.mode;
+      renderMode();
+    }));
+    $('scenario').addEventListener('change', reset);
+    $('reset').addEventListener('click', reset);
+    next.addEventListener('click', advance);
+    play.addEventListener('click', () => {
+      if (playing) stop();
+      else playing = true;
+      play.textContent = playing ? '暂停' : '播放';
+      play.setAttribute('aria-pressed', String(playing));
+      schedule();
+    });
+    render();
+  </script>
+</body>
+</html>
