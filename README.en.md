@@ -6,13 +6,23 @@
 
 Source-linked, layered **text memory** for DeepSeek Harness. **Public beta, not a stable release.** See the npm beta tag and GitHub releases for the currently published version. See [RELEASE.md](RELEASE.md) for tested scope and known gaps.
 
-## Tested examples
+## Explain it once, use it later
 
-- **Recall across worktrees.** In an isolated test, a real DSH model saved a fictional project decision to use Chinese for delivery notes. After an explicit same-repository worktree link, a new model session encountered an old English-language task record, retrieved the project memory and chose Chinese. This used real model sessions and a worktree link, **not Super Agent dispatch**.
-- **Super Agent Worker with project context.** In an isolated test, the prototype's Engine, Executor and Sessions created a Worker. The injected project memory said “default Chinese” while the assigned fictional task referenced an older English-language record. A real model selected Chinese and stated that it had only seen the injected summary. The controller, events and other calls used test doubles, and model context was adapted for the test; **this is not full production acceptance**.
-- **A retry counterexample.** After a prepare failure, the tested prototype can retry and start a Worker without project memory. Inspect the leftover workspace and ensure preparation reruns before retrying; see [worktree setup](#project-memory-across-worktrees-023-beta).
+This dialogue is a readable summary of an isolated test with a fictional project and real model sessions:
 
-These are synthetic, bounded tests of 0.23.0-beta.2 on 2026-11-12. They do not guarantee model behavior or erase copies in old sessions. See the [case notes](docs/runs/2026-11-12-superagent-examples.md) for methods and limitations.
+> **You:** “Remember: this project's delivery notes should default to Chinese.”<br>
+> **SoloPup:** Saves it as a project decision.
+>
+> **Later, in another worktree:** “An old task used English. What is the default now?”<br>
+> **DSH:** “Chinese. The current project memory says Chinese; the old task record needs its timing and scope checked.”
+
+**Why it helps:** You do not need to explain the project decision from scratch in every worktree. The test required an explicit link between two worktrees in the same repository. One observation does not guarantee every model decision.
+
+### Project context for Super Agent
+
+Super Agent is a DSH prototype that can organize AI work. In another isolated test, a Worker received the same project memory and an old English-language task record. A real model chose Chinese and stated that it had only seen the memory summary.
+
+The test used prototype components and a real model, but some orchestration and events were test doubles and model context was adapted; **it was not full production acceptance**. After a prepare failure, the prototype can retry without project memory: inspect the leftover workspace and ensure preparation reruns before retrying. Withdrawing a memory does not automatically erase old session copies. [Read the test details and limitations](docs/runs/2026-11-12-superagent-examples.md).
 
 ## Quick install
 
