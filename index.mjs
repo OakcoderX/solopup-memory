@@ -19,7 +19,7 @@ import {isRevisionAdmissionError} from './revision-admission.mjs'
  * 宿主在请求准备时刷新。公开包通过dsh.bundle贡献配置层。
  */
 
-import { accessSync, constants, existsSync, lstatSync, readFileSync, readdirSync, renameSync, statSync, writeFileSync } from 'node:fs'
+import { accessSync, constants, existsSync, lstatSync, readFileSync, readdirSync, realpathSync, renameSync, statSync, watch, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { createHash } from 'node:crypto'
 import { rankLines } from './retrieval.mjs'
@@ -44,11 +44,15 @@ import {captureJobStatus,CAPTURE_STATUS_SCHEMA} from './capture-jobs.mjs'
 import { claimCaptureJob, assertCaptureClaim, finishCaptureJob, recoverCaptureJobs, retryBusyWrite } from './capture-jobs.mjs'
 import { setupMemoryHistory } from './context-history.mjs'
 import { captureSessionEligible, captureInputDescriptor, enqueueCaptureInput, bindCaptureInput, blockCaptureInput, pendingCaptureInputs, listCaptureInputs, reconstructCaptureInput, observeCaptureSource } from './capture-inputs.mjs'
-import { join, resolve, relative } from 'node:path'
+import { basename, join, resolve, relative } from 'node:path'
 import { DEFAULT_AUTO_CAPTURE, normalizePluginConfig } from './plugin-config.mjs'
 import { optionalService } from './host-services.mjs'
 import { projectStoreDir, inspectProjectStore, migrateProjectStore, recoverProjectStore, linkWorktreeProject, unlinkWorktreeProject } from './project-stores.mjs'
 import { watchOptionalService } from './service-readiness.mjs'
+import { createDreamRuntime } from './dream-runtime.mjs'
+import { openDreamQueue } from './dream-queue.mjs'
+import { createOrdinaryDreamExecutor } from './dream-ordinary.mjs'
+import { createSuperAgentDreamExecutor, SUPER_AGENT_DREAM_SERVICE, SUPER_AGENT_DREAM_ISOLATION_SERVICE } from './dream-superagent.mjs'
 export { Config } from './plugin-config.mjs'
 
 import {
@@ -1273,6 +1277,37 @@ function effectiveSourceRecords(dir,scope,indexText,includeUntyped=false){
  const lines=new Set(index.split(/\r?\n/).map(line=>line.trim()).filter(line=>line.startsWith('- [')&&!isExpired(line)))
  const current=includeUntyped?liveSourceRecords(dir,scope).filter(record=>['recorded','adopted'].includes(record.status)):activeMeanings(liveSourceRecords(dir,scope))
  return current.filter(record=>!record.sources.some(source=>policy.revoked.includes(source))&&lines.has(record.indexLine??indexLine(record.type,record.summary,record.expires,record.detail!==undefined)))
+}
+
+export function readDreamProject(root, cwd, consume) {
+  const physical = realpathSync(cwd)
+  if (!statSync(physical).isDirectory() || !isManagedStore(root)) throw Error('dream-project-unavailable')
+  const dir = projectStoreDir(root, findProjectRoot(physical))
+  const projectId = /^v2-([a-f0-9]{64})$/.exec(basename(dir))?.[1]
+  if (!projectId || !existsSync(dir)) return consume(undefined)
+  return managedRead(dir, () => {
+    assertPublicationClear(dir)
+    const records = effectiveSourceRecords(dir, 'project', undefined, true)
+    const groups = new Map()
+    for (const record of records) {
+      const { signature, values } = conflictSignature(record.summary)
+      if (!values.length) continue
+      const group = groups.get(signature) ?? []
+      group.push({ id: record.id, values: JSON.stringify(values) })
+      groups.set(signature, group)
+    }
+    const relatedRecordIdsByTarget = {}
+    for (const group of groups.values()) {
+      for (const target of group) {
+        const ids = group.filter(other => other.id !== target.id && other.values !== target.values).map(other => other.id).sort()
+        if (ids.length) relatedRecordIdsByTarget[target.id] = ids.slice(0, 3)
+      }
+    }
+    const ordered = [...records].sort((a, b) =>
+      Number(Boolean(relatedRecordIdsByTarget[b.id])) - Number(Boolean(relatedRecordIdsByTarget[a.id])) ||
+      String(b.createdAt ?? '').localeCompare(String(a.createdAt ?? '')) || a.id.localeCompare(b.id))
+    return consume({ projectId, storeRevision: storeRevisionLocal(dir), records: ordered, relatedRecordIdsByTarget })
+  })
 }
 
 /** Current index-only legacy entries are visible as unclassified data, never inherited sources. */
@@ -2964,6 +2999,7 @@ export function apply(ctx, config = {}) {
       ),
     )
     const autoCapture = startup.state==='managed'?setupAutoCapture(ctx, config):{enabled:false,reason:startup.code}
+    const dream = startup.state === 'managed' ? setupDreamReview(ctx, root, config.dream) : { enabled: false, reason: startup.code }
 
   // 加载痕迹**无条件**写：它是 A2 的唯一可靠依据，不能依赖诊断开关。
     // 之前它藏在 writeDiag 里（需要 .diagnostics 开关），导致 A2 永远无法通过——
@@ -2984,6 +3020,7 @@ export function apply(ctx, config = {}) {
             tools: canRegisterTools ? ['memory_write', 'memory_forget', 'memory_links', 'memory_search', 'memory_prune', 'memory_status'] : [],
             degraded: startup.state==='managed'?health.degrade:[...health.degrade,'sourceControl: '+startup.code],
             autoCapture,
+            dream,
           },
           null,
           2,
@@ -2995,6 +3032,52 @@ export function apply(ctx, config = {}) {
   } catch {
     /* 写不出来就算了：注入不依赖这两个文件 */
   }
+  }
+}
+
+function setupDreamReview(ctx, root, options) {
+  if (!options.enabled) return { enabled: false }
+  if (typeof ctx.on !== 'function' || typeof ctx.effect !== 'function') return { enabled: false, reason: 'dream-host-lifecycle-unavailable' }
+  let runtime, queue, controlWatch
+  try {
+    const activity = (session, event) => {
+      if (!runtime || !captureSessionEligible(session)) return
+      switch (event?.type) {
+        case 'turn/start': runtime.scheduler.enter(session.id); break
+        case 'turn/end': runtime.scheduler.leave(session.id); break
+        case 'user/message': runtime.scheduler.activity(); break
+      }
+    }
+    ctx.on('session/event', activity)
+    ctx.on('session/disposed', session => runtime?.scheduler.leave(session?.id))
+    const changed = () => runtime?.scheduler.wake()
+    const ordinaryLlm = watchOptionalService(ctx, 'llm', changed)
+    const superAgent = watchOptionalService(ctx, SUPER_AGENT_DREAM_SERVICE, changed)
+    const isolation = watchOptionalService(ctx, SUPER_AGENT_DREAM_ISOLATION_SERVICE, changed)
+    const executors = {
+      ordinary: createOrdinaryDreamExecutor({ getLlm: () => ordinaryLlm.refresh() }),
+      superagent: createSuperAgentDreamExecutor({
+        getBridge: () => superAgent.refresh(),
+        getIsolation: () => isolation.refresh(),
+      }),
+    }
+    queue = openDreamQueue(root, {
+      maxDailyAttempts: options.maxDailyAttempts,
+      maxDailyTokens: options.maxDailyTokens,
+      leaseMs: options.timeoutMs + 10_000,
+    })
+    runtime = createDreamRuntime({ options, queue, readProject: (cwd, consume) => readDreamProject(root, cwd, consume), executors })
+    controlWatch = watch(root + '.dream', { persistent: false }, () => { void runtime?.checkControls() })
+    controlWatch.on('error', () => controlWatch.close())
+    void runtime.checkControls()
+    ctx.effect(() => () => { controlWatch.close(); runtime.dispose(); runtime = undefined })
+    return { enabled: true, mode: queue.status().mode }
+  } catch {
+    controlWatch?.close()
+    if (runtime) runtime.dispose()
+    else queue?.close()
+    runtime = undefined
+    return { enabled: false, reason: 'dream-initialization-failed' }
   }
 }
 
