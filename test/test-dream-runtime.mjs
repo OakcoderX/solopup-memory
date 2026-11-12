@@ -39,13 +39,13 @@ function clock() {
   }
 }
 
-function fixture(t, executors) {
+function fixture(t, executors, options = {}) {
   const home = realpathSync(mkdtempSync(join(tmpdir(), 'solopup-dream-runtime-')))
   const timer = clock()
-  const queue = openDreamQueue(join(home, 'memory'), { now: timer.now })
+  const queue = openDreamQueue(join(home, 'memory'), { now: timer.now, maxDailyTokens: options.maxDailyTokens })
   const project = { projectId: digest('project-a'), storeRevision: digest('initial-revision'), records: [record] }
   const runtime = createDreamRuntime({
-    options: { projects: ['project-a'], idleMs: 1000, timeoutMs: 5000, provider: 'fixture', model: 'fixture' },
+    options: { projects: ['project-a'], idleMs: 1000, timeoutMs: 5000, provider: 'fixture', model: 'fixture', ...options },
     queue, readProject: (_path, consume) => consume(project), executors,
     now: timer.now, timers: { setTimer: timer.setTimer, clearTimer: timer.clearTimer },
   })
@@ -163,4 +163,33 @@ test('project revision changed in flight rejects the result without accepting a 
   await flush()
   assert.equal(queue.status().counts.invalidated, 1)
   assert.equal(queue.status().counts.completed ?? 0, 0)
+})
+
+test('large new evidence uses a smaller batch and retains unreviewed entries', async t => {
+  const seen = []
+  const ordinary = {
+    ready: () => ({ ready: true }),
+    async execute(input, options) {
+      options.beforeDispatch()
+      seen.push(input.items.length)
+      return {
+        output: { items: input.items.map((_item, index) =>
+          ({ id: 'm' + (index + 1), verdict: 'keep', sourceIds: ['s' + (index + 1)], reason: '原话支持现行记录。' })) },
+        usage: { totalTokens: 100 },
+      }
+    },
+  }
+  const { timer, queue, project } = fixture(t, { ordinary }, { maxDailyTokens: 5100 })
+  project.records = Array.from({ length: 5 }, (_, index) => {
+    const messageId = 'message-' + index
+    const longQuote = '用户已经确认项目交付说明的字数和格式。'.repeat(24)
+    return { ...record, id: digest('item-' + index), evidence: [{ messageId, quote: longQuote, hash: digest(longQuote) }],
+      sources: [digest(JSON.stringify([sessionId, messageId]))] }
+  })
+  await timer.advance(1000)
+  assert.equal(queue.status().counts.completed, 1)
+  assert.equal(seen.length, 1)
+  assert.ok(seen[0] > 0 && seen[0] < 5)
+  await timer.advance(1000)
+  assert.ok(queue.listQueued().length > 0)
 })

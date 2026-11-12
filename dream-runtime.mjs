@@ -4,7 +4,9 @@ import { createDreamScheduler } from './dream-scheduler.mjs'
 
 const REVIEW_POLICY = 'solopup-project-review-v1'
 const MAX_OUTPUT_TOKENS = 1800
+const SUPER_AGENT_RESERVE = 8000
 const digest = value => createHash('sha256').update(JSON.stringify(value)).digest('hex')
+const ordinaryReservation = input => Buffer.byteLength(JSON.stringify(dreamReviewMessages(input))) + MAX_OUTPUT_TOKENS + 512
 function itemKey(project, record, byId) {
   const related = project.relatedRecordIdsByTarget?.[record.id] ?? []
   const additional = project.additionalEvidenceByTarget?.[record.id] ?? []
@@ -36,6 +38,7 @@ function deadline(signal, timeoutMs) {
 export function createDreamRuntime({ options, queue, readProject, executors, now = Date.now, timers = {} }) {
   const owner = randomUUID()
   const route = { provider: options.provider, model: options.model }
+  const dailyTokens = options.maxDailyTokens ?? 12_000
   let last = 'waiting-for-idle', disposed = false, inFlight, checkingControls
   const controlLifetime = new AbortController()
 
@@ -44,6 +47,9 @@ export function createDreamRuntime({ options, queue, readProject, executors, now
     const keys = new Map(project.records.map(record => [record.id, itemKey(project, record, byId)]))
     const targetIds = queued ? queued.metadata.itemIds : [...keys.keys()].filter(id => !queue.wasReviewed(project.projectId, keys.get(id)))
     const input = buildDreamEvidence({ ...project, targetIds, now: now() })
+    // Fit new batches before they receive an identity. A queued batch is always
+    // reconstructed byte-for-byte, including when the executor changes.
+    if (!queued) while (input.items.length && ordinaryReservation(input) > Math.min(dailyTokens, 12_000)) input.items.pop()
     if (!input.items.length) return undefined
     return {
       input,
@@ -101,9 +107,8 @@ export function createDreamRuntime({ options, queue, readProject, executors, now
     let usage, reservedTokens
     try {
       const { input } = current(path, claim, selected => selected)
-      const messages = dreamReviewMessages(input)
-      const ordinaryReserve = Buffer.byteLength(JSON.stringify(messages)) + MAX_OUTPUT_TOKENS + 512
-      reservedTokens = claim.mode === 'superagent' ? Math.max(ordinaryReserve, 8_000) : ordinaryReserve
+      const ordinaryReserve = ordinaryReservation(input)
+      reservedTokens = claim.mode === 'superagent' ? Math.max(ordinaryReserve, SUPER_AGENT_RESERVE) : ordinaryReserve
       const outcome = await Promise.race([limit.expired, Promise.resolve().then(() => {
         limit.signal.throwIfAborted()
         return executor.execute(input, {
@@ -221,7 +226,8 @@ export function createDreamRuntime({ options, queue, readProject, executors, now
       const limit = deadline(controlLifetime.signal, Math.min(5000, options.timeoutMs))
       let ready = false
       try {
-        const result = await Promise.race([limit.expired, executors[request.mode]?.ready({ signal: limit.signal })])
+        const result = request.mode === 'superagent' && dailyTokens < SUPER_AGENT_RESERVE
+          ? undefined : await Promise.race([limit.expired, executors[request.mode]?.ready({ signal: limit.signal })])
         ready = result?.ready === true
       } catch { /* Preserve the current executor if the requested one is unavailable. */ }
       finally { limit.dispose() }
@@ -237,7 +243,9 @@ export function createDreamRuntime({ options, queue, readProject, executors, now
     scheduler,
     checkControls,
     async requestMode(mode) {
-      if (disposed || !executors[mode]) return { accepted: false, reason: 'dream-mode-unavailable' }
+      if (disposed || !executors[mode] || mode === 'superagent' && dailyTokens < SUPER_AGENT_RESERVE) {
+        return { accepted: false, reason: 'dream-mode-unavailable' }
+      }
       const limit = deadline(new AbortController().signal, Math.min(5000, options.timeoutMs))
       try {
         const status = await Promise.race([limit.expired, executors[mode].ready({ signal: limit.signal })])
