@@ -84,6 +84,26 @@ function ownerText(event) {
   return { id: data.id, raw, text, hash: hashText(text) }
 }
 
+/** Derive a reference from a real owner event. Keep transcript text in memory only. */
+export function observeDreamCorrection(session, event) {
+  const header = session?.header
+  if (!ownerHeader(header) || header.id !== session.id || !SESSION_ID.test(session.id) ||
+      !safeTime(header.createdAt) || !safeTime(event?.time) || event.time < header.createdAt ||
+      !Number.isSafeInteger(event?.seq) || event.seq < 0 || event.seq >= MAX_EVENTS) return undefined
+  const owner = ownerText(event)
+  if (!owner || owner.text.length > MAX_QUOTE_CHARS) return undefined
+  // The user names the old entry. A guess about relevance cannot create a
+  // persisted link from arbitrary conversation to a memory.
+  const correction = /^(?:更正|纠正|修订)\s*[：:]?\s*[「『“"]([^」』”"\n]{2,200})[」』”"]\s*(?:[：:]|改为|改成|->|→)\s*\S/u.exec(owner.text)
+    ?? /^correction\s*:?\s*"([^"\n]{2,200})"\s*(?::|->|→)\s*\S/iu.exec(owner.text)
+  if (!correction) return undefined
+  return {
+    targetSummary: correction[1].trim(),
+    occurredAt: event.time,
+    pointer: { sessionId: session.id, createdAt: header.createdAt, seq: event.seq, hash: owner.hash },
+  }
+}
+
 function sourceContext(events, indices, header) {
   const dirs = new Map()
   const replaced = new Set()

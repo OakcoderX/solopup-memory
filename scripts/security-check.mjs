@@ -40,7 +40,9 @@ function walk(dir, out = []) {
 }
 
 const files = walk(ROOT)
-const runtimeFiles = files.filter((file) => file.endsWith('.mjs') && !/\/test-[^/]+\.mjs$/.test(file) && !file.includes('/scripts/') && !file.includes('/eval/'))
+const nonRuntimeFixtures = new Set(['test/fixtures/dream-superagent-dsh-smoke.mjs'])
+const runtimeFiles = files.filter((file) => file.endsWith('.mjs') && !/\/test-[^/]+\.mjs$/.test(file) && !file.includes('/scripts/') &&
+  !file.includes('/eval/') && !nonRuntimeFixtures.has(relative(ROOT, file)))
 const text = (file) => readFileSync(file, 'utf8')
 
 /** 发行包实际包含的文件（目录条目展开）。绝对路径与密钥检查只看这些。 */
@@ -83,7 +85,7 @@ check('runtime-network', () => {
 })
 
 check('runtime-exec', () => {
-  const allowed = new Set(['restore.mjs', 'project-stores.mjs'])
+  const allowed = new Set(['restore.mjs', 'project-stores.mjs', 'dream-companion.mjs'])
   const hits = []
   for (const file of runtimeFiles) {
     if (!/child_process|\bexecSync\b|\bspawnSync\b/.test(text(file))) continue
@@ -97,7 +99,24 @@ check('runtime-exec', () => {
   assert(/execFileSync\('git',\s*\['-C',\s*root,\s*'rev-parse',\s*'--path-format=absolute',\s*'--show-toplevel',\s*'--git-common-dir'\]/.test(projects), 'project-stores.mjs 的子进程不是固定的 git rev-parse 参数调用')
   assert(!/shell:\s*true/.test(projects) && !/\b(?:spawn|exec|execSync|spawnSync)\s*\(/.test(projects), 'project-stores.mjs 出现非允许的子进程调用')
   assert(/GIT_CONFIG_GLOBAL:\s*'\/dev\/null'/.test(projects) && /GIT_CONFIG_NOSYSTEM:\s*'1'/.test(projects) && /GIT_TERMINAL_PROMPT:\s*'0'/.test(projects), 'worktree 身份检查未隔离 Git 全局配置或交互')
-  return 'restore 固定调用 tar；project-stores 固定调用 git rev-parse；均无 shell'
+  const companion = text(join(ROOT, 'dream-companion.mjs'))
+  assert(/const SANDBOX = '\/usr\/bin\/sandbox-exec'/.test(companion) &&
+    /spawn\(SANDBOX, \['-p', setup\.sandbox, environment\.cli, '--profile', PROFILE\]/.test(companion) &&
+    /executeFile\(SANDBOX, \['-p', profile, '\/bin\/cat', path\]/.test(companion) &&
+    /executeFile\(SANDBOX, \['-p', profile, environment\.cli, '--version'\]/.test(companion), 'dream-companion 子进程入口超出固定 Seatbelt 路径')
+  assert((companion.match(/\b(?:spawn|executeFile)\s*\(/g) ?? []).length === 3 &&
+    !/(?<!\.)\b(?:spawnSync|exec|execSync|execFile|execFileSync|fork)\s*\(|shell\s*:|process\.env\b|\/bin\/sh/.test(companion),
+  'dream-companion 有额外子进程、Shell 或继承环境')
+  assert(/\(deny default\)/.test(companion) && !/\(allow[^\n]*(?:network|mach-lookup)/.test(companion) &&
+    /stdio:\s*\['ignore', 'ignore', 'ignore', 'pipe', 'pipe'\]/.test(companion) &&
+    /tools:\s*\[\]/.test(companion), 'dream-companion 未固定默认拒绝的隔离及无工具管道')
+  const worker = text(join(ROOT, 'scripts/dream-companion-worker.mjs'))
+  assert((worker.match(/\bconnect\s*\(/g) ?? []).length === 1 &&
+    /connect\(\{ host: '127\.0\.0\.1', port: 1 \}\)/.test(worker) &&
+    !/child_process|\bfetch\s*\(|\.listen\s*\(|node:(?:http|https|tls)|new\s+WebSocket/.test(worker),
+  'dream-companion-worker 出现超出拒绝探针的网络或执行能力')
+  assert(shippedFiles().every(file => !nonRuntimeFixtures.has(relative(ROOT, file))), '测试宿主夹具不可进入发行包')
+  return 'restore 固定调用 tar，project-stores 固定调用 git rev-parse，dream-companion 只通过固定 Seatbelt 启动，无 Shell 选项或继承环境'
 })
 
 check('secrets-shipped', () => {

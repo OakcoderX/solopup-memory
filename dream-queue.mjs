@@ -5,7 +5,7 @@ import { basename, dirname, join, resolve } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 
 const APPLICATION_ID = 0x53504452
-const SCHEMA_VERSION = 3
+const SCHEMA_VERSION = 4
 const MODES = ['ordinary', 'superagent']
 const ACTIVE = "'prepared', 'dispatching', 'running', 'uncertain'"
 const MAX_RUNS = 10_000
@@ -18,6 +18,18 @@ CREATE TABLE executor_request (
   requested_at INTEGER NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected')),
   reason TEXT
+) STRICT;
+`
+const REPLAY_SOURCE_SCHEMA = `
+CREATE TABLE replay_sources (
+  project_id TEXT NOT NULL,
+  target_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  seq INTEGER NOT NULL,
+  source_hash TEXT NOT NULL,
+  occurred_at INTEGER NOT NULL,
+  PRIMARY KEY (project_id,target_id)
 ) STRICT;
 `
 
@@ -87,6 +99,7 @@ CREATE TABLE reviewed (
   PRIMARY KEY (project_id, item_key)
 ) STRICT;
 ${EXECUTOR_REQUEST_SCHEMA}
+${REPLAY_SOURCE_SCHEMA}
 `
 
 const digest = (value) => createHash('sha256').update(JSON.stringify(value)).digest('hex')
@@ -186,9 +199,10 @@ function openDatabase(dataRoot, existingOnly) {
       const version = db.prepare('PRAGMA user_version').get().user_version
       if (appId === APPLICATION_ID && version === SCHEMA_VERSION) return
       if (existingOnly) fail('not-initialized')
-      if (appId === APPLICATION_ID && [1, 2].includes(version)) {
+      if (appId === APPLICATION_ID && [1, 2, 3].includes(version)) {
         if (version === 1) db.exec(EXECUTOR_REQUEST_SCHEMA)
-        db.exec('ALTER TABLE runs ADD COLUMN remote_binding TEXT')
+        if (version <= 2) db.exec('ALTER TABLE runs ADD COLUMN remote_binding TEXT')
+        db.exec(REPLAY_SOURCE_SCHEMA)
         db.exec(`PRAGMA user_version=${SCHEMA_VERSION};`)
         return
       }
@@ -390,6 +404,38 @@ export function openDreamQueue(dataRoot, {
       `).run(runId, projectId, inputHash, policyVersion, checkpoint ?? null, encoded, at, at)
       return getRun(runId)
     })
+  }
+
+  function recordReplaySource(projectId, targetId, pointer, occurredAt) {
+    if (![projectId, targetId, pointer?.hash].every(value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)) ||
+        typeof pointer?.sessionId !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,249}$/.test(pointer.sessionId)) fail('invalid-replay-source')
+    integer(pointer.createdAt, 0, 8_640_000_000_000_000, 'replay-created')
+    integer(occurredAt, pointer.createdAt, 8_640_000_000_000_000, 'replay-occurred')
+    integer(pointer.seq, 0, 4095, 'replay-seq')
+    return write(() => {
+      const result = db.prepare(`
+        INSERT INTO replay_sources VALUES (?,?,?,?,?,?,?)
+        ON CONFLICT(project_id,target_id) DO UPDATE SET
+          session_id=excluded.session_id, created_at=excluded.created_at, seq=excluded.seq,
+          source_hash=excluded.source_hash, occurred_at=excluded.occurred_at
+        WHERE excluded.occurred_at>replay_sources.occurred_at
+      `).run(projectId, targetId, pointer.sessionId, pointer.createdAt, pointer.seq, pointer.hash, occurredAt)
+      db.prepare(`
+        DELETE FROM replay_sources WHERE rowid IN (
+          SELECT rowid FROM replay_sources ORDER BY occurred_at DESC,rowid DESC LIMIT -1 OFFSET 512
+        )
+      `).run()
+      return result.changes === 1
+    })
+  }
+
+  function replaySources(projectId) {
+    identifier(projectId, 'project-id')
+    const rows = db.prepare(`
+      SELECT target_id AS targetId, session_id AS sessionId, created_at AS createdAt, seq, source_hash AS hash
+      FROM replay_sources WHERE project_id=? ORDER BY occurred_at DESC,target_id LIMIT 128
+    `).all(projectId)
+    return Object.fromEntries(rows.map(({targetId, ...pointer}) => [targetId, [pointer]]))
   }
 
   function claim({ owner, manual = false, projectId, projectIds, runId } = {}) {
@@ -599,7 +645,7 @@ export function openDreamQueue(dataRoot, {
     })
   }
 
-  /** A validated terminal receipt may unblock the queue. An uncertain run is never requeued. */
+  /** A validated terminal receipt or explicit operator discard may unblock the queue. Never requeue an uncertain run. */
   function resolveUncertain(runId, { status: outcome, usedTokens, reason } = {}) {
     identifier(runId, 'run-id')
     if (!['failed', 'invalidated', 'cancelled'].includes(outcome)) fail('invalid-reconciliation')
@@ -660,6 +706,8 @@ export function openDreamQueue(dataRoot, {
   return {
     status,
     enqueue,
+    recordReplaySource,
+    replaySources,
     claim,
     beginDispatch,
     markRunning,

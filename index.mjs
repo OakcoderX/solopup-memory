@@ -52,6 +52,7 @@ import { watchOptionalService } from './service-readiness.mjs'
 import { createDreamRuntime } from './dream-runtime.mjs'
 import { openDreamQueue } from './dream-queue.mjs'
 import { createOrdinaryDreamExecutor } from './dream-ordinary.mjs'
+import { observeDreamCorrection, readDreamTranscripts } from './dream-transcripts.mjs'
 import { createSuperAgentDreamExecutor, SUPER_AGENT_DREAM_SERVICE, SUPER_AGENT_DREAM_ISOLATION_SERVICE } from './dream-superagent.mjs'
 export { Config } from './plugin-config.mjs'
 
@@ -1279,12 +1280,18 @@ function effectiveSourceRecords(dir,scope,indexText,includeUntyped=false){
  return current.filter(record=>!record.sources.some(source=>policy.revoked.includes(source))&&lines.has(record.indexLine??indexLine(record.type,record.summary,record.expires,record.detail!==undefined)))
 }
 
-export function readDreamProject(root, cwd, consume) {
+function resolveDreamProject(root, cwd) {
   const physical = realpathSync(cwd)
   if (!statSync(physical).isDirectory() || !isManagedStore(root)) throw Error('dream-project-unavailable')
   const dir = projectStoreDir(root, findProjectRoot(physical))
   const projectId = /^v2-([a-f0-9]{64})$/.exec(basename(dir))?.[1]
-  if (!projectId || !existsSync(dir)) return consume(undefined)
+  if (projectId && existsSync(dir)) return { dir, projectId }
+}
+
+export function readDreamProject(root, cwd, consume) {
+  const location = resolveDreamProject(root, cwd)
+  if (!location) return consume(undefined)
+  const { dir, projectId } = location
   return managedRead(dir, () => {
     assertPublicationClear(dir)
     const records = effectiveSourceRecords(dir, 'project', undefined, true)
@@ -1306,7 +1313,8 @@ export function readDreamProject(root, cwd, consume) {
     const ordered = [...records].sort((a, b) =>
       Number(Boolean(relatedRecordIdsByTarget[b.id])) - Number(Boolean(relatedRecordIdsByTarget[a.id])) ||
       String(b.createdAt ?? '').localeCompare(String(a.createdAt ?? '')) || a.id.localeCompare(b.id))
-    return consume({ projectId, storeRevision: storeRevisionLocal(dir), records: ordered, relatedRecordIdsByTarget })
+    return consume({ projectId, storeRevision: storeRevisionLocal(dir), records: ordered,
+      withdrawnSourceIds: withdrawalPolicy(dir).revoked, relatedRecordIdsByTarget })
   })
 }
 
@@ -3026,6 +3034,11 @@ export function apply(ctx, config = {}) {
     )
     const autoCapture = startup.state==='managed'?setupAutoCapture(ctx, config):{enabled:false,reason:startup.code}
     dream = startup.state === 'managed' ? setupDreamReview(ctx, root, config.dream) : { enabled: false, reason: startup.code }
+    const tools = canRegisterTools ? ['memory_write', 'memory_forget', 'memory_links', 'memory_search', 'memory_prune', 'memory_status'] : []
+    if (canRegisterTools && dream.enabled) {
+      ctx.tools.register(runtimeTool(defineDreamReportTool(ctx, sourceInputs, dream), startup))
+      tools.push('memory_dream_report')
+    }
 
   // 加载痕迹**无条件**写：它是 A2 的唯一可靠依据，不能依赖诊断开关。
     // 之前它藏在 writeDiag 里（需要 .diagnostics 开关），导致 A2 永远无法通过——
@@ -3043,7 +3056,7 @@ export function apply(ctx, config = {}) {
             order: CONTEXT_ORDER,
             memoryHistory: { available: memoryHistory.available },
             sourceControl: runtimeSourceControl(startup),
-            tools: canRegisterTools ? ['memory_write', 'memory_forget', 'memory_links', 'memory_search', 'memory_prune', 'memory_status'] : [],
+            tools,
             degraded: startup.state==='managed'?health.degrade:[...health.degrade,'sourceControl: '+startup.code],
             autoCapture,
             dream,
@@ -3061,17 +3074,56 @@ export function apply(ctx, config = {}) {
   }
 }
 
+function defineDreamReportTool(ctx, sourceInputs, dream) {
+  return {
+    name: 'memory_dream_report',
+    description: '按用户请求查看当前项目的做梦复核报告。原话仅作证据，报告建议需要用户核对。',
+    parameters: { type: 'object', additionalProperties: false, properties: {
+      runId: { type: 'string', description: '复核报告 ID，省略时打开当前项目的最新报告。' },
+    } },
+    output: { schema: { type: 'object', additionalProperties: false, required: ['available', 'report'], properties: {
+      available: { type: 'boolean' }, report: { type: 'string' },
+    } }, render: (_args, value) => [{ type: 'text', text: value.report }] },
+    async execute({ runId }, exec) {
+      const session = exec?.agent?.session
+      if (!captureSessionEligible(session)) throw Error('dream-report-session-unavailable')
+      const cwd = ctx.workingDirectory?.get?.(session) ?? session.header.cwd
+      const result = await dream.openReport(cwd, runId, sourceInputs.signalFor(exec))
+      return { available: result?.available === true, report: JSON.stringify(result ?? { reason: 'dream-report-unavailable' }) }
+    },
+  }
+}
+
 function setupDreamReview(ctx, root, options) {
   if (!options.enabled) return { enabled: false }
   if (typeof ctx.on !== 'function' || typeof ctx.effect !== 'function') return { enabled: false, reason: 'dream-host-lifecycle-unavailable' }
   let runtime, queue, controlWatch
   try {
+    const resolveProjectId = cwd => resolveDreamProject(root, cwd)?.projectId
+    const trackCorrection = (session, event) => {
+      const observed = observeDreamCorrection(session, event)
+      if (!observed) return
+      try {
+        const cwd = ctx.workingDirectory?.get?.(session) ?? session.header.cwd
+        const projectId = resolveProjectId(cwd)
+        if (!projectId || !options.projects.some(path => {
+          try { return resolveProjectId(path) === projectId } catch { return false }
+        })) return
+        readDreamProject(root, cwd, project => {
+          if (project?.projectId !== projectId) return
+          const targets = project.records.filter(record => record.summary.trim() === observed.targetSummary)
+          if (targets.length === 1 && !privateMemory(targets[0])) {
+            queue.recordReplaySource(projectId, targets[0].id, observed.pointer, observed.occurredAt)
+          }
+        })
+      } catch { /* Foreground turns must not depend on the optional review queue. */ }
+    }
     const activity = (session, event) => {
       if (!runtime || !captureSessionEligible(session)) return
       switch (event?.type) {
         case 'turn/start': runtime.scheduler.enter(session.id); break
         case 'turn/end': runtime.scheduler.leave(session.id); break
-        case 'user/message': runtime.scheduler.activity(); break
+        case 'user/message': runtime.scheduler.activity(); trackCorrection(session, event); break
       }
     }
     ctx.on('session/event', activity)
@@ -3080,6 +3132,9 @@ function setupDreamReview(ctx, root, options) {
     const ordinaryLlm = watchOptionalService(ctx, 'llm', changed)
     const superAgent = watchOptionalService(ctx, SUPER_AGENT_DREAM_SERVICE, changed)
     const isolation = watchOptionalService(ctx, SUPER_AGENT_DREAM_ISOLATION_SERVICE, changed)
+    const sessionQuery = watchOptionalService(ctx, 'sessionQuery', changed)
+    const sessions = watchOptionalService(ctx, 'sessions', changed)
+    const sessionPersistence = watchOptionalService(ctx, 'sessionPersistence', changed)
     const executors = {
       ordinary: createOrdinaryDreamExecutor({ getLlm: () => ordinaryLlm.refresh() }),
       superagent: createSuperAgentDreamExecutor({
@@ -3092,12 +3147,32 @@ function setupDreamReview(ctx, root, options) {
       maxDailyTokens: options.maxDailyTokens,
       leaseMs: options.timeoutMs + 10_000,
     })
-    runtime = createDreamRuntime({ options, queue, readProject: (cwd, consume) => readDreamProject(root, cwd, consume), executors })
-    controlWatch = watch(root + '.dream', { persistent: false }, () => { void runtime?.checkControls() })
+    const readReplay = (snapshot, signal) => {
+      const query = sessionQuery.refresh(), registry = sessions.refresh(), persistence = sessionPersistence.refresh()
+      const canPreflight = typeof registry.value?.get === 'function' && typeof persistence.value?.stat === 'function'
+      return readDreamTranscripts({
+        query: canPreflight ? query.value : undefined, projectId: snapshot.projectId,
+        pointersByTarget: snapshot.pointers, withdrawnSourceIds: snapshot.withdrawnSourceIds, resolveProjectId,
+        signal: AbortSignal.any([signal, query.signal, registry.signal, persistence.signal]),
+        async preflightSession(id, { signal }) {
+          const live = registry.value.get(id)
+          if (live) return { source: 'live', header: live.header, cursor: live.seq - 1 }
+          const saved = await persistence.value.stat(id, { signal })
+          return saved && { source: 'prepared', header: saved.header, sizeBytes: saved.sizeBytes, revision: saved.revision }
+        },
+      })
+    }
+    runtime = createDreamRuntime({ options, queue, readProject: (cwd, consume) => readDreamProject(root, cwd, consume), readReplay, executors })
+    controlWatch = watch(root + '.dream', { persistent: false }, () => {
+      void runtime?.checkControls()
+      try { runtime?.resumeAfterDiscard() } catch { /* The next idle turn rechecks the queue. */ }
+    })
     controlWatch.on('error', () => controlWatch.close())
     void runtime.checkControls()
     ctx.effect(() => () => { controlWatch.close(); runtime.dispose(); runtime = undefined })
-    return { enabled: true, mode: queue.status().mode, diagnostics() {
+    return { enabled: true, mode: queue.status().mode,
+      openReport: (cwd, runId, signal) => runtime?.openReport(cwd, runId, signal),
+      diagnostics() {
       try {
         const state = runtime.status()
         return {

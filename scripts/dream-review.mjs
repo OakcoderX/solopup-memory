@@ -20,12 +20,14 @@ function run(args) {
       'node scripts/dream-review.mjs preview /absolute/project',
       'node scripts/dream-review.mjs reports',
       'node scripts/dream-review.mjs show RUN_ID /absolute/project',
+      'node scripts/dream-review.mjs abandon RUN_ID',
     ] }
   }
   const [command, parameter, project, ...rest] = args
   if (rest.length || !(command === 'status' && args.length === 1 || command === 'reports' && args.length === 1 ||
     command === 'mode' && args.length === 2 && ['ordinary', 'superagent'].includes(parameter) ||
     command === 'preview' && args.length === 2 ||
+    command === 'abandon' && args.length === 2 && /^[a-f0-9]{64}$/.test(parameter) ||
     command === 'show' && args.length === 3 && /^[a-f0-9]{64}$/.test(parameter))) throw Error('dream-invalid-command')
   const root = join(process.env.DSH_HOME ?? join(homedir(), '.dsh'), 'memory')
   if (command === 'preview') return readDreamProject(root, parameter, current => {
@@ -46,6 +48,11 @@ function run(args) {
     }
     if (command === 'mode') return queue.requestExecutor(parameter)
     if (command === 'reports') return queue.listReports()
+    if (command === 'abandon') {
+      const run = queue.resolveUncertain(parameter, { status: 'invalidated', reason: 'operator-discarded-uncertain' })
+      if (!run) throw Error('dream-run-not-uncertain')
+      return { runId: run.runId, status: run.status, reason: run.reason, providerCompletionVerified: false }
+    }
     return reportView(queue, root, parameter, project)
   } finally { queue.close() }
 }

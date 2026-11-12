@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.24.0-beta.1 — idle project memory review
+
+- Opt-in Dream Review waits for DSH to be idle, checks one selected project at a time, and creates a source-linked report for user review.
+- A later explicit correction can reopen the exact DSH message. Opening the report checks the references again and hides recommendations whose evidence can no longer be verified.
+- Ordinary DSH and the experimental macOS Super Agent companion share a durable queue, budget and reports. Explicit switches wait for the active run to finish.
+- Formal memories continue to change through the existing write and confirmation flow. See [Dream Review setup](docs/dream-review.md).
+
 ## 0.23.0-beta.2 — conflict-aware memory guidance
 
 - Guide agents to compare sources, scope and time when task history and long-term memory disagree, follow explicit current user corrections, and ask when evidence is insufficient.

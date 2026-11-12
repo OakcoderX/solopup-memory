@@ -18,13 +18,14 @@ export function createOrdinaryDreamExecutor({ getLlm }) {
       const ready = !state?.signal?.aborted && typeof state?.value?.prepareCall === 'function'
       return ready ? { ready } : { ready, reason: 'dream-model-service-unavailable' }
     },
-    async execute(input, { signal, runId, route, maxTokens, beforeDispatch }) {
+    async execute(input, { signal, runId, route, maxTokens, beforeDispatch, verifyBeforeDispatch }) {
       const state = getLlm()
       if (typeof state?.value?.prepareCall !== 'function') throw Error('dream-model-service-unavailable')
       const linkedSignal = state.signal ? AbortSignal.any([signal, state.signal]) : signal
       linkedSignal.throwIfAborted()
       const [system, ...messages] = dreamReviewMessages(input)
       const call = await state.value.prepareCall({ ...route, maxTokens, reasoningEffort: 'off' }, linkedSignal, selectCaptureControls)
+      if (verifyBeforeDispatch) await verifyBeforeDispatch()
       linkedSignal.throwIfAborted()
       beforeDispatch()
       linkedSignal.throwIfAborted()

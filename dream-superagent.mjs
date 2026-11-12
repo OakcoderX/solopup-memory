@@ -157,7 +157,7 @@ export function createSuperAgentDreamExecutor({ getBridge, getIsolation, verifyI
       catch (error) { return { ready: false, reason: error.code ?? 'dream-superagent-bridge-unavailable' } }
     },
 
-    async execute(input, { signal, runId, attempt, route, maxTokens, maxTotalTokens, onReceipt, beforeDispatch } = {}) {
+    async execute(input, { signal, runId, attempt, route, maxTokens, maxTotalTokens, onReceipt, beforeDispatch, verifyBeforeDispatch, beforeModel } = {}) {
       if (!isId(runId) || !Number.isSafeInteger(attempt) || attempt < 1 || !isRouteId(route?.provider) || !isRouteId(route.model) ||
           !Number.isSafeInteger(maxTokens) || maxTokens < 1 || !Number.isSafeInteger(maxTotalTokens) ||
           maxTotalTokens < maxTokens || maxTotalTokens > 12_000 || typeof beforeDispatch !== 'function') {
@@ -166,7 +166,7 @@ export function createSuperAgentDreamExecutor({ getBridge, getIsolation, verifyI
       let messages
       try { messages = dreamReviewMessages(input) } catch { throw failure('dream-superagent-invalid-evidence') }
       const request = freezeTree({ runId, attempt, projectId: input.projectId,
-        inputDigest: digest(input), route: { provider: route.provider, model: route.model },
+        inputDigest: digest(input), modelInputDigest: digest(messages), route: { provider: route.provider, model: route.model },
         maxTokens, maxTotalTokens })
       const { live, lifetime, bridge, proof } = await inspect(signal, request)
       const binding = freezeTree({ runId, attempt, projectId: request.projectId, inputDigest: request.inputDigest,
@@ -174,6 +174,7 @@ export function createSuperAgentDreamExecutor({ getBridge, getIsolation, verifyI
       const envelope = freezeTree({ protocol: SUPER_AGENT_DREAM_PROTOCOL, proof, binding, trigger: localTrigger(binding, now()),
         messages, route: request.route, maxTokens, maxTotalTokens, maxRunMs: MAX_RUN_MS })
       const linked = combinedSignal([signal, ...lifetime], MAX_RUN_MS)
+      if (verifyBeforeDispatch) await withSignal(verifyBeforeDispatch, linked)
       if (linked.aborted || !live()) throw failure('dream-superagent-before-dispatch')
       // No await may occur between this authorization check and handing over the evidence.
       const authorization = beforeDispatch()
@@ -203,8 +204,20 @@ export function createSuperAgentDreamExecutor({ getBridge, getIsolation, verifyI
         }
       }
       let result
-      try { result = await withSignal(() => bridge.dispatch(envelope, { signal: linked, onReceipt: acceptReceipt }), linked) }
-      catch { throw receiptError ?? failure('dream-superagent-dispatch-uncertain', false) }
+      try {
+        result = await withSignal(() => bridge.dispatch(envelope, {
+          signal: linked, onReceipt: acceptReceipt,
+          async beforeModel() {
+            if (linked.aborted || !live()) throw failure('dream-superagent-before-model')
+            await beforeModel?.()
+            if (linked.aborted || !live()) throw failure('dream-superagent-before-model')
+          },
+        }), linked)
+      } catch (error) {
+        if (receiptError) throw receiptError
+        if (error?.notDispatched === true && !linked.aborted && live()) throw failure('dream-superagent-model-unsent')
+        throw failure('dream-superagent-dispatch-uncertain', false)
+      }
       if (receiptError) throw receiptError
       const final = readReceipt(result?.receipt, binding, true)
       if (linked.aborted || !live() || !final || (receipt && final.ticketId !== receipt.ticketId)) {

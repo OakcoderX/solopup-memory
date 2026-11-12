@@ -11,8 +11,11 @@ function itemKey(project, record, byId) {
   const related = project.relatedRecordIdsByTarget?.[record.id] ?? []
   const additional = project.additionalEvidenceByTarget?.[record.id] ?? []
   return digest([record.id, record.summary, record.meaning, record.expires, record.evidence,
-    related.map(id => byId.get(id) ?? id), additional.map(source => [source.hash, source.occurredAt])])
+    related.map(id => byId.get(id) ?? id), project.replayPointers?.[record.id] ?? additional.map(source => [source.hash, source.occurredAt])])
 }
+
+const selectedPointers = (project, ids) => Object.fromEntries(ids.flatMap(id =>
+  project.replayPointers?.[id]?.length ? [[id, project.replayPointers[id]]] : []))
 
 /** Show quotes only while this row still resolves to the same authorized evidence. */
 export function renderDreamReport(project, run, report, now = Date.now()) {
@@ -38,6 +41,9 @@ export function renderDreamReport(project, run, report, now = Date.now()) {
     const item = byId.get(row.id)
     if (!item || (row.evidenceDigest ? digest(item) !== row.evidenceDigest : !sameSnapshot) ||
         !row.sourceIds.every(id => item.sources.some(source => source.id === id))) {
+      if (item && row.historical && !project.additionalEvidenceByTarget) {
+        return { id: row.id, state: 'source-recheck-required' }
+      }
       return { id: row.id, state: 'evidence-changed' }
     }
     const sources = item.sources.filter(source => row.sourceIds.includes(source.id)).map(source => ({ ...source, ...origins.get(source.id) }))
@@ -67,17 +73,19 @@ function deadline(signal, timeoutMs) {
 }
 
 /** A backend-independent pipeline. Only trusted host code may provide readProject and executors. */
-export function createDreamRuntime({ options, queue, readProject, executors, now = Date.now, timers = {} }) {
+export function createDreamRuntime({ options, queue, readProject, readReplay, executors, now = Date.now, timers = {} }) {
   const owner = randomUUID()
   const route = { provider: options.provider, model: options.model }
   const dailyTokens = options.maxDailyTokens ?? 12_000
   let last = 'waiting-for-idle', disposed = false, inFlight, checkingControls
   const controlLifetime = new AbortController()
 
-  function select(project, queued) {
+  function select(project, queued, targetOverride) {
     const byId = new Map(project.records.map(record => [record.id, record]))
     const keys = new Map(project.records.map(record => [record.id, itemKey(project, record, byId)]))
-    const targetIds = queued ? queued.metadata.itemIds : [...keys.keys()].filter(id => !queue.wasReviewed(project.projectId, keys.get(id)))
+    const preferred = [...new Set([...Object.keys(project.replayPointers ?? {}), ...keys.keys()])]
+    const targetIds = queued?.metadata.itemIds ?? targetOverride ?? preferred.filter(id =>
+      keys.has(id) && !queue.wasReviewed(project.projectId, keys.get(id)))
     const input = buildDreamEvidence({ ...project, targetIds, now: now() })
     // Fit new batches before they receive an identity. A queued batch is always
     // reconstructed byte-for-byte, including when the executor changes.
@@ -93,6 +101,13 @@ export function createDreamRuntime({ options, queue, readProject, executors, now
     }
   }
 
+  function liveProject(path, consume) {
+    if (!path) throw Error('dream-project-no-longer-authorized')
+    return readProject(path, project => consume(project && {
+      ...project, replayPointers: readReplay ? queue.replaySources(project.projectId) : undefined,
+    }))
+  }
+
   function projects() {
     const selected = new Map()
     for (const path of options.projects) {
@@ -105,14 +120,37 @@ export function createDreamRuntime({ options, queue, readProject, executors, now
     return selected
   }
 
-  function current(path, claim, action) {
-    if (!path) throw Error('dream-project-no-longer-authorized')
-    return readProject(path, project => {
-      if (!project || project.projectId !== claim.projectId) throw Error('dream-project-changed')
-      const selected = select(project, claim)
-      if (selected?.inputHash !== claim.inputHash) throw Error('dream-evidence-changed')
+  function current(path, claim, action, proof) {
+    return liveProject(path, project => {
+      if (!project || (claim && project.projectId !== claim.projectId)) throw Error('dream-project-changed')
+      if (proof && (project.projectId !== proof.projectId || project.storeRevision !== proof.storeRevision ||
+          digest(selectedPointers(project, proof.targetIds)) !== digest(proof.pointers))) throw Error('dream-evidence-changed')
+      const checked = proof?.additionalEvidenceByTarget ? { ...project, additionalEvidenceByTarget: proof.additionalEvidenceByTarget } : project
+      const selected = select(checked, claim, proof?.targetIds)
+      if (claim && selected?.inputHash !== claim.inputHash) throw Error('dream-evidence-changed')
       return action(selected)
     })
+  }
+
+  async function prepare(path, claim, signal) {
+    const pending = liveProject(path, project => {
+      if (!project || (claim && project.projectId !== claim.projectId)) return
+      const initial = select(project, claim)
+      if (!initial) return
+      const targetIds = initial.metadata.itemIds
+      return { projectId: project.projectId, storeRevision: project.storeRevision,
+        targetIds, pointers: selectedPointers(project, targetIds), withdrawnSourceIds: project.withdrawnSourceIds ?? [] }
+    })
+    if (!pending) {
+      if (claim) throw Error('dream-evidence-changed')
+      return
+    }
+    if (Object.keys(pending.pointers).length) {
+      const replay = await readReplay(pending, signal)
+      signal.throwIfAborted()
+      pending.additionalEvidenceByTarget = replay.additionalEvidenceByTarget
+    }
+    return current(path, claim, selected => selected && { ...selected, proof: pending }, pending)
   }
 
   async function reconcileRemote(active, method, signal) {
@@ -138,7 +176,9 @@ export function createDreamRuntime({ options, queue, readProject, executors, now
     let dispatched = false, returned = false, completed = false
     let usage, reservedTokens
     try {
-      const { input } = current(path, claim, selected => selected)
+      const { input, proof } = await prepare(path, claim, limit.signal)
+      const hasReplay = Object.keys(proof.pointers).length > 0
+      let verified = proof, historyChecked = !hasReplay
       const ordinaryReserve = ordinaryReservation(input)
       reservedTokens = claim.mode === 'superagent' ? Math.max(ordinaryReserve, SUPER_AGENT_RESERVE) : ordinaryReserve
       const outcome = await Promise.race([limit.expired, Promise.resolve().then(() => {
@@ -150,13 +190,29 @@ export function createDreamRuntime({ options, queue, readProject, executors, now
             if (limit.signal.aborted || !dispatched || !receipt?.ticketId ||
               !queue.markRunning(claim, { remoteId: receipt.ticketId, binding: receipt })) throw Error('dream-receipt-stale')
           },
+          ...(hasReplay ? { verifyBeforeDispatch: async () => {
+            const refreshed = await prepare(path, claim, limit.signal)
+            verified = refreshed.proof
+            historyChecked = true
+          } } : {}),
+          beforeModel: async () => {
+            if (hasReplay) verified = (await prepare(path, claim, limit.signal)).proof
+            limit.signal.throwIfAborted()
+            current(path, claim, () => {
+              const active = queue.getRun(claim.runId)
+              if (!active || active.attempt !== claim.attempt || active.epoch !== claim.epoch ||
+                  active.mode !== claim.mode || active.owner !== claim.owner || active.leaseUntil <= now() ||
+                  !['dispatching', 'running'].includes(active.status)) throw Error('dream-dispatch-not-admitted')
+            }, verified)
+          },
           beforeDispatch: () => {
             limit.signal.throwIfAborted()
+            if (!historyChecked) throw Error('dream-history-recheck-required')
             if (dispatched) throw Error('dream-duplicate-dispatch')
             current(path, claim, () => {
               if (!queue.beginDispatch(claim, { reservedTokens })) throw Error('dream-dispatch-not-admitted')
               dispatched = true
-            })
+            }, verified)
           },
         })
       })])
@@ -169,14 +225,16 @@ export function createDreamRuntime({ options, queue, readProject, executors, now
         schema: 1, runId: claim.runId, projectId: claim.projectId, mode: claim.mode,
         inputHash: claim.inputHash, storeRevision: input.storeRevision,
         createdAt: new Date(now()).toISOString(), route,
-        items: result.items.map(row => ({ ...row, evidenceDigest: digest(input.items.find(item => item.id === row.id)) })),
+        items: result.items.map(row => ({ ...row, evidenceDigest: digest(input.items.find(item => item.id === row.id)),
+          ...(proof.pointers[row.id] ? { historical: true } : {}) })),
         usage: usage ?? null,
       }
+      if (hasReplay) verified = (await prepare(path, claim, limit.signal)).proof
       const finished = current(path, claim, selected => {
         return queue.finish(claim, {
           status: 'completed', report, reviewedItemKeys: selected.metadata.itemKeys, usedTokens: usage?.totalTokens,
         })
-      })
+      }, verified)
       completed = finished?.status === 'completed'
       last = completed ? 'report-ready' : finished?.status === 'failed' ? 'review-failed' : 'lease-changed'
     } catch (error) {
@@ -186,9 +244,11 @@ export function createDreamRuntime({ options, queue, readProject, executors, now
         last = limit.signal.aborted ? 'deferred' : 'dispatch-not-admitted'
         if (!limit.signal.aborted) return { retryAt: queue.nextAutomaticAt({ reservedTokens, projectIds }) ?? null }
       } else {
-        const status = !dispatched || returned ? 'invalidated' : 'uncertain'
-        const finished = queue.finish(claim, { status, usedTokens: usage?.totalTokens, confirmedUnsent: !dispatched })
-        last = status === 'uncertain' ? 'dispatch-uncertain' : 'review-invalidated'
+        const confirmedUnsent = !dispatched || error?.notDispatched === true
+        const status = dispatched && confirmedUnsent ? 'retryable' : !dispatched || returned ? 'invalidated' : 'uncertain'
+        const finished = queue.finish(claim, { status, usedTokens: usage?.totalTokens, confirmedUnsent,
+          ...(dispatched && confirmedUnsent ? { reason: 'model-unsent' } : {}) })
+        last = status === 'uncertain' ? 'dispatch-uncertain' : status === 'retryable' ? 'model-unsent' : 'review-invalidated'
         if (!disposed && status === 'uncertain' && limit.signal.aborted &&
           await reconcileRemote(finished, 'cancel', controlLifetime.signal)) last = 'remote-cancel-confirmed'
       }
@@ -218,12 +278,14 @@ export function createDreamRuntime({ options, queue, readProject, executors, now
         limit.signal.throwIfAborted()
         // Preserve a queued batch across reloads and mode changes before forming another.
         if (queue.listQueued({ projectId, limit: 1 }).length) continue
-        readProject(path, project => {
-          if (project?.projectId !== projectId) return
-          const selected = select(project)
-          if (!selected) return
-          queue.enqueue({ projectId, inputHash: selected.inputHash, policyVersion: REVIEW_POLICY, metadata: selected.metadata })
-        })
+        const selected = await prepare(path, undefined, limit.signal)
+        if (selected?.input.projectId !== projectId) continue
+        limit.signal.throwIfAborted()
+        current(path, undefined, current => {
+          if (current?.inputHash === selected.inputHash) {
+            queue.enqueue({ projectId, inputHash: selected.inputHash, policyVersion: REVIEW_POLICY, metadata: selected.metadata })
+          }
+        }, selected.proof)
       }
       const projectIds = [...locations.keys()]
       const claim = queue.claim({ owner, projectIds })
@@ -272,9 +334,58 @@ export function createDreamRuntime({ options, queue, readProject, executors, now
     return checkingControls
   }
 
+  async function openReport(path, runId, signal = controlLifetime.signal) {
+    const unavailable = reason => ({ available: false, reason })
+    if (disposed || !path || (runId !== undefined && (typeof runId !== 'string' || !/^[a-f0-9]{64}$/.test(runId)))) {
+      return unavailable('dream-report-unavailable')
+    }
+    const linked = AbortSignal.any([signal, controlLifetime.signal])
+    try {
+      linked.throwIfAborted()
+      const authorized = projects()
+      const snapshot = liveProject(path, project => {
+        if (!project || !authorized.has(project.projectId)) return
+        const id = runId ?? queue.listReports({ projectId: project.projectId, limit: 1 })[0]?.runId
+        if (!id) return
+        const run = queue.getRun(id)
+        const report = queue.report(id)
+        if (run?.projectId !== project.projectId || !report) return
+        const ids = report.items.filter(row => row.historical).map(row => row.id)
+        return { projectId: project.projectId, storeRevision: project.storeRevision,
+          ids, pointers: selectedPointers(project, ids), withdrawnSourceIds: project.withdrawnSourceIds ?? [], run, report }
+      })
+      if (!snapshot) return unavailable('dream-report-missing')
+      let additionalEvidenceByTarget
+      if (snapshot.ids.length && readReplay && Object.keys(snapshot.pointers).length) {
+        const limit = deadline(linked, Math.min(5000, options.timeoutMs))
+        try {
+          const replay = await Promise.race([limit.expired, Promise.resolve().then(() => readReplay(snapshot, limit.signal))])
+          additionalEvidenceByTarget = replay.additionalEvidenceByTarget
+        } finally { limit.dispose() }
+      }
+      linked.throwIfAborted()
+      return liveProject(path, project => {
+        if (!project || project.projectId !== snapshot.projectId || !queue.report(snapshot.run.runId)) {
+          return unavailable('dream-report-unavailable')
+        }
+        const same = project.storeRevision === snapshot.storeRevision &&
+          digest(selectedPointers(project, snapshot.ids)) === digest(snapshot.pointers)
+        const checked = same && additionalEvidenceByTarget ? { ...project, additionalEvidenceByTarget } : project
+        return renderDreamReport(checked, snapshot.run, snapshot.report, now())
+      })
+    } catch { return unavailable('dream-report-unavailable') }
+  }
+
   return {
     scheduler,
     checkControls,
+    openReport,
+    resumeAfterDiscard() {
+      if (!disposed && last === 'dispatch-uncertain' && !queue.status().active) {
+        last = 'waiting-for-idle'
+        scheduler.wake()
+      }
+    },
     status() { return { last, idle: scheduler.status(), ...queue.status() } },
     dispose() {
       disposed = true

@@ -39,14 +39,14 @@ function clock() {
   }
 }
 
-function fixture(t, executors, options = {}) {
+function fixture(t, executors, options = {}, readReplay) {
   const home = realpathSync(mkdtempSync(join(tmpdir(), 'solopup-dream-runtime-')))
   const timer = clock()
   const queue = openDreamQueue(join(home, 'memory'), { now: timer.now, maxDailyTokens: options.maxDailyTokens })
   const project = { projectId: digest('project-a'), storeRevision: digest('initial-revision'), records: [record] }
   const runtime = createDreamRuntime({
     options: { projects: ['project-a'], idleMs: 1000, timeoutMs: 5000, provider: 'fixture', model: 'fixture', ...options },
-    queue, readProject: (_path, consume) => consume(project), executors,
+    queue, readProject: (path, consume) => consume(path === 'project-a' ? project : undefined), readReplay, executors,
     now: timer.now, timers: { setTimer: timer.setTimer, clearTimer: timer.clearTimer },
   })
   t.after(async () => { runtime.dispose(); await flush(); rmSync(home, { recursive: true, force: true }) })
@@ -96,6 +96,87 @@ test('last foreground turn ends and ordinary DSH wakes on time without another e
   assert.equal(renderDreamReport({ ...project, projectId: digest('other-project') }, run, report).available, false)
   await timer.advance(1000)
   assert.equal(outbound.length, 1)
+})
+
+test('historical evidence is re-read before dispatch and cannot publish after it is replaced', async t => {
+  const projectId = digest('project-a'), changedQuote = '更正「交付说明默认使用中文。」：改用英文。'
+  const pointer = { sessionId: 'session-later', createdAt: 100, seq: 4, hash: digest(changedQuote) }
+  const source = { ...pointer, projectId, role: 'user', sourceComplete: true, messageId: 'session-later:4',
+    text: changedQuote, quote: changedQuote, occurredAt: new Date(1000).toISOString() }
+  let reads = 0, invoked = 0
+  const ordinary = {
+    ready: () => ({ ready: true }),
+    async execute(input, { verifyBeforeDispatch, beforeDispatch }) {
+      assert.equal(input.items[0].sources[1].kind, 'additional-user-message')
+      await verifyBeforeDispatch()
+      beforeDispatch()
+      invoked++
+      return { output: { items: [{ id: 'm1', verdict: 'propose-correction', sourceIds: ['s1', 's2'],
+        reason: '第二段原话明确更正了默认语言。', proposedSummary: '交付说明默认使用英文。' }] } }
+    },
+  }
+  const { timer, queue } = fixture(t, { ordinary }, {}, async ({ pointers }) => {
+    assert.deepEqual(pointers, { [record.id]: [pointer] })
+    reads++
+    return { additionalEvidenceByTarget: { [record.id]: reads < 4 ? [source] : [{}] } }
+  })
+  queue.recordReplaySource(projectId, record.id, pointer, 1000)
+  await timer.advance(1000)
+  assert.equal(reads, 4)
+  assert.equal(invoked, 1)
+  assert.equal(queue.listReports().length, 0)
+  assert.equal(queue.status().counts.invalidated, 1)
+})
+
+test('open a completed historical report only with the current authorized evidence', async t => {
+  const projectId = digest('project-a'), changedQuote = '更正「交付说明默认使用中文。」：改用英文。'
+  const pointer = { sessionId: 'later-report-session', createdAt: 100, seq: 4, hash: digest(changedQuote) }
+  const source = { ...pointer, projectId, role: 'user', sourceComplete: true, messageId: 'later-report-session:4',
+    text: changedQuote, quote: changedQuote, occurredAt: new Date(1000).toISOString() }
+  const correction = { items: [{ id: 'm1', verdict: 'propose-correction', sourceIds: ['s1', 's2'],
+    reason: '第二段原话明确更正了默认语言。', proposedSummary: '交付说明默认使用英文。' }] }
+  const ordinary = { ready: () => ({ ready: true }), async execute(_input, options) {
+    await options.verifyBeforeDispatch()
+    options.beforeDispatch()
+    return { output: correction }
+  } }
+  let available = true
+  const { timer, queue, runtime } = fixture(t, { ordinary }, {}, async () => ({
+    additionalEvidenceByTarget: available ? { [record.id]: [source] } : {},
+  }))
+  queue.recordReplaySource(projectId, record.id, pointer, 1000)
+  await timer.advance(1000)
+  const [{ runId }] = queue.listReports()
+  const shown = await runtime.openReport('project-a')
+  assert.equal(shown.runId, runId)
+  assert.equal(shown.items[0].sources[1].quote, changedQuote)
+  assert.equal((await runtime.openReport('another-project', runId)).available, false)
+  available = false
+  const masked = await runtime.openReport('project-a', runId)
+  assert.deepEqual(masked.items, [{ id: record.id, state: 'evidence-changed' }])
+  assert.doesNotMatch(JSON.stringify(masked), /改用英文|默认使用英文/)
+})
+
+test('a Super Agent rechecks withdrawal after claiming but before any model request', async t => {
+  let sent = 0, project
+  const superagent = { ready: () => ({ ready: true }), async execute(_input, options) {
+    options.beforeDispatch()
+    project.records = []
+    project.storeRevision = digest('withdrawn-before-model')
+    try { await options.beforeModel() }
+    catch { throw Object.assign(Error('bridge-proved-model-unsent'), { notDispatched: true }) }
+    sent++
+    return { output: approved }
+  } }
+  const setup = fixture(t, { superagent })
+  project = setup.project
+  const { timer, queue } = setup
+  queue.requestMode('superagent')
+  await timer.advance(1000)
+  assert.equal(sent, 0)
+  assert.equal(queue.listReports().length, 0)
+  assert.equal(queue.status().counts.uncertain, undefined)
+  assert.equal(queue.status().budget.tokens, 0)
 })
 
 test('installation alone leaves ordinary selected; explicit switch drains then passes the next batch', async t => {
