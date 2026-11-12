@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto'
 import { mkdtempSync, realpathSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createDreamRuntime } from '../dream-runtime.mjs'
+import { createDreamRuntime, renderDreamReport } from '../dream-runtime.mjs'
 import { createOrdinaryDreamExecutor } from '../dream-ordinary.mjs'
 import { openDreamQueue } from '../dream-queue.mjs'
 import { normalizePluginConfig } from '../plugin-config.mjs'
@@ -85,6 +85,15 @@ test('last foreground turn ends and ordinary DSH wakes on time without another e
   assert.deepEqual(outbound[0].tools, [])
   assert.doesNotMatch(JSON.stringify(outbound[0].messages), /review-test-session|review-test-message/)
   assert.equal(queue.status().counts.completed, 1)
+  const [{ runId }] = queue.listReports()
+  const project = { projectId: digest('project-a'), storeRevision: digest('unrelated-change'), records: [record] }
+  const report = queue.report(runId), run = queue.getRun(runId)
+  assert.equal(renderDreamReport(project, run, report).items[0].sources[0].quote, quote)
+  assert.equal(renderDreamReport(project, run, report).items[0].sources[0].messageId, messageId)
+  assert.deepEqual(renderDreamReport({ ...project, records: [] }, run, report).items, [
+    { id: record.id, state: 'evidence-changed' },
+  ])
+  assert.equal(renderDreamReport({ ...project, projectId: digest('other-project') }, run, report).available, false)
   await timer.advance(1000)
   assert.equal(outbound.length, 1)
 })

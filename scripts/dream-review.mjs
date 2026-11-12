@@ -1,26 +1,15 @@
 #!/usr/bin/env node
-import { createHash } from 'node:crypto'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { openDreamQueue } from '../dream-queue.mjs'
 import { buildDreamEvidence } from '../dream-review.mjs'
 import { readDreamProject } from '../index.mjs'
-
-const digest = value => createHash('sha256').update(JSON.stringify(value)).digest('hex')
+import { renderDreamReport } from '../dream-runtime.mjs'
 
 function reportView(queue, root, runId, cwd) {
   const run = queue.getRun(runId), report = queue.report(runId)
   if (!run || !report) return { available: false, reason: 'dream-report-missing' }
-  return readDreamProject(root, cwd, project => {
-    if (project?.projectId !== report.projectId) return { available: false, reason: 'dream-report-project-mismatch' }
-    const input = buildDreamEvidence({ ...project, targetIds: run.metadata.itemIds })
-    if (digest(input) !== report.inputHash) return { available: false, reason: 'dream-report-evidence-changed' }
-    const items = report.items.map(row => {
-      const item = input.items.find(value => value.id === row.id)
-      return { ...row, current: item.summary, sources: item.sources.filter(source => row.sourceIds.includes(source.id)) }
-    })
-    return { available: true, ...report, items }
-  })
+  return readDreamProject(root, cwd, project => renderDreamReport(project, run, report))
 }
 
 function run(args) {

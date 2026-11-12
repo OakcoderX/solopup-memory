@@ -14,6 +14,38 @@ function itemKey(project, record, byId) {
     related.map(id => byId.get(id) ?? id), additional.map(source => [source.hash, source.occurredAt])])
 }
 
+/** Show quotes only while this row still resolves to the same authorized evidence. */
+export function renderDreamReport(project, run, report, now = Date.now()) {
+  if (!run || !report) return { available: false, reason: 'dream-report-missing' }
+  if (project?.projectId !== report.projectId || run.projectId !== project.projectId) {
+    return { available: false, reason: 'dream-report-project-mismatch' }
+  }
+  const input = buildDreamEvidence({ ...project, targetIds: run.metadata.itemIds, now })
+  const byId = new Map(input.items.map(item => [item.id, item]))
+  const origins = new Map()
+  for (const record of project.records) {
+    for (const source of record.evidence ?? []) {
+      origins.set(digest([record.sessionId, source.messageId]), { sessionId: record.sessionId, messageId: source.messageId })
+    }
+  }
+  for (const sources of Object.values(project.additionalEvidenceByTarget ?? {})) {
+    for (const source of sources) {
+      origins.set(digest([source.sessionId, source.messageId]), { sessionId: source.sessionId, messageId: source.messageId })
+    }
+  }
+  const sameSnapshot = digest(input) === report.inputHash
+  const items = report.items.map(row => {
+    const item = byId.get(row.id)
+    if (!item || (row.evidenceDigest ? digest(item) !== row.evidenceDigest : !sameSnapshot) ||
+        !row.sourceIds.every(id => item.sources.some(source => source.id === id))) {
+      return { id: row.id, state: 'evidence-changed' }
+    }
+    const sources = item.sources.filter(source => row.sourceIds.includes(source.id)).map(source => ({ ...source, ...origins.get(source.id) }))
+    return { ...row, state: 'current', current: item.summary, sources }
+  })
+  return { available: true, ...report, items }
+}
+
 function deadline(signal, timeoutMs) {
   const controller = new AbortController()
   const linked = AbortSignal.any([signal, controller.signal])
@@ -137,7 +169,8 @@ export function createDreamRuntime({ options, queue, readProject, executors, now
         schema: 1, runId: claim.runId, projectId: claim.projectId, mode: claim.mode,
         inputHash: claim.inputHash, storeRevision: input.storeRevision,
         createdAt: new Date(now()).toISOString(), route,
-        items: result.items, usage: usage ?? null,
+        items: result.items.map(row => ({ ...row, evidenceDigest: digest(input.items.find(item => item.id === row.id)) })),
+        usage: usage ?? null,
       }
       const finished = current(path, claim, selected => {
         return queue.finish(claim, {
