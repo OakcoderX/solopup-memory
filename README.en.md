@@ -10,10 +10,11 @@ SoloPup is a text-memory plugin for DeepSeek Harness (DSH). It attempts to save 
 
 This is a **fictional illustration**, not a tested conversation:
 
-> **Today, you say:** “Remember that I like emails short, polite, and not too formal.”<br>
-> **SoloPup:** Checks and attempts to save the preference.<br>
-> **Later, you say:** “Help me write a thank-you email after a meeting.”<br>
-> **DSH:** If the preference is recalled, it can use it to adjust the tone and length.
+**Today, you say:** “Remember that I like emails short, polite, and not too formal.”<br>
+**SoloPup:** Checks and attempts to save the preference.
+
+**Later, you say:** “Help me write a thank-you email after a meeting.”<br>
+**DSH:** If it recalls the preference, it might write: “Thanks for meeting today. Looking forward to working together!”
 
 For a project, you might record a travel budget or an agreed character detail for a story. Whether memory helps depends on successful saving and recall; check original sources for important decisions.
 
