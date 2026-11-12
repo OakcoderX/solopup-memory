@@ -25,6 +25,10 @@ const SEED = 241113
 const MAX_OUTPUT = 600
 const OUTPUT_RESERVATION = 680
 const ARMS = Object.freeze(['raw-only', 'old-memory', 'corrected-memory', 'report-only'])
+const MEMORY_ONLY_VALUES = Object.freeze({ 'old-memory': '中文', 'report-only': '中文', 'corrected-memory': '英文' })
+const HOLDOUT_INPUT_SHA256 = '88690d7a808c2b7ab7522b2e7f1c75dbfa4472d418aa9008192d55859d268acb'
+const PRIOR_REVIEW_MAX_MESSAGE_BYTES = 4061
+const INPUT_OVERHEAD_BYTES = 512
 const STALE = '样片正式交付说明默认用中文'
 const CORRECTED = '样片正式交付说明默认用英文'
 const textHash = value => createHash('sha256').update(value).digest('hex')
@@ -79,6 +83,12 @@ export function dreamReturnPlan() {
 
 export function dreamReturnRubric() {
   return structuredClone(questions.map(({ id, prompt, expected, criticalReason, sources }) => ({ id, prompt, expected, criticalReason, sources })))
+}
+
+function memoryOnlyPlan() {
+  const plan = dreamReturnPlan()
+  const question = questions[0]
+  return { ...plan, jobs: plan.jobs.filter(row => row.questionId === question.id && row.arm in MEMORY_ONLY_VALUES) }
 }
 
 /** Human grades must be supplied using blind labels before opening the mapping. */
@@ -266,16 +276,62 @@ export function previousReturnUsage(value, { candidateSha256, route, prior, earl
   return usage
 }
 
-function previousReturn(path, binding) {
+function privateFollowupReceipt(path) {
   const info = lstatSync(path)
   if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1 || (info.mode & 0o077) || info.size > 128 * 1024) {
-    throw failure('previous-return-unsafe')
+    throw failure('followup-receipt-unsafe')
   }
   const raw = readFileSync(path)
-  return { sha256: textHash(raw), usage: previousReturnUsage(JSON.parse(raw), binding) }
+  return { sha256: textHash(raw), value: JSON.parse(raw) }
 }
 
-function questionText(question) {
+function previousReturn(path, binding) {
+  const { sha256, value } = privateFollowupReceipt(path)
+  return { sha256, usage: previousReturnUsage(value, binding) }
+}
+
+export function memoryOnlyPriorTotals(completed, holdout, { route, prior, earlier, retry, totals }) {
+  const plan = dreamReturnPlan()
+  const keys = Object.keys(LIMITS)
+  const matchesRoute = value => value?.provider === route.provider && value.model === route.model
+  const measured = row => row?.status === 'completed' && row.usage?.calls === 1 && keys.every(key => natural(row.usage[key]))
+  const sum = (base, rows) => Object.fromEntries(keys.map(key => [key, base[key] + rows.reduce((used, row) => used + row.usage[key], 0)]))
+  const expectedEarlier = earlier.map(({ sha256, trialId, usage }) => ({ sha256, trialId, usage }))
+  const ordered = rows => [...rows].sort((left, right) => left.sha256.localeCompare(right.sha256))
+  if (completed?.schema !== 1 || completed.status !== 'awaiting-blind-grades' || completed.transport !== 'real-model' ||
+      completed.providerThinking !== 'explicit-off' || !matchesRoute(completed.route) || completed.seed !== plan.seed ||
+      completed.fixtureSha256 !== plan.fixtureSha256 || completed.candidateSha256 !== prior.candidateSha256 ||
+      completed.priorReceiptSha256 !== prior.sha256 || completed.priorTrialId !== prior.trialId ||
+      !Array.isArray(completed.earlierReceipts) || completed.earlierReceipts.some(row => !hash(row?.sha256)) ||
+      digest(ordered(completed.earlierReceipts)) !== digest(ordered(expectedEarlier)) ||
+      completed.previousReturnReceipt?.sha256 !== retry.sha256 || keys.some(key => completed.previousReturnReceipt.usage?.[key] !== retry.usage[key]) ||
+      !Array.isArray(completed.rows) || completed.rows.length !== plan.jobs.length ||
+      new Set(completed.rows.map(row => row?.label)).size !== plan.jobs.length ||
+      completed.rows.some((row, index) => !measured(row) || row.arm !== plan.jobs[index].arm ||
+        row.questionId !== plan.jobs[index].questionId || !hash(row.requestSha256) || !hash(row.answerSha256)) ||
+      completed.controls?.reportOnlyProjectionMatched !== true) throw failure('completed-return-incomplete')
+  const completedTotals = sum(totals, completed.rows)
+  if (keys.some(key => completedTotals[key] !== completed.totals?.[key] || completedTotals[key] !== holdout?.priorTotals?.[key]) ||
+      holdout.status !== 'awaiting-blind-grades' || holdout.candidateSha256 !== completed.candidateSha256 || !matchesRoute(holdout.route) ||
+      holdout.batchId !== 'H' || holdout.inputSha256 !== HOLDOUT_INPUT_SHA256 || !Array.isArray(holdout.rows) || holdout.rows.length !== 2 ||
+      new Set(holdout.rows.map(row => row?.mode)).size !== 2 || holdout.rows.some(row => !measured(row) ||
+        !['ordinary', 'superagent'].includes(row.mode) || row.wire?.wireVerified !== true || row.wire.providerThinking !== 'explicit-off' ||
+        row.wire.mode !== row.mode || row.wire.runId !== row.label || row.wire.calls !== row.usage.calls ||
+        row.wire.requestSha256 !== HOLDOUT_INPUT_SHA256 || row.wire.providerReportedModels?.length !== 1 ||
+        row.wire.providerReportedModels[0] !== route.model)) throw failure('holdout-incomplete')
+  const measuredTotals = sum(completedTotals, holdout.rows)
+  const measuredReturnCalls = completed.rows.length + retry.usage.calls
+  const reportedReturnInputTokens = retry.usage.inputTokens + completed.rows.reduce((tokens, row) => tokens + row.usage.inputTokens, 0)
+  const potentiallyCacheOmittedCalls = measuredTotals.calls - measuredReturnCalls
+  const upperBound = reportedReturnInputTokens + potentiallyCacheOmittedCalls * (PRIOR_REVIEW_MAX_MESSAGE_BYTES + INPUT_OVERHEAD_BYTES)
+  if (upperBound < measuredTotals.inputTokens) throw failure('memory-only-input-bound')
+  return { measuredTotals, inputSafetyMargin: upperBound - measuredTotals.inputTokens,
+    inputEngineeringBound: { potentiallyCacheOmittedCalls, reportedReturnInputTokens,
+      maxReviewMessageBytes: PRIOR_REVIEW_MAX_MESSAGE_BYTES, overheadPerCall: INPUT_OVERHEAD_BYTES, priorUpperBound: upperBound } }
+}
+
+function questionText(question, memoryOnly = false) {
+  if (memoryOnly) return `请只回答当前默认值。若无法确认，回答“无法确认”。\n\n问题：${question.prompt}`
   const raw = question.sources.map(source => `[${source.label}] ${source.quote}`).join('\n')
   return `这是虚构项目的回查测试。按下方原话回答，用方括号标明引用。证据不够就说明还需要确认什么。\n\n${raw}\n\n问题：${question.prompt}`
 }
@@ -302,30 +358,33 @@ async function getRequest(req) {
   return JSON.parse(Buffer.concat(chunks).toString())
 }
 
-function loopbackResponse(model, question) {
+function loopbackResponse(model, question, expected = question.expected) {
   const base = { id: 'chatcmpl-return-fixture', object: 'chat.completion.chunk', created: 1, model }
   const event = (choices, usage) => `data: ${JSON.stringify({ ...base, choices, ...(usage && { usage }) })}\n\n`
-  return event([{ index: 0, delta: { role: 'assistant', content: question.expected }, finish_reason: null }]) +
+  return event([{ index: 0, delta: { role: 'assistant', content: expected }, finish_reason: null }]) +
     event([{ index: 0, delta: {}, finish_reason: 'stop' }]) +
     event([], { prompt_tokens: 100, completion_tokens: 30 }) + 'data: [DONE]\n\n'
 }
 
-async function gateway({ route, endpoint, apiKey, receipt, save }) {
+async function gateway({ route, endpoint, apiKey, receipt, save, inputSafetyMargin = 0 }) {
   let active
+  const budgetExceeded = reservation => Object.keys(LIMITS).some(key => receipt.totals[key] + (reservation?.[key] ?? 0) +
+    (key === 'inputTokens' ? inputSafetyMargin : 0) > LIMITS[key])
   const server = createServer(async (req, res) => {
     const attempt = active
     if (!attempt || req.method !== 'POST' || req.url !== '/v1/chat/completions' || req.headers.authorization !== `Bearer ${KEY}` ||
       attempt.accepted) { res.writeHead(409).end(); return }
     attempt.accepted = true
-    const { question, row, arm } = attempt
+    const { question, row, arm, memoryOnly } = attempt
     try {
       const body = await getRequest(req)
       if (body.model !== route.model || body.stream !== true || !Array.isArray(body.messages)) throw failure('wire-route')
-      const marker = questionText(question)
+      const marker = questionText(question, memoryOnly)
       const userTexts = body.messages.filter(value => value.role === 'user').flatMap(value =>
         typeof value.content === 'string' ? [value.content] : Array.isArray(value.content) ? value.content.map(block => block.text) : [])
-      if (userTexts.filter(text => text === marker).length !== 1 ||
-          questions.some(other => other.id !== question.id && userTexts.some(text => text === questionText(other)))) throw failure('session-contaminated')
+      if (userTexts.filter(text => text === marker).length !== 1 || (memoryOnly ? userTexts.some(text => typeof text === 'string' &&
+        question.sources.some(source => text.includes(source.quote))) :
+          questions.some(other => other.id !== question.id && userTexts.some(text => text === questionText(other))))) throw failure('session-contaminated')
       const projection = contextProjection(body)
       if (arm === 'raw-only' ? projection.length > 0 : !projection.includes(arm === 'corrected-memory' ? CORRECTED : STALE) ||
           projection.includes(arm === 'corrected-memory' ? STALE : CORRECTED)) throw failure('projection-mismatch')
@@ -336,8 +395,8 @@ async function gateway({ route, endpoint, apiKey, receipt, save }) {
       if (natural(wire.max_completion_tokens)) wire.max_completion_tokens = Math.min(MAX_OUTPUT, wire.max_completion_tokens)
       else wire.max_tokens = Math.min(MAX_OUTPUT, natural(wire.max_tokens) ? wire.max_tokens : MAX_OUTPUT)
       const raw = JSON.stringify(wire)
-      const reservation = { calls: 1, inputTokens: Buffer.byteLength(raw) + 512, outputTokens: OUTPUT_RESERVATION }
-      if (Object.keys(LIMITS).some(key => receipt.totals[key] + reservation[key] > LIMITS[key])) throw failure('aggregate-budget')
+      const reservation = { calls: 1, inputTokens: Buffer.byteLength(raw) + INPUT_OVERHEAD_BYTES, outputTokens: OUTPUT_RESERVATION }
+      if (budgetExceeded(reservation)) throw failure('aggregate-budget')
       row.status = 'dispatch-intent'
       row.reservation = reservation
       row.requestSha256 = textHash(raw)
@@ -347,7 +406,8 @@ async function gateway({ route, endpoint, apiKey, receipt, save }) {
       const response = endpoint ? await fetch(endpoint, {
         method: 'POST', redirect: 'error', signal: AbortSignal.timeout(55_000),
         headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json', accept: 'text/event-stream' }, body: raw,
-      }) : new Response(loopbackResponse(route.model, question), { headers: { 'content-type': 'text/event-stream' } })
+      }) : new Response(loopbackResponse(route.model, question, memoryOnly ? MEMORY_ONLY_VALUES[arm] : undefined),
+        { headers: { 'content-type': 'text/event-stream' } })
       if (!response.ok || !response.headers.get('content-type')?.includes('text/event-stream') || !response.body) {
         await response.body?.cancel()
         throw failure(response.status === 429 ? 'provider-rate-limit' : 'provider-response')
@@ -381,7 +441,7 @@ async function gateway({ route, endpoint, apiKey, receipt, save }) {
         for (const key of Object.keys(LIMITS)) receipt.totals[key] += usage[key] - reservation[key]
         save()
       }
-      if (!usage || Object.keys(LIMITS).some(key => usage[key] > reservation[key] || receipt.totals[key] > LIMITS[key])) throw failure('usage-unverified')
+      if (!usage || Object.keys(LIMITS).some(key => usage[key] > reservation[key]) || budgetExceeded()) throw failure('usage-unverified')
       if (models.size !== 1 || !models.has(route.model) || !done || !stop || !answer.trim() ||
           Buffer.byteLength(answer) > 12 * 1024 || findSecrets(normalizeText(answer)).length) throw failure('answer-unverified')
       attempt.answer = answer
@@ -455,6 +515,9 @@ function startSdk(base, env, cli) {
 
 async function runTrial(values) {
   const real = values.real === true
+  const memoryOnly = values['memory-only'] === true
+  const plan = memoryOnly ? memoryOnlyPlan() : dreamReturnPlan()
+  const arms = memoryOnly ? Object.keys(MEMORY_ONLY_VALUES) : ARMS
   const route = real ? { provider: values.provider, model: values.model } : { provider: 'dream-return-fixture', model: 'dream-return-fixture' }
   const validRoute = /^[a-zA-Z0-9][a-zA-Z0-9._/-]{0,95}$/
   if (!Object.values(route).every(value => typeof value === 'string' && validRoute.test(value))) throw failure('route-required')
@@ -487,8 +550,8 @@ async function runTrial(values) {
   const cli = realpathSync(values.cli ?? CLI)
   const archive = realpathSync(values.candidate)
   const candidateSha256 = textHash(readFileSync(archive))
-  if (prior && prior.candidateSha256 !== candidateSha256) throw failure('prior-candidate-mismatch')
-  const totals = Object.fromEntries(Object.keys(LIMITS).map(key => [key,
+  if (prior && !memoryOnly && prior.candidateSha256 !== candidateSha256) throw failure('prior-candidate-mismatch')
+  let totals = Object.fromEntries(Object.keys(LIMITS).map(key => [key,
     (prior?.usage[key] ?? 0) + earlier.reduce((sum, value) => sum + value.usage[key], 0)]))
   let retry
   if (values['previous-return-receipt']) {
@@ -496,38 +559,56 @@ async function runTrial(values) {
     if (endpoint.origin !== 'https://api.deepseek.com' || path !== join(trialRoot, 'return-path', 'receipt.json')) {
       throw failure('previous-return-location')
     }
-    retry = previousReturn(path, { candidateSha256, route, prior, earlier, totals })
+    retry = previousReturn(path, { candidateSha256: prior.candidateSha256, route, prior, earlier, totals })
     for (const key of Object.keys(LIMITS)) totals[key] += retry.usage[key]
   }
-  if (totals.calls + 20 > LIMITS.calls || totals.outputTokens + 20 * OUTPUT_RESERVATION > LIMITS.outputTokens ||
-      totals.inputTokens >= LIMITS.inputTokens) throw failure('aggregate-budget')
+  let memoryOnlyLedger, inputSafetyMargin = 0
+  if (memoryOnly && real) {
+    if (!retry || endpoint.origin !== 'https://api.deepseek.com') throw failure('memory-only-prior-required')
+    const completed = privateFollowupReceipt(join(trialRoot, 'return-path-retest', 'receipt.json'))
+    const holdout = privateFollowupReceipt(join(dirname(trialRoot), 'holdout', 'receipt.json'))
+    const ledger = memoryOnlyPriorTotals(completed.value, holdout.value, { route, prior, earlier, retry, totals })
+    totals = ledger.measuredTotals
+    inputSafetyMargin = ledger.inputSafetyMargin
+    memoryOnlyLedger = { completedReturnReceiptSha256: completed.sha256, holdoutReceiptSha256: holdout.sha256,
+      priorCandidateSha256: prior.candidateSha256, candidateChanged: prior.candidateSha256 !== candidateSha256,
+      before: { ...totals }, inputEngineeringBound: ledger.inputEngineeringBound }
+  }
+  if (totals.calls + plan.jobs.length > LIMITS.calls || totals.outputTokens + plan.jobs.length * OUTPUT_RESERVATION > LIMITS.outputTokens ||
+      totals.inputTokens + inputSafetyMargin >= LIMITS.inputTokens) throw failure('aggregate-budget')
   const root = resolve(values['receipt-dir'])
-  if (real && (realpathSync(dirname(root)) !== trialRoot || basename(root) !== (retry ? 'return-path-retest' : 'return-path'))) {
+  const receiptSubdirectory = memoryOnly ? 'memory-only' : retry ? 'return-path-retest' : 'return-path'
+  if (real && (realpathSync(dirname(root)) !== trialRoot || basename(root) !== receiptSubdirectory)) {
     throw failure('receipt-must-share-trial-directory')
   }
   mkdirSync(root, { mode: 0o700 })
   const blind = join(root, 'blind')
   mkdirSync(blind, { mode: 0o700 })
-  writeJson(join(blind, 'rubric.json'), dreamReturnRubric())
+  writeJson(join(blind, 'rubric.json'), memoryOnly ? { question: questionText(questions[0], true),
+    grade: 'Record only the answer provided: 中文, 英文, 无法确认, or other.' } : dreamReturnRubric())
   const base = realpathSync(mkdtempSync(join(tmpdir(), PREFIX)))
-  const plan = dreamReturnPlan()
   const receipt = {
     schema: 1, seed: plan.seed, fixtureSha256: plan.fixtureSha256, route, transport: real ? 'real-model' : 'scripted',
     candidateSha256, ...(prior && { priorReceiptSha256: prior.sha256, priorTrialId: prior.trialId }),
     ...(earlier.length && { earlierReceipts: earlier.map(({ sha256, trialId, usage }) => ({ sha256, trialId, usage })) }),
     ...(retry && { previousReturnReceipt: retry }),
+    ...(memoryOnly && { probe: 'C01-memory-only', questionSha256: textHash(questionText(questions[0], true)) }),
+    ...(memoryOnlyLedger && { memoryOnlyLedger }),
     ...(endpoint?.origin === 'https://api.deepseek.com' && { providerThinking: 'explicit-off' }),
     totals, generationMaxTokens: MAX_OUTPUT, outputTokenReservation: OUTPUT_RESERVATION,
     rows: plan.jobs.map(job => ({ ...job, label: randomUUID(), status: 'queued' })),
     semanticTruthEvaluated: false, controls: {},
   }
-  const save = () => writeJson(join(root, 'receipt.json'), receipt)
+  const save = () => {
+    if (memoryOnlyLedger) memoryOnlyLedger.currentInputUpperBound = totals.inputTokens + inputSafetyMargin
+    writeJson(join(root, 'receipt.json'), receipt)
+  }
   save()
   const hosts = new Map(), fixtures = new Map()
   let proxy
   try {
-    proxy = await gateway({ route, endpoint, apiKey, receipt, save })
-    for (const arm of ARMS) {
+    proxy = await gateway({ route, endpoint, apiKey, receipt, save, inputSafetyMargin })
+    for (const arm of arms) {
       const folder = join(base, PREFIX + randomUUID())
       const env = { ...probeEnvironment(folder), SOLOPUP_RETURN_LOCAL_KEY: KEY }
       mkdirSync(folder)
@@ -565,17 +646,18 @@ async function runTrial(values) {
     receipt.controls.formalCorrectionAdmitted = true
     for (const row of receipt.rows) {
       const question = questions.find(item => item.id === row.questionId)
-      const attempt = { row, arm: row.arm, question }
+      const attempt = { row, arm: row.arm, question, memoryOnly }
       proxy.set(attempt)
       const host = hosts.get(row.arm)
       const sessionId = 'fresh-return-' + randomUUID()
       try {
-        await host.call('session/prompt', { sessionId, contentBlocks: [{ type: 'text', text: questionText(question) }] })
+        await host.call('session/prompt', { sessionId, contentBlocks: [{ type: 'text', text: questionText(question, memoryOnly) }] })
         await host.call('session/wait', { sessionId })
         if (attempt.error) throw Error(attempt.error)
         if (!attempt.answer || !row.usage || host.answers.get(sessionId) !== attempt.answer ||
             !host.completions.has(sessionId) || host.completions.get(sessionId) === 'error') throw failure('host-result')
         writeJson(join(blind, `${row.label}.json`), { label: row.label, questionId: row.questionId, answer: attempt.answer })
+        if (memoryOnly) row.answerValue = attempt.answer.trim().match(/^(中文|英文|无法确认)[。！.!]?$/u)?.[1] ?? 'other'
         row.answerSha256 = digest(attempt.answer)
         row.status = 'completed'
         save()
@@ -586,16 +668,18 @@ async function runTrial(values) {
         throw error
       } finally { proxy.set(undefined) }
     }
-    receipt.controls.reportOnlyProjectionMatched = questions.every(question => {
+    receipt.controls.reportOnlyProjectionMatched = (memoryOnly ? questions.slice(0, 1) : questions).every(question => {
       const old = receipt.rows.find(row => row.arm === 'old-memory' && row.questionId === question.id)
       const report = receipt.rows.find(row => row.arm === 'report-only' && row.questionId === question.id)
       return old.projectionSha256 === report.projectionSha256
     })
     if (!receipt.controls.reportOnlyProjectionMatched) throw failure('negative-control-projection')
-    receipt.status = 'awaiting-blind-grades'
+    receipt.status = memoryOnly ? 'completed' : 'awaiting-blind-grades'
+    if (memoryOnly) receipt.observedExpectedValues = receipt.rows.every(row => row.answerValue === MEMORY_ONLY_VALUES[row.arm])
     save()
     return { status: receipt.status, transport: receipt.transport, cases: receipt.rows.length, totals: receipt.totals,
-      controls: receipt.controls, semanticTruthEvaluated: false }
+      controls: receipt.controls, semanticTruthEvaluated: false,
+      ...(memoryOnly && { probe: receipt.probe, observedExpectedValues: receipt.observedExpectedValues }) }
   } catch (error) {
     receipt.status = 'stopped'
     receipt.reason = /^(?:dream-return-)[a-z-]+$/.test(error.message) ? error.message : 'dream-return-failed'
@@ -617,7 +701,7 @@ if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.m
         loopback: { type: 'boolean' }, real: { type: 'boolean' }, candidate: { type: 'string' }, cli: { type: 'string' },
         'receipt-dir': { type: 'string' }, 'prior-receipt': { type: 'string' },
         'earlier-receipt': { type: 'string', multiple: true }, 'base-url': { type: 'string' },
-        'previous-return-receipt': { type: 'string' },
+        'previous-return-receipt': { type: 'string' }, 'memory-only': { type: 'boolean' },
         provider: { type: 'string' }, model: { type: 'string' }, grades: { type: 'string' }, receipt: { type: 'string' },
       } })
       if (!args.length) console.log(JSON.stringify(dreamReturnPlan(), null, 2))
