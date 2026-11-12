@@ -2163,7 +2163,23 @@ function definePruneTool(ctx) {
   }
 }
 
-function defineStatusTool(ctx, sourceInputs) {
+const DREAM_STATUS_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['enabled', 'phase'],
+  properties: {
+    enabled: { type: 'boolean' },
+    phase: { type: 'string' },
+    mode: { type: 'string', enum: ['ordinary', 'superagent'] },
+    pendingMode: { type: 'string', enum: ['ordinary', 'superagent'] },
+    running: { type: 'boolean' },
+    idleAt: { type: 'integer' },
+    queued: { type: 'integer' },
+    reports: { type: 'integer' },
+  },
+}
+
+function defineStatusTool(ctx, sourceInputs, dreamStatus = () => undefined) {
   const definition = {
     name: 'memory_status',
     description: '只读快照：条数、容量、来源与全局捕获诊断（解析过滤/准入拒绝/截断/失败/模型无候选分别报告，不证明语义完整）。要记录原生工具观察，先用includeObservations=true列出当前可引用的真实callId和文本；逐字复制，不猜调用ID。该列表不把输出当作世界事实。',
@@ -2183,6 +2199,7 @@ function defineStatusTool(ctx, sourceInputs) {
         properties: {
           dir: { type: 'string' },
           capture:CAPTURE_STATUS_SCHEMA,
+          dream: DREAM_STATUS_SCHEMA,
           executionObservations:OBSERVATION_LIST_SCHEMA,
           recent: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['op'], properties: { op: { type: 'string' }, outcome: { type: 'string' }, at: { type: 'string' } } } },
           index: {
@@ -2263,6 +2280,7 @@ function defineStatusTool(ctx, sourceInputs) {
               `类型：${types}；过期 ${value.expired} 条；重复组 ${value.duplicateGroups}；` +
               `主题文件：${topics || '无'}；库占用 ${(value.storeBytes / 1024).toFixed(1)}K。` +
               (value.lint ? `\n检测（L0）：error ${value.lint.errors}、warning ${value.lint.warnings}` + (value.lint.checks.length ? '；' + value.lint.checks.map((check) => `${check.id}×${check.count}`).join('、') : '') + '（明细：node scripts/detect.mjs）' : '') + '\n' +
+              (value.dream ? `做梦：${value.dream.mode ?? '不可用'}，${value.dream.phase}。待处理 ${value.dream.queued ?? 0}，报告 ${value.dream.reports ?? 0}。\n` : '') +
               (value.sourceLedger?.available ? `来源记录 ${value.sourceLedger.fullRecords}/${value.sourceLedger.fullLimit}；历史来源凭据 ${value.sourceLedger.retiredRecords}/${value.sourceLedger.retiredLimit}；待审 ${value.sourceLedger.pending}/${value.sourceLedger.pendingLimit}；来源占用 ${(value.sourceLedger.bytes / 1024).toFixed(1)}/${value.sourceLedger.byteLimit / 1024}K。\n` : '来源账本待修复，容量状态未知。\n') + value.dir+(value.capture?'\n捕获诊断（全局保留作业）：'+(!value.capture.available?'账本不可用，未知':value.capture.latest?.diagnostic?value.capture.latest.diagnostic.classification+'；解析拒绝'+value.capture.latest.diagnostic.parserRejected+'，截断'+value.capture.latest.diagnostic.deferred+'，准入拒绝'+value.capture.latest.diagnostic.admissionRejected+'，写入失败'+value.capture.latest.diagnostic.writeFailures+'；不证明没有漏记':value.capture.latest?'旧作业无细分诊断或仍未完成，不能推断空结果':'尚无捕获作业记录；不能推断没有长期信息'):'')+(value.capture?.blockedInput?'\n自动整理未执行：用户来源不完整；没有从截断的前半段建立记忆。':'')+(value.executionObservations?'\n可引用执行结果（复制callId及原文）：\n'+value.executionObservations.items.map(item=>JSON.stringify(item)).join('\n')+'\n'+value.executionObservations.note+(value.executionObservations.truncated?'（列表有省略，优先核对最近结果）':''):'') ,
           },
         ]
@@ -2271,6 +2289,8 @@ function defineStatusTool(ctx, sourceInputs) {
     async execute(args, exec) {
       const dir = resolveStoreDir(ctx, exec, 'memory_status', args.scope)
       const value={...statusOf(dir),capture:managedRead(storeRoot(),()=>captureJobStatus(storeRoot()))}
+      const dream = dreamStatus()
+      if (dream) value.dream = dream
       value.lint = await lintStatus(dir, dir === storeRoot() ? 'global' : 'project')
       if(args.includeObservations!==undefined&&typeof args.includeObservations!=='boolean')throw Error('memory-observation-invalid-list-option')
       if(args.includeObservations===true){if(!captureSessionEligible(exec?.agent?.session))throw Error('memory-observation-source-unavailable');return{...value,executionObservations:sourceInputs.availableForExecution(exec)}}
@@ -2279,18 +2299,18 @@ function defineStatusTool(ctx, sourceInputs) {
   }
 
   const singleSchema=definition.output.schema,singleRender=definition.output.render,singleExecute=definition.execute
-  const {capture:_capture,executionObservations:_observations,...storeProperties}=singleSchema.properties
+  const {capture:_capture,executionObservations:_observations,dream:_dream,...storeProperties}=singleSchema.properties
   const storeSchema={...singleSchema,properties:storeProperties}
   const reasons=['no-current-project','project-not-registered','project-status-unavailable']
   definition.parameters.properties.scope={type:'string',enum:['both','project','global'],description:'both=分别查看跨项目库和当前项目库；不汇总计数，不查其他项目。project仍为省略时默认；global只查跨项目库。项目无法定位/未登记时both明确报告不可用，不当成空库。'}
   definition.description+=' scope=both分别返回两库状态，捕获诊断仍只有全局一份；无项目时明确报告项目不可用。'
-  definition.output.schema={oneOf:[singleSchema,{type:'object',additionalProperties:false,required:['scope','stores','capture'],properties:{scope:{type:'string',enum:['both']},stores:{type:'array',items:{type:'object',additionalProperties:false,required:['scope','available'],properties:{scope:{type:'string',enum:['global','project']},available:{type:'boolean'},status:storeSchema,reason:{type:'string',enum:reasons}}}},capture:CAPTURE_STATUS_SCHEMA,executionObservations:OBSERVATION_LIST_SCHEMA}}]}
+  definition.output.schema={oneOf:[singleSchema,{type:'object',additionalProperties:false,required:['scope','stores','capture'],properties:{scope:{type:'string',enum:['both']},stores:{type:'array',items:{type:'object',additionalProperties:false,required:['scope','available'],properties:{scope:{type:'string',enum:['global','project']},available:{type:'boolean'},status:storeSchema,reason:{type:'string',enum:reasons}}}},capture:CAPTURE_STATUS_SCHEMA,dream:DREAM_STATUS_SCHEMA,executionObservations:OBSERVATION_LIST_SCHEMA}}]}
   definition.output.render=(args,value)=>{
     if(value.scope!=='both')return singleRender(args,value)
     const blocks=[]
     for(const row of value.stores){
       const label=row.scope==='global'?'global（跨项目）':'project（当前项目）'
-      if(row.available){const status=row.scope==='global'?{...row.status,capture:value.capture,...value.executionObservations?{executionObservations:value.executionObservations}:{}}:row.status;blocks.push({type:'text',text:label+'：\n'+singleRender(args,status).map(b=>b.text).join('\n')})}
+      if(row.available){const status=row.scope==='global'?{...row.status,capture:value.capture,dream:value.dream,...value.executionObservations?{executionObservations:value.executionObservations}:{}}:row.status;blocks.push({type:'text',text:label+'：\n'+singleRender(args,status).map(b=>b.text).join('\n')})}
       else blocks.push({type:'text',text:label+'：状态不可用（'+row.reason+'），计数未知，不能当作空库。'})
     }
     return blocks
@@ -2317,6 +2337,8 @@ function defineStatusTool(ctx, sourceInputs) {
       stores.push(project)
       return {scope:'both',stores,capture:captureJobStatus(root)}
     })
+    const dream = dreamStatus()
+    if (dream) result.dream = dream
     for(const row of result.stores){
       if(!row.available)continue
       row.status.lint=await lintStatus(row.status.dir,row.scope)
@@ -2982,8 +3004,12 @@ export function apply(ctx, config = {}) {
   ctx.on?.('session/disposed', session => {sessionLifetimes.get(session)?.abort();inputTracker.disposeSession(session);observations.disposeSession(session)})
   ctx.effect?.(() => () => { inputsActive = false;inputLifetime.abort();observations.dispose() })
   const sourceInputs = { llmSnapshot:()=>nativeLlm.refresh(),forExecution(exec) { if (!inputsActive) throw new Error('memory-tool-inputs-disposed'); return inputTracker.forExecution(exec) },forValidation(exec){if(!inputsActive)throw Error('memory-tool-inputs-disposed');return inputTracker.forValidation(exec)},signalFor(exec){let controller=sessionLifetimes.get(exec.agent.session);if(!controller){controller=new AbortController();sessionLifetimes.set(exec.agent.session,controller)}return AbortSignal.any([inputLifetime.signal,controller.signal,...exec.signal?[exec.signal]:[]])},observationForExecution(exec,reference,owner){if(!inputsActive)throw Error('memory-tool-inputs-disposed');return observations.forExecution(exec,reference,owner)},availableForExecution(exec){if(!inputsActive)throw Error('memory-tool-inputs-disposed');inputTracker.forExecution(exec);return observations.availableForExecution(exec)} }
+  let dream
   if (canRegisterTools) {
-    for(const tool of [defineWriteTool(ctx,sourceInputs,config),defineForgetTool(ctx),defineLinksTool(ctx),defineSearchTool(ctx),definePruneTool(ctx),defineStatusTool(ctx,sourceInputs)])ctx.tools.register(runtimeTool(tool,startup))
+    for(const tool of [defineWriteTool(ctx,sourceInputs,config),defineForgetTool(ctx),defineLinksTool(ctx),defineSearchTool(ctx),definePruneTool(ctx),defineStatusTool(ctx,sourceInputs, () => {
+      if (!config.dream.enabled || !dream) return undefined
+      return dream.diagnostics?.() ?? { enabled: false, phase: dream.reason ?? 'dream-unavailable' }
+    })])ctx.tools.register(runtimeTool(tool,startup))
   }
 
   try {
@@ -2999,7 +3025,7 @@ export function apply(ctx, config = {}) {
       ),
     )
     const autoCapture = startup.state==='managed'?setupAutoCapture(ctx, config):{enabled:false,reason:startup.code}
-    const dream = startup.state === 'managed' ? setupDreamReview(ctx, root, config.dream) : { enabled: false, reason: startup.code }
+    dream = startup.state === 'managed' ? setupDreamReview(ctx, root, config.dream) : { enabled: false, reason: startup.code }
 
   // 加载痕迹**无条件**写：它是 A2 的唯一可靠依据，不能依赖诊断开关。
     // 之前它藏在 writeDiag 里（需要 .diagnostics 开关），导致 A2 永远无法通过——
@@ -3071,7 +3097,17 @@ function setupDreamReview(ctx, root, options) {
     controlWatch.on('error', () => controlWatch.close())
     void runtime.checkControls()
     ctx.effect(() => () => { controlWatch.close(); runtime.dispose(); runtime = undefined })
-    return { enabled: true, mode: queue.status().mode }
+    return { enabled: true, mode: queue.status().mode, diagnostics() {
+      try {
+        const state = runtime.status()
+        return {
+          enabled: true, phase: state.last, mode: state.mode,
+          ...(state.pendingMode ? { pendingMode: state.pendingMode } : {}),
+          running: state.idle.running, idleAt: state.idle.idleAt,
+          queued: state.counts.queued ?? 0, reports: state.counts.completed ?? 0,
+        }
+      } catch { return { enabled: true, phase: 'dream-status-unavailable' } }
+    } }
   } catch {
     controlWatch?.close()
     if (runtime) runtime.dispose()

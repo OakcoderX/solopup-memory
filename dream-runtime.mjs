@@ -242,20 +242,6 @@ export function createDreamRuntime({ options, queue, readProject, executors, now
   return {
     scheduler,
     checkControls,
-    async requestMode(mode) {
-      if (disposed || !executors[mode] || mode === 'superagent' && dailyTokens < SUPER_AGENT_RESERVE) {
-        return { accepted: false, reason: 'dream-mode-unavailable' }
-      }
-      const limit = deadline(new AbortController().signal, Math.min(5000, options.timeoutMs))
-      try {
-        const status = await Promise.race([limit.expired, executors[mode].ready({ signal: limit.signal })])
-        if (disposed || !status?.ready) return { accepted: false, reason: 'dream-mode-unavailable' }
-        const result = queue.requestMode(mode)
-        scheduler.wake()
-        return { accepted: true, result }
-      } catch { return { accepted: false, reason: 'dream-mode-unavailable' } }
-      finally { limit.dispose() }
-    },
     status() { return { last, idle: scheduler.status(), ...queue.status() } },
     dispose() {
       disposed = true
