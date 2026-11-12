@@ -47,7 +47,7 @@ test('optional actual companion: one Seatbelt DSH Worker, one parent model call,
           request.signal.throwIfAborted()
         }
         yield { type: 'text-delta', index: 0, text: output }
-        yield { type: 'finish', reason: { kind: 'stop' }, usage: { inputTokens: 475, outputTokens: 20 } }
+        yield { type: 'finish', reason: { kind: 'stop' }, usage: { inputTokens: 400, cacheReadTokens: 60, cacheWriteTokens: 15, outputTokens: 20, totalTokens: 495 } }
       } }
     } } })
     const config = { dshCli: process.env.DSH_CLI ?? '/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh',

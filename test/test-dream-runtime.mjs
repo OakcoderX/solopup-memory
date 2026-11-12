@@ -5,7 +5,7 @@ import { mkdtempSync, realpathSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createDreamRuntime, renderDreamReport } from '../dream-runtime.mjs'
-import { createOrdinaryDreamExecutor } from '../dream-ordinary.mjs'
+import { createOrdinaryDreamExecutor, normalizeDreamUsage } from '../dream-ordinary.mjs'
 import { openDreamQueue } from '../dream-queue.mjs'
 import { normalizePluginConfig } from '../plugin-config.mjs'
 
@@ -67,7 +67,7 @@ test('last foreground turn ends and ordinary DSH wakes on time without another e
       return { config, async *stream(request) {
         outbound.push(request)
         yield { type: 'text-delta', text: JSON.stringify(approved) }
-        yield { type: 'finish', usage: { inputTokens: 150, outputTokens: 25 } }
+        yield { type: 'finish', usage: { inputTokens: 150, outputTokens: 25, cacheReadTokens: 80, cacheWriteTokens: 20, totalTokens: 275 } }
       } }
     },
   }
@@ -88,6 +88,8 @@ test('last foreground turn ends and ordinary DSH wakes on time without another e
   const [{ runId }] = queue.listReports()
   const project = { projectId: digest('project-a'), storeRevision: digest('unrelated-change'), records: [record] }
   const report = queue.report(runId), run = queue.getRun(runId)
+  assert.deepEqual(report.usage, { inputTokens: 250, outputTokens: 25, totalTokens: 275 })
+  assert.equal(queue.status().budget.tokens, 275)
   assert.equal(renderDreamReport(project, run, report).items[0].sources[0].quote, quote)
   assert.equal(renderDreamReport(project, run, report).items[0].sources[0].messageId, messageId)
   assert.deepEqual(renderDreamReport({ ...project, records: [] }, run, report).items, [
@@ -96,6 +98,12 @@ test('last foreground turn ends and ordinary DSH wakes on time without another e
   assert.equal(renderDreamReport({ ...project, projectId: digest('other-project') }, run, report).available, false)
   await timer.advance(1000)
   assert.equal(outbound.length, 1)
+})
+
+test('inconsistent DSH usage does not reduce a run reservation', () => {
+  assert.equal(normalizeDreamUsage({ inputTokens: 60, cacheReadTokens: 80, outputTokens: 40, totalTokens: 100 }), undefined)
+  assert.equal(normalizeDreamUsage({ inputTokens: 60, cacheReadTokens: -1, outputTokens: 40 }), undefined)
+  assert.deepEqual(normalizeDreamUsage({ inputTokens: 60, outputTokens: 40 }), { inputTokens: 60, outputTokens: 40, totalTokens: 100 })
 })
 
 test('historical evidence is re-read before dispatch and cannot publish after it is replaced', async t => {

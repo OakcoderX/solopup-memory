@@ -8,6 +8,7 @@ import { setTimeout as delay } from 'node:timers/promises'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import { chunkText, selectCaptureControls } from './capture-llm.mjs'
+import { normalizeDreamUsage } from './dream-ordinary.mjs'
 import { SUPER_AGENT_DREAM_PROTOCOL, SUPER_AGENT_DREAM_PROTOTYPE } from './dream-superagent.mjs'
 import { encodeFrame, readFrames } from './scripts/dream-companion-wire.mjs'
 
@@ -189,12 +190,7 @@ async function brokerModel(getLlm, envelope, signal, recheck, beginEgress) {
       if (reason !== 'stop') throw Error('dream-companion-model-incomplete')
       finished = true
     }
-    if (['finish', 'usage'].includes(chunk?.type)) {
-      const { inputTokens, outputTokens } = chunk.usage ?? {}
-      if (natural(inputTokens) && natural(outputTokens) && natural(inputTokens + outputTokens)) {
-        usage = { inputTokens, outputTokens, totalTokens: inputTokens + outputTokens }
-      }
-    }
+    if (chunk?.type === 'usage' || (chunk?.type === 'finish' && chunk.usage !== undefined)) usage = normalizeDreamUsage(chunk.usage)
     output += chunkText(chunk)
     if (Buffer.byteLength(output) > 8192 || usage?.totalTokens > envelope.maxTotalTokens) throw Error('dream-companion-model-budget')
   }

@@ -168,7 +168,8 @@ function loopbackEvents(model, body) {
   const event = (choices, usage) => `data: ${JSON.stringify({ ...base, choices, ...(usage ? { usage } : {}) })}\n\n`
   return event([{ index: 0, delta: { role: 'assistant', content: output }, finish_reason: null }]) +
     event([{ index: 0, delta: {}, finish_reason: 'stop' }]) +
-    event([], { prompt_tokens: 902, completion_tokens: 168, total_tokens: 1070 }) + 'data: [DONE]\n\n'
+    event([], { prompt_tokens: 902, completion_tokens: 168, total_tokens: 1070,
+      prompt_tokens_details: { cached_tokens: 600 } }) + 'data: [DONE]\n\n'
 }
 
 export function dreamTrialProviderPayload(endpoint, body) {

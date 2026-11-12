@@ -27,6 +27,7 @@ const OTHER_MEMORY = 'Other project Cedar keeps separate layout notes'
 const PROJECT_MEMORIES = new Map([[PROJECT, MEMORY], ['project-b', OTHER_MEMORY], ['project-c', 'Project Ash requires numbered review pages']])
 const PROVIDER = 'solopup-soak-local'
 const KEY = 'synthetic-loopback-fixture'
+const FIXTURE_USAGE = { inputTokens: 104, outputTokens: 32, totalTokens: 136 }
 const FOREGROUND_PROMPT = 'Smoke test foreground request marker; reply with a single OK.'
 const FOREGROUND_SESSION = 'solopup-dream-smoke-foreground'
 const delay = (ms) => new Promise(resolveDelay => setTimeout(resolveDelay, ms))
@@ -206,7 +207,8 @@ function startModelStub(idleMs, replay = false, dual = false) {
       const delta = toolCall ? { role: 'assistant', tool_calls: [toolCall] } : { role: 'assistant', content: response }
       res.write(event([{ index: 0, delta, finish_reason: null }]))
       res.write(event([{ index: 0, delta: {}, finish_reason: toolCall ? 'tool_calls' : 'stop' }]))
-      res.write(event([], { prompt_tokens: 104, completion_tokens: 32, total_tokens: 136 }))
+      res.write(event([], { prompt_tokens: 104, completion_tokens: 32, total_tokens: 136,
+        prompt_tokens_details: { cached_tokens: 70 } }))
       res.end('data: [DONE]\n\n')
     } catch (error) {
       errors.push(error.message)
@@ -422,6 +424,7 @@ export async function soakDreamDual({ tgz, prototypeBundle, expectedBundleSha256
       assert.equal(value.items.length, 1)
       assert.equal(value.items[0].id, original.recordId)
       assert.deepEqual(value.items[0].sourceIds, [original.sourceId])
+      assert.deepEqual(value.usage, FIXTURE_USAGE, 'Cached prompt tokens must count against the shared budget')
       return { ...row, sha256: hash(JSON.stringify(value)), usage: value.usage }
     })
     await host.close()
@@ -543,6 +546,7 @@ export async function soakDream({ tgz, foreground = false, replay = false } = {}
         assert.ok(!JSON.stringify(report).includes(REPLAY_PROMPT))
       } else assert.deepEqual(report.items[0].sourceIds, [expected.sourceId])
       assert.ok(!JSON.stringify(report).includes(QUOTE))
+      assert.deepEqual(report.usage, FIXTURE_USAGE, 'Cached prompt tokens must count against the shared budget')
       await delay(idleMs + 250)
       const dreamRequests = stub.requests.filter(request => request.kind === 'dream')
       assert.equal(dreamRequests.length, 1)

@@ -4,10 +4,14 @@ import { dreamReviewMessages } from './dream-review.mjs'
 const MAX_RESPONSE_BYTES = 16 * 1024
 const bound = number => Number.isSafeInteger(number) && number >= 0
 
-function tokenUsage(usage) {
-  if (!bound(usage?.inputTokens) || !bound(usage?.outputTokens)) return undefined
-  const totalTokens = usage.inputTokens + usage.outputTokens
-  return bound(totalTokens) ? { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, totalTokens } : undefined
+/** DSH reports disjoint cache buckets. Count the entire prompt toward the budget. */
+export function normalizeDreamUsage(usage) {
+  const { inputTokens: uncached, cacheReadTokens = 0, cacheWriteTokens = 0, outputTokens, totalTokens: reported } = usage ?? {}
+  if (![uncached, cacheReadTokens, cacheWriteTokens, outputTokens].every(bound)) return undefined
+  const inputTokens = uncached + cacheReadTokens + cacheWriteTokens
+  const totalTokens = inputTokens + outputTokens
+  if (!bound(totalTokens) || (reported !== undefined && reported !== totalTokens)) return undefined
+  return { inputTokens, outputTokens, totalTokens }
 }
 
 /** Ordinary DSH uses the host model service without creating or continuing a user session. */
@@ -43,9 +47,9 @@ export function createOrdinaryDreamExecutor({ getLlm }) {
         linkedSignal.throwIfAborted()
         if (chunk?.type === 'finish') {
           if (['error', 'aborted', 'max-tokens'].includes(chunk.reason?.kind)) throw Error('dream-model-incomplete')
-          usage = tokenUsage(chunk.usage) ?? usage
+          if (chunk.usage !== undefined) usage = normalizeDreamUsage(chunk.usage)
         }
-        if (chunk?.type === 'usage') usage = tokenUsage(chunk.usage) ?? usage
+        if (chunk?.type === 'usage') usage = normalizeDreamUsage(chunk.usage)
         const delta = chunkText(chunk)
         bytes += Buffer.byteLength(delta)
         if (bytes > MAX_RESPONSE_BYTES) throw Error('dream-model-response-too-large')
