@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto'
 import { buildDreamEvidence, dreamReviewMessages, validateDreamReview } from './dream-review.mjs'
 import { createDreamScheduler } from './dream-scheduler.mjs'
 
-const REVIEW_POLICY = 'solopup-project-review-v1'
+const REVIEW_POLICY = 'solopup-project-review-v2'
 const MAX_OUTPUT_TOKENS = 1800
 const SUPER_AGENT_RESERVE = 8000
 const digest = value => createHash('sha256').update(JSON.stringify(value)).digest('hex')
