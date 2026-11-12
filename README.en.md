@@ -6,6 +6,20 @@
 
 Source-linked, layered **text memory** for DeepSeek Harness. **Public beta, not a stable release.** See the npm beta tag and GitHub releases for the currently published version. See [RELEASE.md](RELEASE.md) for tested scope and known gaps.
 
+## How memory helps later
+
+```mermaid
+flowchart TD
+    A["① You share a project decision<br/>e.g. delivery notes default to Chinese"] --> B["② SoloPup checks the source<br/>and saves an accepted project memory"]
+    B --> C["③ Start a new task<br/>DSH receives a current memory summary"]
+    C --> D["④ Look up and check details as needed<br/>and consider the project decision"]
+    B --> E["Link worktrees in the same repository<br/>explicit setup required"]
+    E --> F["A Super Agent Worker<br/>receives linked project memory summaries"]
+    F --> G["Consider the task and its history<br/>check sources and scope if they conflict"]
+```
+
+This is a simplified flow: a memory may not be saved or recalled, and a model can misinterpret it. Super Agent Workers do not necessarily have memory search or write tools by default. [See setup and test limitations](docs/runs/2026-11-12-superagent-examples.md).
+
 ## Explain it once, use it later
 
 This dialogue is a readable summary of an isolated test with a fictional project and real model sessions:
