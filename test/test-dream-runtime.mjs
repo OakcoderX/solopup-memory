@@ -269,7 +269,7 @@ test('large new evidence uses a smaller batch and retains unreviewed entries', a
       }
     },
   }
-  const { timer, queue, project } = fixture(t, { ordinary }, { maxDailyTokens: 5200 })
+  const { timer, queue, project } = fixture(t, { ordinary }, { maxDailyTokens: 5700 })
   project.records = Array.from({ length: 5 }, (_, index) => {
     const messageId = 'message-' + index
     const longQuote = '用户已经确认项目交付说明的字数和格式。'.repeat(24)
