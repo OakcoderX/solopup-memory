@@ -262,6 +262,7 @@ export async function runDreamReviewTrial({ dir, route, transport, metadata = {}
   }
   const { state } = transaction(() => undefined)
   if (state.jobs.every(job => job.status === 'completed')) status = 'complete'
+  else if (status === 'paused' && state.jobs.filter(job => modes.includes(job.mode)).every(job => job.status === 'completed')) status = 'selection-complete'
   return { status, receipt: state }
 }
 

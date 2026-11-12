@@ -48,6 +48,7 @@ test('a clean pause resumes only remaining batches and keeps blind outputs apart
   const seen = []
   const transport = { kind: 'scripted', execute(request) {
     assert.deepEqual(request.route, route)
+    assert.deepEqual(request.generation, { maxTokens: 1800, reasoningEffort: 'off' })
     assert.deepEqual(request.messages, dreamReviewMessages(request.input))
     assert.doesNotMatch(JSON.stringify(request), /criticalReason|expectedVerdict|C01/)
     seen.push(request)
@@ -81,6 +82,19 @@ test('a clean pause resumes only remaining batches and keeps blind outputs apart
   assert.doesNotMatch(JSON.stringify(second.receipt), /用于验证执行回执/)
   await assert.rejects(runDreamReviewTrial({ dir, route: { ...route, model: 'changed' }, transport, metadata }), /resume-mismatch/)
   assert.equal(seen.length, 4)
+})
+
+test('ordinary can complete while the isolated Super Agent transport is still unavailable', async t => {
+  const dir = scratch(t)
+  const seen = []
+  const transport = { kind: 'scripted', execute(request) { seen.push(request.mode); return response(request) } }
+  const ordinary = await runDreamReviewTrial({ dir, route, transport, modes: ['ordinary'], maxBatches: 2 })
+  assert.equal(ordinary.status, 'selection-complete')
+  assert.deepEqual(seen, ['ordinary', 'ordinary'])
+  assert.ok(ordinary.receipt.jobs.filter(job => job.mode === 'superagent').every(job => job.status === 'queued'))
+  const both = await runDreamReviewTrial({ dir, route, transport, modes: ['superagent'] })
+  assert.equal(both.status, 'complete')
+  assert.deepEqual(seen, ['ordinary', 'ordinary', 'superagent', 'superagent'])
 })
 
 test('the driver prevents concurrent claim and preserves an uncertain call without resending', async t => {
