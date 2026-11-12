@@ -1,41 +1,40 @@
 # SoloPup Memory
 
-**Start here:** [Quick start](docs/guides/quickstart.md) · [Synthetic trials](docs/README.md) · [FAQ](docs/faq.md) · [Feedback](docs/feedback.md)
+**Help DSH remember your preferences and project decisions, so you have less to repeat next time.**
 
-**Remember what matters. Keep up when you change your mind.** · [中文](README.md)
+SoloPup is a text-memory plugin for DeepSeek Harness (DSH). It attempts to save useful long-term context for DSH to recall and consider later. **Public beta:** saving or recall may fail; check important details.
 
-Source-linked, layered **text memory** for DeepSeek Harness. **Public beta, not a stable release.** See the npm beta tag and GitHub releases for the currently published version. See [RELEASE.md](RELEASE.md) for tested scope and known gaps.
+[Quick start](docs/guides/quickstart.md) · [Install](#quick-install) · [More fictional examples](docs/README.md) · [FAQ](docs/faq.md) · [中文](README.md)
 
-## How memory helps later
+## What could it look like?
+
+This is a **fictional illustration**, not a tested conversation:
+
+> **Today, you say:** “Remember that I like emails short, polite, and not too formal.”<br>
+> **SoloPup:** Checks and attempts to save the preference.<br>
+> **Later, you say:** “Help me write a thank-you email after a meeting.”<br>
+> **DSH:** If the preference is recalled, it can use it to adjust the tone and length.
+
+For a project, you might record a travel budget or an agreed character detail for a story. Whether memory helps depends on successful saving and recall; check original sources for important decisions.
+
+## How does memory help?
 
 ```mermaid
 flowchart TD
-    A["① You share a project decision<br/>e.g. delivery notes default to Chinese"] --> B["② SoloPup checks the source<br/>and saves an accepted project memory"]
-    B --> C["③ Start a new task<br/>DSH receives a current memory summary"]
-    C --> D["④ Look up and check details as needed<br/>and consider the project decision"]
-    D -.->|Another scenario| E["⑤ Using Super Agent?<br/>First link worktrees in the same repository"]
-    E --> F["⑥ Its Worker receives project context<br/>and considers it alongside the task"]
+    A["① You share something worth remembering"] --> B["② SoloPup checks and attempts to save it"]
+    B --> C["③ Later, DSH receives a summary or searches memory"]
+    C --> D["④ The AI considers it alongside the current task"]
 ```
 
-This is a simplified flow: a memory may not be saved or recalled, and a model can misinterpret it. Super Agent Workers do not necessarily have memory search or write tools by default. [See setup and test limitations](docs/runs/2026-11-12-superagent-examples.md).
+Memory is context for the AI, and may not be saved, recalled, or interpreted correctly. You can also inspect sources and request revisions; see [storage and limitations](#storage-and-limitations).
 
-## Explain it once, use it later
+## Can Super Agent use it?
 
-This dialogue is a readable summary of an isolated test with a fictional project and real model sessions:
+**With the required setup**, Super Agent tasks can receive project context: worktrees in the same repository must first be explicitly linked, after which a Worker may receive a project memory summary.
 
-> **You:** “Remember: this project's delivery notes should default to Chinese.”<br>
-> **SoloPup:** Saves it as a project decision.
->
-> **Later, in another worktree:** “An old task used English. What is the default now?”<br>
-> **DSH:** “Chinese. The current project memory says Chinese; the old task record needs its timing and scope checked.”
+In one isolated test using a fictional project, a real model saw both a Chinese-by-default project decision and an old English-language task record; it chose Chinese and flagged the old record for checking. A separate Super Agent prototype test also observed a Worker using the project summary. **Both are single observations; the latter used test doubles for some orchestration and was not full production acceptance.**
 
-**Why it helps:** You do not need to explain the project decision from scratch in every worktree. The test required an explicit link between two worktrees in the same repository. One observation does not guarantee every model decision.
-
-### Project context for Super Agent
-
-Super Agent is a DSH prototype that can organize AI work. In another isolated test, a Worker received the same project memory and an old English-language task record. A real model chose Chinese and stated that it had only seen the memory summary.
-
-The test used prototype components and a real model, but some orchestration and events were test doubles and model context was adapted; **it was not full production acceptance**. After a prepare failure, the prototype can retry without project memory: inspect the leftover workspace and ensure preparation reruns before retrying. Withdrawing a memory does not automatically erase old session copies. [Read the test details and limitations](docs/runs/2026-11-12-superagent-examples.md).
+After a prepare failure, the prototype can retry without project memory. Workers do not necessarily have memory search or write tools by default. Withdrawing a memory does not erase old session copies. [Setup, tests and limitations](docs/runs/2026-11-12-superagent-examples.md).
 
 ## Quick install
 
