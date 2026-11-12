@@ -6,6 +6,14 @@
 
 Source-linked, layered **text memory** for DeepSeek Harness. **Public beta, not a stable release.** See the npm beta tag and GitHub releases for the currently published version. See [RELEASE.md](RELEASE.md) for tested scope and known gaps.
 
+## Tested examples
+
+- **Recall across worktrees.** In an isolated test, a real DSH model saved a fictional project decision to use Chinese for delivery notes. After an explicit same-repository worktree link, a new model session encountered an old English-language task record, retrieved the project memory and chose Chinese. This used real model sessions and a worktree link, **not Super Agent dispatch**.
+- **Super Agent Worker with project context.** In an isolated test, the prototype's Engine, Executor and Sessions created a Worker. The injected project memory said “default Chinese” while the assigned fictional task referenced an older English-language record. A real model selected Chinese and stated that it had only seen the injected summary. The controller, events and other calls used test doubles, and model context was adapted for the test; **this is not full production acceptance**.
+- **A retry counterexample.** After a prepare failure, the tested prototype can retry and start a Worker without project memory. Inspect the leftover workspace and ensure preparation reruns before retrying; see [worktree setup](#project-memory-across-worktrees-023-beta).
+
+These are synthetic, bounded tests of 0.23.0-beta.2 on 2026-11-12. They do not guarantee model behavior or erase copies in old sessions. See the [case notes](docs/runs/2026-11-12-superagent-examples.md) for methods and limitations.
+
 ## Quick install
 
 Requires an installed DeepSeek Harness and Node >=24.9. For the desktop profile:
