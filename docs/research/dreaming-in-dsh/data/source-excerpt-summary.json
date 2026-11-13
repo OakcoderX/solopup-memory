@@ -1,0 +1,25 @@
+{
+  "semanticTruthEvaluated": true,
+  "summary": {
+    "raw-only": {
+      "passed": 5,
+      "criticalErrors": 0
+    },
+    "old-memory": {
+      "passed": 4,
+      "criticalErrors": 1
+    },
+    "corrected-memory": {
+      "passed": 5,
+      "criticalErrors": 0
+    },
+    "report-only": {
+      "passed": 5,
+      "criticalErrors": 0
+    }
+  },
+  "improvedOldValue": false,
+  "noNewCriticalError": true,
+  "negativeControlProjectionMatched": true,
+  "passed": false
+}

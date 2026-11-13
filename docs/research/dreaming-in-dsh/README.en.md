@@ -44,6 +44,20 @@ We picked six new cases of the same kinds. We asked all three groups to fill a d
 
 Generating a report left project memory unchanged in all six projects. The fourth proposed correction was accurate, but our review rule missed one way of saying “changed to” in Chinese. We counted that case as a miss. All three conditions used the old default. The unapproved proposal also left the old rule in place. In the case without a correction marker, the new message never got linked to the old rule, so the review saw only the original statement. Both the cases and the prompt changed between rounds, which leaves the effect of the wording on its own open. [Round two data](data/round-2.json)
 
+## What did the earlier comparisons tell us?
+
+The two rounds above asked whether saving a correction changed the next handoff. Three earlier comparisons looked at the proposals themselves, what happens when the original messages are already available, and what happens when a new session has to rely on saved project memory.
+
+![Three earlier comparisons. Review scores were 9/10 and 10/10. The four groups with source excerpts scored similarly. On four changed rules without excerpts, scores went from 0/4 with old memory to 4/4 after adoption.](assets/prior-comparisons-en.png)
+
+*Figure 3. Each comparison used its own cases and scoring. Read the counts within each panel.*
+
+- **Could dreaming make a well-supported suggestion?** An AI reviewer scored the same ten cases without seeing which executor ran them. Ordinary DSH passed **9/10**, and Super Agent passed **10/10**, with no critical errors in either mode. In two earlier attempts, the model proposed corrections even though no replacement had been confirmed. The review passed after we revised the instructions. Both modes also passed **2/2** holdout cases on the candidate with corrected token accounting. The samples are too small to rank the two modes.
+- **What if the agent already has the original messages?** All four groups got the same excerpts and five questions. The excerpts alone scored **5/5**, old memory plus excerpts **4/5**, report only plus excerpts **5/5**, and revised memory plus excerpts **5/5**. On the question we picked in advance, both the old-memory and revised-memory groups answered correctly from the excerpts. **The test missed its preset improvement criterion.**
+- **What if the original messages are absent?** In a separate ten-project comparison, old memory scored **6/10** and adopted memory **10/10** under strict grading. All four changed rules went from the old code to the new one. The empty-store group scored **0/10**. It returned text resembling tool calls on every attempt, and no tools ran. We reran only the two questions with insufficient evidence, this time explicitly saying tools were unavailable. All six replies correctly said they did not know. The original 0/10 needs that context.
+
+[Full comparisons, case-level data, and storage measurements](SCIENCE.en.md)
+
 ## The old checkpoint was still there the next day
 
 The fresh-session tests showed what happens when a new session receives a correction. We wanted to see what happens when the agent reopens a task that still carries the old rule.
@@ -56,7 +70,7 @@ The request the agent received still contained the old checkpoint. The current p
 
 ![The resumed worker receives the old task record and the newly confirmed project rule. Its draft uses the new default and keeps the original exception.](assets/resume-en.png)
 
-*Figure 3. The worker could still see the old default in its progress note. Both resumed tasks used the new default after we saved the correction.*
+*Figure 4. The worker could still see the old default in its progress note. Both resumed tasks used the new default after we saved the correction.*
 
 | Project | Old checkpoint | Dreaming off | Correction adopted | Exception both groups kept |
 | --- | --- | --- | --- | --- |
@@ -67,7 +81,7 @@ The two comparisons show that an agent can keep its old progress note and follow
 
 ## What we learned
 
-Keep a record of what the agent did, and keep an up-to-date record of which rules apply. Dreaming helps find a stale rule and bring the original messages back for review. After confirmation, we check the agent’s draft to see whether it followed the revision. The first round showed how much we would miss by checking the report or the request alone.
+Keep a record of what the agent did, and keep an up-to-date record of which rules apply. Dreaming helps find a stale rule and bring the original messages back for review. After confirmation, we check the agent’s draft to see whether it followed the revision. The first round showed how much we would miss by checking the report or the request alone. When the task already included the original messages, our test did not establish that revising memory improved the answer.
 
 These tests used one model, a single-user DSH setup, and a small set of fictional projects scored against exact answers. We restarted DSH and reopened real saved sessions. The task engine’s clock simulated the overnight interval, and a local follow-up in the original thread resumed each task. The agent produced a draft for review. We used fixed rules to simulate user confirmation and the model’s validation of memory writes. The tests leave open unattended wake-up, crash recovery, external actions, and broader coverage of unmarked corrections. We also did not measure the additional benefit of dreaming over confirming and saving a correction directly, or compare the quality of the ordinary and Super Agent executors.
 

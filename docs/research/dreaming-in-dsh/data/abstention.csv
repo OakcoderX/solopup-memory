@@ -1,0 +1,7 @@
+caseId,arm,type,answer,normalized,correct,staleUsed,unrelatedCodeUsed,inputTokens,outputTokens,elapsedMs,answerSha256
+C09,prior,unknown,UNKNOWN,UNKNOWN,True,False,False,2062,2,608,23759997b3c59884dc4c0ff5320d6301b0e7f63bf0f6483a7b54d7d43bc5ccd1
+C10,empty,unknown,UNKNOWN,UNKNOWN,True,False,False,1619,2,784,23759997b3c59884dc4c0ff5320d6301b0e7f63bf0f6483a7b54d7d43bc5ccd1
+C09,empty,unknown,UNKNOWN,UNKNOWN,True,False,False,1618,2,498,23759997b3c59884dc4c0ff5320d6301b0e7f63bf0f6483a7b54d7d43bc5ccd1
+C10,prior,unknown,UNKNOWN,UNKNOWN,True,False,False,2066,2,736,23759997b3c59884dc4c0ff5320d6301b0e7f63bf0f6483a7b54d7d43bc5ccd1
+C10,reviewed,unknown,UNKNOWN,UNKNOWN,True,False,False,2067,2,864,23759997b3c59884dc4c0ff5320d6301b0e7f63bf0f6483a7b54d7d43bc5ccd1
+C09,reviewed,unknown,UNKNOWN,UNKNOWN,True,False,False,2063,2,1121,23759997b3c59884dc4c0ff5320d6301b0e7f63bf0f6483a7b54d7d43bc5ccd1

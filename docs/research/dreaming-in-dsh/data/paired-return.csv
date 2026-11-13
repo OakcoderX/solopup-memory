@@ -1,0 +1,131 @@
+caseId,arm,type,answer,normalized,correct,staleUsed,unrelatedCodeUsed,inputTokens,outputTokens,elapsedMs,answerSha256
+C01,prior,stable,T5NK8Z,T5NK8Z,True,False,False,2030,5,835,3ffe34c7496b7c1e1f7d11128504c6f4d30c6c5cb2d4c577b0f77a7602c5a002
+C09,prior,unknown,UNKNOWN,UNKNOWN,True,False,False,2033,2,778,23759997b3c59884dc4c0ff5320d6301b0e7f63bf0f6483a7b54d7d43bc5ccd1
+C05,prior,changed,B4JF6M,B4JF6M,False,True,False,2030,5,605,18897842363bc952500394664e9a4103185907650b4755b0bc84c3c08fa2bdbe
+C02,reviewed,stable,R9Q4V2,R9Q4V2,True,False,False,2033,6,819,511a98ee4f4a6af6105b9cbeb9c21749f133cb4f8008f3e37e02756aa793e710
+C02,empty,stable,"
+
+<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""memory_search"">
+<｜｜DSML｜｜ parameter name=""query"" string=""true"">代理片验收 确认码</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>","<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""memory_search"">
+<｜｜DSML｜｜ parameter name=""query"" string=""true"">代理片验收 确认码</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>",False,False,False,1587,42,610,2144b39395cae53d6db35a47cf3d5b24f36910835aed2be7dd1f328b4c4d5bca
+C06,reviewed,changed,M3WN8C,M3WN8C,True,False,False,2033,5,460,d69a42126a191d47d3069fece1f479cf88cdd44a293926739ff1edeb57e011a7
+C04,empty,stable,"
+
+<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""bash"">
+<｜｜DSML｜｜ parameter name=""command"" string=""true"">ls -la; find . -maxdepth 3 -type f | head -100</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>","<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""bash"">
+<｜｜DSML｜｜ parameter name=""command"" string=""true"">ls -la; find . -maxdepth 3 -type f | head -100</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>",False,False,False,1588,53,831,6f3bda10608b05eaf969c97f4c7243ad449e5a4a3a48eef4350da7d7789f3538
+C06,prior,changed,A7KG2V,A7KG2V,False,True,False,2035,5,937,b81750d7c0c21d98f769835b9e1d54af2234262b8a776fd2ff8d257978a6f94e
+C10,empty,unknown,"
+
+<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""bash"">
+<｜｜DSML｜｜ parameter name=""command"" string=""true"">ls -la; find . -maxdepth 3 -type f | head -100</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>","<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""bash"">
+<｜｜DSML｜｜ parameter name=""command"" string=""true"">ls -la; find . -maxdepth 3 -type f | head -100</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>",False,False,False,1588,53,817,6f3bda10608b05eaf969c97f4c7243ad449e5a4a3a48eef4350da7d7789f3538
+C01,reviewed,stable,T5NK8Z,T5NK8Z,True,False,False,2031,5,1059,3ffe34c7496b7c1e1f7d11128504c6f4d30c6c5cb2d4c577b0f77a7602c5a002
+C08,reviewed,changed,P5ZD7K,P5ZD7K,True,False,False,2040,5,886,6c2e8ffe2870773524843ddcfea0ddbb83fc586d188d96db16ba559db08feb5d
+C04,prior,stable,G6XC8D,G6XC8D,True,False,False,2032,5,577,da48908cfb34e4a8448044470b15b785d5dc5871c45cd31b5d2cc70d65f80b75
+C08,empty,changed,"
+
+<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""bash"">
+<｜｜DSML｜｜ parameter name=""command"" string=""true"">ls -la; find . -maxdepth 3 -type f | head -100</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>","<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""bash"">
+<｜｜DSML｜｜ parameter name=""command"" string=""true"">ls -la; find . -maxdepth 3 -type f | head -100</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>",False,False,False,1588,53,619,6f3bda10608b05eaf969c97f4c7243ad449e5a4a3a48eef4350da7d7789f3538
+C05,empty,changed,"
+
+<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""bash"">
+<｜｜DSML｜｜ parameter name=""command"" string=""true"">ls -la; find . -maxdepth 3 -type f | head -100</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>","<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""bash"">
+<｜｜DSML｜｜ parameter name=""command"" string=""true"">ls -la; find . -maxdepth 3 -type f | head -100</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>",False,False,False,1587,53,955,6f3bda10608b05eaf969c97f4c7243ad449e5a4a3a48eef4350da7d7789f3538
+C09,empty,unknown,"
+
+<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""memory_search"">
+<｜｜DSML｜｜ parameter name=""query"" string=""true"">印刷送样 六位 内部确认码</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>","<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""memory_search"">
+<｜｜DSML｜｜ parameter name=""query"" string=""true"">印刷送样 六位 内部确认码</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>",False,False,False,1587,46,577,6dedbf3208e5ca6d65bd7b636b15895f78578fc51c4fb6a0111cba353139c952
+C08,prior,changed,N8CV4G,N8CV4G,False,True,False,2031,5,539,a06818462e6d36aaf298f54006275fbd2768b243d49f32ac4648e668da4230cf
+C10,prior,unknown,UNKNOWN,UNKNOWN,True,False,False,2034,2,529,23759997b3c59884dc4c0ff5320d6301b0e7f63bf0f6483a7b54d7d43bc5ccd1
+C10,reviewed,unknown,UNKNOWN,UNKNOWN,True,False,False,2035,2,563,23759997b3c59884dc4c0ff5320d6301b0e7f63bf0f6483a7b54d7d43bc5ccd1
+C09,reviewed,unknown,UNKNOWN,UNKNOWN,True,False,False,2034,2,540,23759997b3c59884dc4c0ff5320d6301b0e7f63bf0f6483a7b54d7d43bc5ccd1
+C03,prior,stable,W3HL7P,W3HL7P,True,False,False,2034,5,817,4ae10e5c5275233d80875d8ee7532eab1ceefd86154abc5ac5cacf688bdf3a7b
+C07,empty,changed,"
+
+<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""memory_search"">
+<｜｜DSML｜｜ parameter name=""query"" string=""true"">双语字幕锁定 确认码</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>","<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""memory_search"">
+<｜｜DSML｜｜ parameter name=""query"" string=""true"">双语字幕锁定 确认码</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>",False,False,False,1587,42,710,850ab448a3024f8d85f75eb613227f15f7ee6f559616a23ea56d8c2ae78f7a77
+C04,reviewed,stable,G6XC8D,G6XC8D,True,False,False,2033,5,1096,da48908cfb34e4a8448044470b15b785d5dc5871c45cd31b5d2cc70d65f80b75
+C06,empty,changed,"
+
+<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""bash"">
+<｜｜DSML｜｜ parameter name=""command"" string=""true"">ls -la; find . -maxdepth 3 -type f | head -100</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>","<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""bash"">
+<｜｜DSML｜｜ parameter name=""command"" string=""true"">ls -la; find . -maxdepth 3 -type f | head -100</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>",False,False,False,1587,53,803,6f3bda10608b05eaf969c97f4c7243ad449e5a4a3a48eef4350da7d7789f3538
+C07,prior,changed,H6TQ9B,H6TQ9B,False,True,False,2026,6,725,98efee31cae83ec1f9b4482dd713d23eb3a8fafee9b3a90de9401c7b855574e4
+C02,prior,stable,R9Q4V2,R9Q4V2,True,False,False,2032,6,552,511a98ee4f4a6af6105b9cbeb9c21749f133cb4f8008f3e37e02756aa793e710
+C03,empty,stable,"
+
+<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""memory_search"">
+<｜｜DSML｜｜ parameter name=""query"" string=""true"">交付母带 六位 内部确认码</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>","<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""memory_search"">
+<｜｜DSML｜｜ parameter name=""query"" string=""true"">交付母带 六位 内部确认码</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>",False,False,False,1587,46,566,605606d45bdfd7dc92e90689a39422febfba09cb9376ae1fc28d254eba3258c2
+C07,reviewed,changed,V2LJ5S,V2LJ5S,True,False,False,2029,6,549,d79e717f64927b73065cae7de8bf4e31f39c17c44dde4d757538e995d8da715a
+C05,reviewed,changed,Z8RP3H,Z8RP3H,True,False,False,2029,5,390,b146a9ff2f1f04138cec8e79a698dbb5f16816c70bb9e5692717debcb3a28ad3
+C03,reviewed,stable,W3HL7P,W3HL7P,True,False,False,2035,5,505,4ae10e5c5275233d80875d8ee7532eab1ceefd86154abc5ac5cacf688bdf3a7b
+C01,empty,stable,"
+
+<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""bash"">
+<｜｜DSML｜｜ parameter name=""command"" string=""true"">ls -la; find . -maxdepth 3 -type f | head -100</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>","<｜｜DSML｜｜ calls>
+<｜｜DSML｜｜ invoke name=""bash"">
+<｜｜DSML｜｜ parameter name=""command"" string=""true"">ls -la; find . -maxdepth 3 -type f | head -100</｜｜DSML｜｜ parameter>
+</｜｜DSML｜｜ invoke>
+</｜｜DSML｜｜ calls>",False,False,False,1588,53,666,6f3bda10608b05eaf969c97f4c7243ad449e5a4a3a48eef4350da7d7789f3538

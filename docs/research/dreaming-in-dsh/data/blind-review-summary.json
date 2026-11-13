@@ -1,0 +1,252 @@
+{
+  "method": "mode-blind independent AI reviewer + deterministic production contract and frozen rubric",
+  "humanReviewed": false,
+  "reports": {
+    "ordinary": {
+      "fixtureSha256": "7b187d4c36cc5c3542d19d738ef656deb54782a6d2b00754c5b4eba98856f2a1",
+      "promptSha256": "c41cec9a7a1dba525d87b8d5bd61ce48f68432c937f85a609020e8f23e85ccc4",
+      "cases": 10,
+      "structuralValid": true,
+      "semanticTruthEvaluated": true,
+      "machinePasses": 10,
+      "correct": 9,
+      "criticalErrors": 0,
+      "passed": true,
+      "batches": [
+        {
+          "fixtureSha256": "7b187d4c36cc5c3542d19d738ef656deb54782a6d2b00754c5b4eba98856f2a1",
+          "promptSha256": "c41cec9a7a1dba525d87b8d5bd61ce48f68432c937f85a609020e8f23e85ccc4",
+          "batchId": "A",
+          "caseCount": 5,
+          "structuralValid": true,
+          "semanticTruthEvaluated": true,
+          "rows": [
+            {
+              "caseId": "C01",
+              "verdict": "propose-correction",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": true
+            },
+            {
+              "caseId": "C02",
+              "verdict": "keep",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": true
+            },
+            {
+              "caseId": "C03",
+              "verdict": "keep",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": false
+            },
+            {
+              "caseId": "C04",
+              "verdict": "needs-evidence",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": true
+            },
+            {
+              "caseId": "C05",
+              "verdict": "needs-evidence",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": true
+            }
+          ]
+        },
+        {
+          "fixtureSha256": "7b187d4c36cc5c3542d19d738ef656deb54782a6d2b00754c5b4eba98856f2a1",
+          "promptSha256": "c41cec9a7a1dba525d87b8d5bd61ce48f68432c937f85a609020e8f23e85ccc4",
+          "batchId": "B",
+          "caseCount": 5,
+          "structuralValid": true,
+          "semanticTruthEvaluated": true,
+          "rows": [
+            {
+              "caseId": "C06",
+              "verdict": "needs-evidence",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": true
+            },
+            {
+              "caseId": "C07",
+              "verdict": "needs-evidence",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": true
+            },
+            {
+              "caseId": "C08",
+              "verdict": "keep",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": true
+            },
+            {
+              "caseId": "C09",
+              "verdict": "keep",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": true
+            },
+            {
+              "caseId": "C10",
+              "verdict": "keep",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": true
+            }
+          ]
+        }
+      ]
+    },
+    "superagent": {
+      "fixtureSha256": "7b187d4c36cc5c3542d19d738ef656deb54782a6d2b00754c5b4eba98856f2a1",
+      "promptSha256": "c41cec9a7a1dba525d87b8d5bd61ce48f68432c937f85a609020e8f23e85ccc4",
+      "cases": 10,
+      "structuralValid": true,
+      "semanticTruthEvaluated": true,
+      "machinePasses": 10,
+      "correct": 10,
+      "criticalErrors": 0,
+      "passed": true,
+      "batches": [
+        {
+          "fixtureSha256": "7b187d4c36cc5c3542d19d738ef656deb54782a6d2b00754c5b4eba98856f2a1",
+          "promptSha256": "c41cec9a7a1dba525d87b8d5bd61ce48f68432c937f85a609020e8f23e85ccc4",
+          "batchId": "A",
+          "caseCount": 5,
+          "structuralValid": true,
+          "semanticTruthEvaluated": true,
+          "rows": [
+            {
+              "caseId": "C01",
+              "verdict": "propose-correction",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": true
+            },
+            {
+              "caseId": "C02",
+              "verdict": "keep",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": true
+            },
+            {
+              "caseId": "C03",
+              "verdict": "keep",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": true
+            },
+            {
+              "caseId": "C04",
+              "verdict": "needs-evidence",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": true
+            },
+            {
+              "caseId": "C05",
+              "verdict": "needs-evidence",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": true
+            }
+          ]
+        },
+        {
+          "fixtureSha256": "7b187d4c36cc5c3542d19d738ef656deb54782a6d2b00754c5b4eba98856f2a1",
+          "promptSha256": "c41cec9a7a1dba525d87b8d5bd61ce48f68432c937f85a609020e8f23e85ccc4",
+          "batchId": "B",
+          "caseCount": 5,
+          "structuralValid": true,
+          "semanticTruthEvaluated": true,
+          "rows": [
+            {
+              "caseId": "C06",
+              "verdict": "needs-evidence",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": true
+            },
+            {
+              "caseId": "C07",
+              "verdict": "needs-evidence",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": true
+            },
+            {
+              "caseId": "C08",
+              "verdict": "keep",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": true
+            },
+            {
+              "caseId": "C09",
+              "verdict": "keep",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": true
+            },
+            {
+              "caseId": "C10",
+              "verdict": "keep",
+              "verdictCorrect": true,
+              "citationsComplete": true,
+              "criticalError": false,
+              "machinePass": true,
+              "semanticPass": true
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
