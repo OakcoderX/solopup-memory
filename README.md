@@ -4,7 +4,7 @@
 
 SoloPup 是 DeepSeek Harness（DSH） 的文字记忆插件。它尝试保存值得长期保留的信息，帮助 DSH 在后续工作中找回并参考。**公开测试版**，记忆可能保存或召回失败，重要内容请核对。
 
-[快速上手](docs/guides/quickstart.md) · [安装](#先试起来) · [做梦交互演示](https://oakcoderx.github.io/solopup-memory/dreaming/) · [更多示意案例](docs/README.md) · [常见问题](docs/faq.md) · [English](README.en.md)
+[快速上手](docs/guides/quickstart.md) · [安装](#先试起来) · [做梦交互演示](https://oakcoderx.github.io/solopup-memory/dreaming/) · [做梦实测报告](docs/research/dreaming-in-dsh/README.md) · [更多示意案例](docs/README.md) · [常见问题](docs/faq.md) · [English](README.en.md)
 
 ## 用起来是什么感觉？
 
@@ -56,7 +56,7 @@ AI 结合当前任务和记忆判断，再继续工作
 
 可以在**满足配置条件时**为 Super Agent 的任务提供项目背景：先显式关联同一仓库的工作区，负责具体任务的 AI 才可能收到项目记忆摘要。
 
-一次使用虚构项目的隔离测试中，真实模型同时看到“交付说明默认中文”的项目记忆和“旧任务用英文”的记录后，选择了中文，并提示旧记录需要核对。另一项 Super Agent 原型测试也观察到 Worker 参考了项目摘要。**两者均为单次观察，后者的部分调度使用测试替身，并非完整生产流程验收。**
+在两个虚构项目的对照中，我们实际重启 DSH，再由同一线程的消息恢复原 Super Agent 任务。旧检查点仍在。关闭做梦时，两个 Worker 继续用旧值。做梦建议经确认写入后，两例都改用新值，并保留原例外。跨夜用任务引擎的逻辑时钟模拟。 [看跨天恢复实测](docs/research/dreaming-in-dsh/README.md#第二天旧检查点还在)
 
 Super Agent 原型准备失败后直接重试，Worker 可能缺少项目记忆；默认也不一定具备记忆检索或写入工具。撤回记忆不会自动清除旧会话副本。[查看接入条件、测试和限制](docs/runs/2026-11-12-superagent-examples.md)。
 

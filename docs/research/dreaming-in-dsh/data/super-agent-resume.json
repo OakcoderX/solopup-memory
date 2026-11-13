@@ -1,0 +1,241 @@
+{
+  "passed": true,
+  "requests": 10,
+  "usage": {
+    "input": 19887,
+    "output": 353,
+    "cacheRead": 7296
+  },
+  "rows": [
+    {
+      "id": "audio",
+      "title": "白栈纪录片",
+      "dreamVerified": true,
+      "arms": {
+        "A": {
+          "verified": true,
+          "restarted": true,
+          "sameTicket": true,
+          "sameWorker": true,
+          "sameAssignment": true,
+          "sameWorktree": true,
+          "restoredCheckpoint": true,
+          "followedNextDay": true,
+          "firstMemory": true,
+          "history": true,
+          "currentMemory": true,
+          "day1": {
+            "artifact": {
+              "status": "waiting",
+              "standard": "AS-5146",
+              "exception": "AS-2605"
+            },
+            "correct": true
+          },
+          "day2": {
+            "artifact": {
+              "standard": "AS-5146",
+              "exception": "AS-2605"
+            },
+            "correct": true
+          },
+          "conflictGuidanceSeen": true,
+          "historyContainsOld": true,
+          "historyContainsCheckpoint": true,
+          "followUpContainsCodes": false,
+          "memorySeen": {
+            "old": true,
+            "new": false,
+            "exception": true,
+            "sha256": "98624a00b3225097c67fcc2e0979c0bc5f171c624422311332b7652dcbbdc895"
+          },
+          "projectionBlocks": [
+            {
+              "role": "user",
+              "messageIndex": 2,
+              "runtimeFrame": true,
+              "old": true,
+              "new": false,
+              "exception": true,
+              "sha256": "98624a00b3225097c67fcc2e0979c0bc5f171c624422311332b7652dcbbdc895"
+            },
+            {
+              "role": "user",
+              "messageIndex": 5,
+              "runtimeFrame": true,
+              "old": true,
+              "new": false,
+              "exception": true,
+              "sha256": "98624a00b3225097c67fcc2e0979c0bc5f171c624422311332b7652dcbbdc895"
+            }
+          ]
+        },
+        "C": {
+          "verified": true,
+          "restarted": true,
+          "sameTicket": true,
+          "sameWorker": true,
+          "sameAssignment": true,
+          "sameWorktree": true,
+          "restoredCheckpoint": true,
+          "followedNextDay": true,
+          "firstMemory": true,
+          "history": true,
+          "currentMemory": true,
+          "day1": {
+            "artifact": {
+              "status": "waiting",
+              "standard": "AS-5146",
+              "exception": "AS-2605"
+            },
+            "correct": true
+          },
+          "day2": {
+            "artifact": {
+              "standard": "AS-8732",
+              "exception": "AS-2605"
+            },
+            "correct": true
+          },
+          "conflictGuidanceSeen": true,
+          "historyContainsOld": true,
+          "historyContainsCheckpoint": true,
+          "followUpContainsCodes": false,
+          "memorySeen": {
+            "old": false,
+            "new": true,
+            "exception": true,
+            "sha256": "4843136e63876073593c82dc1c30fc30657c89a726746eff6ef80400b5f0b37d"
+          },
+          "projectionBlocks": [
+            {
+              "role": "user",
+              "messageIndex": 5,
+              "runtimeFrame": true,
+              "old": false,
+              "new": true,
+              "exception": true,
+              "sha256": "4843136e63876073593c82dc1c30fc30657c89a726746eff6ef80400b5f0b37d"
+            }
+          ]
+        }
+      },
+      "verified": true
+    },
+    {
+      "id": "story",
+      "title": "杉径漫画",
+      "dreamVerified": true,
+      "arms": {
+        "A": {
+          "verified": true,
+          "restarted": true,
+          "sameTicket": true,
+          "sameWorker": true,
+          "sameAssignment": true,
+          "sameWorktree": true,
+          "restoredCheckpoint": true,
+          "followedNextDay": true,
+          "firstMemory": true,
+          "history": true,
+          "currentMemory": true,
+          "day1": {
+            "artifact": {
+              "status": "waiting",
+              "standard": "PF-4162",
+              "exception": "PF-2589"
+            },
+            "correct": true
+          },
+          "day2": {
+            "artifact": {
+              "standard": "PF-4162",
+              "exception": "PF-2589"
+            },
+            "correct": true
+          },
+          "conflictGuidanceSeen": true,
+          "historyContainsOld": true,
+          "historyContainsCheckpoint": true,
+          "followUpContainsCodes": false,
+          "memorySeen": {
+            "old": true,
+            "new": false,
+            "exception": true,
+            "sha256": "c142ff82f02390dabe692e908be3c0e5ec8880b4ebe452f743a05a4059a102a5"
+          },
+          "projectionBlocks": [
+            {
+              "role": "user",
+              "messageIndex": 2,
+              "runtimeFrame": true,
+              "old": true,
+              "new": false,
+              "exception": true,
+              "sha256": "c142ff82f02390dabe692e908be3c0e5ec8880b4ebe452f743a05a4059a102a5"
+            },
+            {
+              "role": "user",
+              "messageIndex": 5,
+              "runtimeFrame": true,
+              "old": true,
+              "new": false,
+              "exception": true,
+              "sha256": "c142ff82f02390dabe692e908be3c0e5ec8880b4ebe452f743a05a4059a102a5"
+            }
+          ]
+        },
+        "C": {
+          "verified": true,
+          "restarted": true,
+          "sameTicket": true,
+          "sameWorker": true,
+          "sameAssignment": true,
+          "sameWorktree": true,
+          "restoredCheckpoint": true,
+          "followedNextDay": true,
+          "firstMemory": true,
+          "history": true,
+          "currentMemory": true,
+          "day1": {
+            "artifact": {
+              "status": "waiting",
+              "standard": "PF-4162",
+              "exception": "PF-2589"
+            },
+            "correct": true
+          },
+          "day2": {
+            "artifact": {
+              "standard": "PF-7903",
+              "exception": "PF-2589"
+            },
+            "correct": true
+          },
+          "conflictGuidanceSeen": true,
+          "historyContainsOld": true,
+          "historyContainsCheckpoint": true,
+          "followUpContainsCodes": false,
+          "memorySeen": {
+            "old": false,
+            "new": true,
+            "exception": true,
+            "sha256": "6a6021390c004018d8d22161dcfb896bd63ed797431ecad6d704e617b224ecc7"
+          },
+          "projectionBlocks": [
+            {
+              "role": "user",
+              "messageIndex": 5,
+              "runtimeFrame": true,
+              "old": false,
+              "new": true,
+              "exception": true,
+              "sha256": "6a6021390c004018d8d22161dcfb896bd63ed797431ecad6d704e617b224ecc7"
+            }
+          ]
+        }
+      },
+      "verified": true
+    }
+  ]
+}

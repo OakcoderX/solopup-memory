@@ -4,7 +4,7 @@
 
 SoloPup is a text-memory plugin for DeepSeek Harness (DSH). It attempts to save useful long-term context for DSH to recall and consider later. **Public beta:** saving or recall may fail; check important details.
 
-[Quick start](docs/guides/quickstart.md) · [Install](#quick-install) · [More fictional examples](docs/README.md) · [FAQ](docs/faq.md) · [中文](README.md)
+[Quick start](docs/guides/quickstart.md) · [Install](#quick-install) · [Dreaming study (Chinese)](docs/research/dreaming-in-dsh/README.md) · [More fictional examples](docs/README.md) · [FAQ](docs/faq.md) · [中文](README.md)
 
 ## What could it look like?
 
@@ -48,7 +48,7 @@ This simplified illustration does not mean every task automatically receives mem
 
 **With the required setup**, Super Agent tasks can receive project context: worktrees in the same repository must first be explicitly linked, after which a Worker may receive a project memory summary.
 
-In one isolated test using a fictional project, a real model saw both a Chinese-by-default project decision and an old English-language task record; it chose Chinese and flagged the old record for checking. A separate Super Agent prototype test also observed a Worker using the project summary. **Both are single observations; the latter used test doubles for some orchestration and was not full production acceptance.**
+In two fictional projects, we restarted DSH and resumed the same Super Agent tasks via a follow-up in the original thread. The old checkpoints were still there. Both Workers kept the old default with dreaming off. After we adopted a correction, both used the new default and kept the original exception. We simulated the overnight interval with the task engine’s clock. [Read the study (Chinese)](docs/research/dreaming-in-dsh/README.md#第二天旧检查点还在)
 
 After a prepare failure, the prototype can retry without project memory. Workers do not necessarily have memory search or write tools by default. Withdrawing a memory does not erase old session copies. [Setup, tests and limitations](docs/runs/2026-11-12-superagent-examples.md).
 

@@ -1,0 +1,89 @@
+{
+  "passed": true,
+  "requests": 12,
+  "usage": {
+    "input": 20562,
+    "output": 414,
+    "cacheRead": 13184
+  },
+  "rows": [
+    {
+      "id": "audio",
+      "title": "白栈纪录片",
+      "expectedRevision": true,
+      "reportMode": "superagent",
+      "reportVerdict": "propose-correction",
+      "workerVerified": true,
+      "reportSourcesVerified": true,
+      "sameABProjection": true,
+      "verified": true,
+      "adopted": true,
+      "artifacts": {
+        "A": {
+          "standard": "AS-5146",
+          "exception": "AS-2605"
+        },
+        "B": {
+          "standard": "AS-5146",
+          "exception": "AS-2605"
+        },
+        "C": {
+          "standard": "AS-8732",
+          "exception": "AS-2605"
+        }
+      }
+    },
+    {
+      "id": "story",
+      "title": "杉径漫画",
+      "expectedRevision": true,
+      "reportMode": "superagent",
+      "reportVerdict": "propose-correction",
+      "workerVerified": true,
+      "reportSourcesVerified": true,
+      "sameABProjection": true,
+      "verified": true,
+      "adopted": true,
+      "artifacts": {
+        "A": {
+          "standard": "PF-4162",
+          "exception": "PF-2589"
+        },
+        "B": {
+          "standard": "PF-4162",
+          "exception": "PF-2589"
+        },
+        "C": {
+          "standard": "PF-7903",
+          "exception": "PF-2589"
+        }
+      }
+    },
+    {
+      "id": "tentative",
+      "title": "棠街花絮",
+      "expectedRevision": false,
+      "reportMode": "superagent",
+      "reportVerdict": "keep",
+      "workerVerified": true,
+      "reportSourcesVerified": true,
+      "sameABProjection": true,
+      "verified": true,
+      "adopted": false,
+      "artifacts": {
+        "A": {
+          "standard": "AR-3785",
+          "exception": "AR-2410"
+        },
+        "B": {
+          "standard": "AR-3785",
+          "exception": "AR-2410"
+        },
+        "C": {
+          "standard": "AR-3785",
+          "exception": "AR-2410"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,1002 @@
+{
+  "schema": 1,
+  "rawReceiptSha256": "e920dc32cc5163511bdad59b1084ee837473f2e17cc5882cc705f7a723f859ac",
+  "archiveSha256": "869c0d879a738056c5cd8557ed7e54e69950b781124d1ba2301a12942211499f",
+  "model": "deepseek-flash",
+  "frozenAt": "2026-11-13T04:17:06.229Z",
+  "startedAt": "2026-11-13T04:17:15.911Z",
+  "finishedAt": "2026-11-13T04:18:37.081Z",
+  "mode": "real-model",
+  "idleMs": 1800,
+  "materials": {
+    "实验协议.md": "1c132dc9a8485f340bd75a083a3e2de292b781b14d37a0dd5c3e69d37ca52c69",
+    "cases.mjs": "8cc0d91a82221d170630be8dc213c62310aa43f1a86b482c8eb4f2b7824af321",
+    "model.mjs": "e36fa9ca800b9467825fe1193c6b4fcd3314535aa6c1904b71fa7db690bbe6f4",
+    "run.mjs": "c828355541437155c9cf8bfa97c7b89fe5be4ef8dbb711f58c9c3aff848ef8e0",
+    "dream-stage.mjs": "997ace02acbf876720c016f8e430301ee171876c58d17279ec5bc7f82ca65f14",
+    "return-stage.mjs": "3a7d98a04f5cff2797f7c0a7e65c949f3d734c3fddd937b000102b3d57ffc114",
+    "summarize.mjs": "c452f33017799c1c1397503cc74137508cc375e596f4029eb7767c752fdc65d7",
+    "launch.py": "7bc23699bd46525b2f9e1945e82eacc3f35e8271b77bf7b44b7b96e76e94cb99"
+  },
+  "dshVersion": "0.2.2-rc.1",
+  "hostNode": "24.21.0",
+  "usage": {
+    "input": 40858,
+    "output": 836,
+    "cacheRead": 25344
+  },
+  "realRequests": 24,
+  "projects": [
+    {
+      "id": "audio",
+      "title": "白栈纪录片",
+      "type": "change",
+      "scenario": {
+        "oldSummary": "白栈纪录片的环境声交付预设默认为 AS-5146，展映版片尾仍使用 AS-2605。",
+        "oldUserMessage": "请记住项目约定：白栈纪录片的环境声交付预设默认为 AS-5146，展映版片尾仍使用 AS-2605。",
+        "ownerMessage": "更正「白栈纪录片的环境声交付预设默认为 AS-5146，展映版片尾仍使用 AS-2605。」：已确认环境声交付预设的默认值改为 AS-8732；展映版片尾仍使用 AS-2605。收到即可，这一轮不要调用工具。",
+        "returnQuestion": "为「白栈纪录片」填一份供我核对的草稿。读取上下文中标记为 memory-store 的当前项目记忆索引，把已记录的项目约定作为填表依据。standard 填普通情况下环境声交付预设的编号；exception 填展映版片尾使用的环境声交付预设编号。每个值只抄对应的编号原样，只有索引没有给出对应编号才填 UNKNOWN。只返回一个恰好包含 standard 和 exception 两个字符串字段的 JSON 对象，不写说明、不展开模板、不调用工具、不查历史、不执行派工。",
+        "expected": {
+          "standard": "AS-8732",
+          "exception": "AS-2605"
+        }
+      },
+      "dream": {
+        "reportSaved": true,
+        "verdict": "propose-correction",
+        "proposedSummary": "白栈纪录片的环境声交付预设默认为 AS-8732，展映版片尾仍使用 AS-2605。",
+        "reason": "s2 明确更正同范围默认值：环境声交付预设默认改为 AS-8732，展映版片尾仍为 AS-2605；s1 为旧约定，s2 时间更晚且为更正。",
+        "sourceAliasesFromModel": [
+          "s1",
+          "s2"
+        ],
+        "validatedOriginalCitation": true,
+        "validatedCorrectionCitation": true,
+        "reopenedReportState": "current",
+        "sourcesGivenToModel": [
+          {
+            "alias": "s1",
+            "kind": "original",
+            "quote": "请记住项目约定：白栈纪录片的环境声交付预设默认为 AS-5146，展映版片尾仍使用 AS-2605。",
+            "quoteSha256": "d2a295cec1c44d7c0c476ddb1311e4a3e223dd88786783f0f886ab4aa2c39ca2"
+          },
+          {
+            "alias": "s2",
+            "kind": "additional-user-message",
+            "quote": "更正「白栈纪录片的环境声交付预设默认为 AS-5146，展映版片尾仍使用 AS-2605。」：已确认环境声交付预设的默认值改为 AS-8732；展映版片尾仍使用 AS-2605。收到即可，这一轮不要调用工具。",
+            "quoteSha256": "b34e5eef07442e1ea8f9641dfca7c148c6e1e8eeebb7e10f8a67407f6d19def7"
+          }
+        ],
+        "reportMemoryUnchanged": true,
+        "actualIdleMs": 1853,
+        "usage": {
+          "input": 514,
+          "output": 113,
+          "cacheRead": 128
+        }
+      },
+      "adoption": {
+        "approved": true,
+        "requested": true,
+        "recorded": true,
+        "exactConfirmedProposal": "白栈纪录片的环境声交付预设默认为 AS-8732，展映版片尾仍使用 AS-2605。",
+        "confirmationMessage": "我确认这是本项目长期约定，请正式保存并取代上面的旧约定。已核对的正式内容：白栈纪录片的环境声交付预设默认为 AS-8732，展映版片尾仍使用 AS-2605。",
+        "oldStatus": "superseded",
+        "newStatus": "recorded",
+        "confirmationSourceSha256": "1b47b2ce090eeff887b1bfb95df4b465f4773044be826bc18416b76950bcb5e4"
+      },
+      "arms": {
+        "A": {
+          "answer": "{\"standard\":\"AS-5146\",\"exception\":\"AS-2605\"}",
+          "artifact": {
+            "standard": "AS-5146",
+            "exception": "AS-2605"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": true,
+          "staleUsed": true,
+          "probesInProjection": {
+            "old": [
+              "AS-5146"
+            ],
+            "revised": [],
+            "protected": [
+              "AS-2605"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "4e5495ef668193ff3e04aa19720b5e83afe07db42a9731bc1068c9ab5179fa5a",
+          "projectionBytes": 1538,
+          "usage": {
+            "input": 2114,
+            "output": 15,
+            "cacheRead": 640
+          },
+          "elapsedMs": 1050
+        },
+        "B": {
+          "answer": "{\"standard\":\"AS-5146\",\"exception\":\"AS-2605\"}",
+          "artifact": {
+            "standard": "AS-5146",
+            "exception": "AS-2605"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": true,
+          "staleUsed": true,
+          "probesInProjection": {
+            "old": [
+              "AS-5146"
+            ],
+            "revised": [],
+            "protected": [
+              "AS-2605"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "4e5495ef668193ff3e04aa19720b5e83afe07db42a9731bc1068c9ab5179fa5a",
+          "projectionBytes": 1537,
+          "usage": {
+            "input": 2114,
+            "output": 15,
+            "cacheRead": 1664
+          },
+          "elapsedMs": 746
+        },
+        "C": {
+          "answer": "{\"standard\":\"AS-8732\",\"exception\":\"AS-2605\"}",
+          "artifact": {
+            "standard": "AS-8732",
+            "exception": "AS-2605"
+          },
+          "format": "json",
+          "correct": true,
+          "standardCorrect": true,
+          "exceptionCorrect": true,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [],
+            "revised": [
+              "AS-8732"
+            ],
+            "protected": [
+              "AS-2605"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "0bfdf7037747df1d9d7f0e5403e2f9f408045599df36ae4a775b07d598673a6c",
+          "projectionBytes": 1536,
+          "usage": {
+            "input": 2111,
+            "output": 15,
+            "cacheRead": 1664
+          },
+          "elapsedMs": 827
+        }
+      }
+    },
+    {
+      "id": "color",
+      "title": "镜湖样片",
+      "type": "change",
+      "scenario": {
+        "oldSummary": "镜湖样片的画面校验清单默认为 VC-6724，黑白档案片段仍使用 VC-1086。",
+        "oldUserMessage": "请记住项目约定：镜湖样片的画面校验清单默认为 VC-6724，黑白档案片段仍使用 VC-1086。",
+        "ownerMessage": "更正「镜湖样片的画面校验清单默认为 VC-6724，黑白档案片段仍使用 VC-1086。」：已确认画面校验清单的默认值改为 VC-3591；黑白档案片段仍使用 VC-1086。收到即可，这一轮不要调用工具。",
+        "returnQuestion": "为「镜湖样片」填一份供我核对的草稿。读取上下文中标记为 memory-store 的当前项目记忆索引，把已记录的项目约定作为填表依据。standard 填普通情况下画面校验清单的编号；exception 填黑白档案片段使用的画面校验清单编号。每个值只抄对应的编号原样，只有索引没有给出对应编号才填 UNKNOWN。只返回一个恰好包含 standard 和 exception 两个字符串字段的 JSON 对象，不写说明、不展开模板、不调用工具、不查历史、不执行派工。",
+        "expected": {
+          "standard": "VC-3591",
+          "exception": "VC-1086"
+        }
+      },
+      "dream": {
+        "reportSaved": true,
+        "verdict": "propose-correction",
+        "proposedSummary": "镜湖样片的画面校验清单默认值已改为 VC-3591，黑白档案片段仍使用 VC-1086。",
+        "reason": "s1 原约定默认 VC-6724；s2 明确更正默认值为 VC-3591，并保留黑白档案片段仍用 VC-1086，属同范围替代决定。",
+        "sourceAliasesFromModel": [
+          "s1",
+          "s2"
+        ],
+        "validatedOriginalCitation": true,
+        "validatedCorrectionCitation": true,
+        "reopenedReportState": "current",
+        "sourcesGivenToModel": [
+          {
+            "alias": "s1",
+            "kind": "original",
+            "quote": "请记住项目约定：镜湖样片的画面校验清单默认为 VC-6724，黑白档案片段仍使用 VC-1086。",
+            "quoteSha256": "7bfb663c5508c385f4157904734aa149d6c162644b2af32e4b9322a3835c198b"
+          },
+          {
+            "alias": "s2",
+            "kind": "additional-user-message",
+            "quote": "更正「镜湖样片的画面校验清单默认为 VC-6724，黑白档案片段仍使用 VC-1086。」：已确认画面校验清单的默认值改为 VC-3591；黑白档案片段仍使用 VC-1086。收到即可，这一轮不要调用工具。",
+            "quoteSha256": "b4886789a57c613b8a665f85433a077df2cb553985966a13ecf17b5e222abe0a"
+          }
+        ],
+        "reportMemoryUnchanged": true,
+        "actualIdleMs": 1863,
+        "usage": {
+          "input": 505,
+          "output": 104,
+          "cacheRead": 128
+        }
+      },
+      "adoption": {
+        "approved": false,
+        "requested": false,
+        "recorded": false,
+        "exactConfirmedProposal": null,
+        "confirmationMessage": null,
+        "oldStatus": null,
+        "newStatus": null,
+        "confirmationSourceSha256": null
+      },
+      "arms": {
+        "A": {
+          "answer": "{\"standard\":\"VC-6724\",\"exception\":\"VC-1086\"}",
+          "artifact": {
+            "standard": "VC-6724",
+            "exception": "VC-1086"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": true,
+          "staleUsed": true,
+          "probesInProjection": {
+            "old": [
+              "VC-6724"
+            ],
+            "revised": [],
+            "protected": [
+              "VC-1086"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "e40b518cf9616b9d9592bd9f7bcd41db6689c6999f3a08b4f31edc6961139f68",
+          "projectionBytes": 1535,
+          "usage": {
+            "input": 2106,
+            "output": 15,
+            "cacheRead": 640
+          },
+          "elapsedMs": 1105
+        },
+        "B": {
+          "answer": "{\"standard\":\"VC-6724\",\"exception\":\"VC-1086\"}",
+          "artifact": {
+            "standard": "VC-6724",
+            "exception": "VC-1086"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": true,
+          "staleUsed": true,
+          "probesInProjection": {
+            "old": [
+              "VC-6724"
+            ],
+            "revised": [],
+            "protected": [
+              "VC-1086"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "e40b518cf9616b9d9592bd9f7bcd41db6689c6999f3a08b4f31edc6961139f68",
+          "projectionBytes": 1534,
+          "usage": {
+            "input": 2106,
+            "output": 15,
+            "cacheRead": 1664
+          },
+          "elapsedMs": 675
+        },
+        "C": {
+          "answer": "{\"standard\":\"VC-6724\",\"exception\":\"VC-1086\"}",
+          "artifact": {
+            "standard": "VC-6724",
+            "exception": "VC-1086"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": true,
+          "staleUsed": true,
+          "probesInProjection": {
+            "old": [
+              "VC-6724"
+            ],
+            "revised": [],
+            "protected": [
+              "VC-1086"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "e40b518cf9616b9d9592bd9f7bcd41db6689c6999f3a08b4f31edc6961139f68",
+          "projectionBytes": 1534,
+          "usage": {
+            "input": 2106,
+            "output": 15,
+            "cacheRead": 1920
+          },
+          "elapsedMs": 973
+        }
+      }
+    },
+    {
+      "id": "story",
+      "title": "杉径漫画",
+      "type": "change",
+      "scenario": {
+        "oldSummary": "杉径漫画的校对反馈表默认为 PF-4162，双语对照页仍使用 PF-2589。",
+        "oldUserMessage": "请记住项目约定：杉径漫画的校对反馈表默认为 PF-4162，双语对照页仍使用 PF-2589。",
+        "ownerMessage": "更正「杉径漫画的校对反馈表默认为 PF-4162，双语对照页仍使用 PF-2589。」：已确认校对反馈表的默认值改为 PF-7903；双语对照页仍使用 PF-2589。收到即可，这一轮不要调用工具。",
+        "returnQuestion": "为「杉径漫画」填一份供我核对的草稿。读取上下文中标记为 memory-store 的当前项目记忆索引，把已记录的项目约定作为填表依据。standard 填普通情况下校对反馈表的编号；exception 填双语对照页使用的校对反馈表编号。每个值只抄对应的编号原样，只有索引没有给出对应编号才填 UNKNOWN。只返回一个恰好包含 standard 和 exception 两个字符串字段的 JSON 对象，不写说明、不展开模板、不调用工具、不查历史、不执行派工。",
+        "expected": {
+          "standard": "PF-7903",
+          "exception": "PF-2589"
+        }
+      },
+      "dream": {
+        "reportSaved": true,
+        "verdict": "propose-correction",
+        "proposedSummary": "杉径漫画的校对反馈表默认为 PF-7903，双语对照页仍使用 PF-2589。",
+        "reason": "s1 原约定默认 PF-4162；s2 明确更正为默认 PF-7903，双语对照页仍为 PF-2589，范围一致且为直接替代决定。",
+        "sourceAliasesFromModel": [
+          "s1",
+          "s2"
+        ],
+        "validatedOriginalCitation": true,
+        "validatedCorrectionCitation": true,
+        "reopenedReportState": "current",
+        "sourcesGivenToModel": [
+          {
+            "alias": "s1",
+            "kind": "original",
+            "quote": "请记住项目约定：杉径漫画的校对反馈表默认为 PF-4162，双语对照页仍使用 PF-2589。",
+            "quoteSha256": "df03ad77c8292fdd70076438fa07e77f3786b4588a4571c7fa1d02f58e1848f1"
+          },
+          {
+            "alias": "s2",
+            "kind": "additional-user-message",
+            "quote": "更正「杉径漫画的校对反馈表默认为 PF-4162，双语对照页仍使用 PF-2589。」：已确认校对反馈表的默认值改为 PF-7903；双语对照页仍使用 PF-2589。收到即可，这一轮不要调用工具。",
+            "quoteSha256": "96e96767572ec0ea2be0deaf9e3699b97f12175d789cc124bf2f4fa3af4f45db"
+          }
+        ],
+        "reportMemoryUnchanged": true,
+        "actualIdleMs": 1859,
+        "usage": {
+          "input": 504,
+          "output": 102,
+          "cacheRead": 128
+        }
+      },
+      "adoption": {
+        "approved": true,
+        "requested": true,
+        "recorded": true,
+        "exactConfirmedProposal": "杉径漫画的校对反馈表默认为 PF-7903，双语对照页仍使用 PF-2589。",
+        "confirmationMessage": "我确认这是本项目长期约定，请正式保存并取代上面的旧约定。已核对的正式内容：杉径漫画的校对反馈表默认为 PF-7903，双语对照页仍使用 PF-2589。",
+        "oldStatus": "superseded",
+        "newStatus": "recorded",
+        "confirmationSourceSha256": "7bd8c6c38ed820a6088b90066f2a8d06b97307972fde8be15d49b6b625840680"
+      },
+      "arms": {
+        "A": {
+          "answer": "{\"standard\":\"PF-4162\",\"exception\":\"PF-2589\"}",
+          "artifact": {
+            "standard": "PF-4162",
+            "exception": "PF-2589"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": true,
+          "staleUsed": true,
+          "probesInProjection": {
+            "old": [
+              "PF-4162"
+            ],
+            "revised": [],
+            "protected": [
+              "PF-2589"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "416c139c37fc4f29a15a4f94a318d33252220ec7f9f40a81d7cb6c78092778b7",
+          "projectionBytes": 1529,
+          "usage": {
+            "input": 2103,
+            "output": 15,
+            "cacheRead": 640
+          },
+          "elapsedMs": 773
+        },
+        "B": {
+          "answer": "{\"standard\":\"PF-4162\",\"exception\":\"PF-2589\"}",
+          "artifact": {
+            "standard": "PF-4162",
+            "exception": "PF-2589"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": true,
+          "staleUsed": true,
+          "probesInProjection": {
+            "old": [
+              "PF-4162"
+            ],
+            "revised": [],
+            "protected": [
+              "PF-2589"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "416c139c37fc4f29a15a4f94a318d33252220ec7f9f40a81d7cb6c78092778b7",
+          "projectionBytes": 1528,
+          "usage": {
+            "input": 2103,
+            "output": 15,
+            "cacheRead": 1664
+          },
+          "elapsedMs": 980
+        },
+        "C": {
+          "answer": "{\"standard\":\"PF-7903\",\"exception\":\"PF-2589\"}",
+          "artifact": {
+            "standard": "PF-7903",
+            "exception": "PF-2589"
+          },
+          "format": "json",
+          "correct": true,
+          "standardCorrect": true,
+          "exceptionCorrect": true,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [],
+            "revised": [
+              "PF-7903"
+            ],
+            "protected": [
+              "PF-2589"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "345a0370ad26da0553d7f030c6ca8430852cc9547f6460681446e2681574639a",
+          "projectionBytes": 1527,
+          "usage": {
+            "input": 2105,
+            "output": 15,
+            "cacheRead": 1664
+          },
+          "elapsedMs": 691
+        }
+      }
+    },
+    {
+      "id": "game",
+      "title": "星市试玩",
+      "type": "change",
+      "scenario": {
+        "oldSummary": "星市试玩的问题归档表默认为 UX-7318，低视力试玩场次仍使用 UX-2640。",
+        "oldUserMessage": "请记住项目约定：星市试玩的问题归档表默认为 UX-7318，低视力试玩场次仍使用 UX-2640。",
+        "ownerMessage": "更正「星市试玩的问题归档表默认为 UX-7318，低视力试玩场次仍使用 UX-2640。」：已确认问题归档表的默认值改为 UX-5064；低视力试玩场次仍使用 UX-2640。收到即可，这一轮不要调用工具。",
+        "returnQuestion": "为「星市试玩」填一份供我核对的草稿。读取上下文中标记为 memory-store 的当前项目记忆索引，把已记录的项目约定作为填表依据。standard 填普通情况下问题归档表的编号；exception 填低视力试玩场次使用的问题归档表编号。每个值只抄对应的编号原样，只有索引没有给出对应编号才填 UNKNOWN。只返回一个恰好包含 standard 和 exception 两个字符串字段的 JSON 对象，不写说明、不展开模板、不调用工具、不查历史、不执行派工。",
+        "expected": {
+          "standard": "UX-5064",
+          "exception": "UX-2640"
+        }
+      },
+      "dream": {
+        "reportSaved": true,
+        "verdict": "propose-correction",
+        "proposedSummary": "星市试玩的问题归档表默认为 UX-5064，低视力试玩场次仍使用 UX-2640。",
+        "reason": "s1 原约定默认 UX-7318、低视力仍用 UX-2640；s2 明确更正默认值为 UX-5064，低视力仍用 UX-2640，属同范围替代决定，故应更新默认值。",
+        "sourceAliasesFromModel": [
+          "s1",
+          "s2"
+        ],
+        "validatedOriginalCitation": true,
+        "validatedCorrectionCitation": true,
+        "reopenedReportState": "current",
+        "sourcesGivenToModel": [
+          {
+            "alias": "s1",
+            "kind": "original",
+            "quote": "请记住项目约定：星市试玩的问题归档表默认为 UX-7318，低视力试玩场次仍使用 UX-2640。",
+            "quoteSha256": "2d78e6fd2e7bab094bcb7dac796ad10fbda4db7bec30d3e3291df816e7bce4e3"
+          },
+          {
+            "alias": "s2",
+            "kind": "additional-user-message",
+            "quote": "更正「星市试玩的问题归档表默认为 UX-7318，低视力试玩场次仍使用 UX-2640。」：已确认问题归档表的默认值改为 UX-5064；低视力试玩场次仍使用 UX-2640。收到即可，这一轮不要调用工具。",
+            "quoteSha256": "c5fd4295b59faf1fdd28bc6a3121a56eae4eb64e82fc3e182fcbde65acd294bd"
+          }
+        ],
+        "reportMemoryUnchanged": true,
+        "actualIdleMs": 1848,
+        "usage": {
+          "input": 516,
+          "output": 117,
+          "cacheRead": 128
+        }
+      },
+      "adoption": {
+        "approved": true,
+        "requested": true,
+        "recorded": true,
+        "exactConfirmedProposal": "星市试玩的问题归档表默认为 UX-5064，低视力试玩场次仍使用 UX-2640。",
+        "confirmationMessage": "我确认这是本项目长期约定，请正式保存并取代上面的旧约定。已核对的正式内容：星市试玩的问题归档表默认为 UX-5064，低视力试玩场次仍使用 UX-2640。",
+        "oldStatus": "superseded",
+        "newStatus": "recorded",
+        "confirmationSourceSha256": "ac3fba7634035b47cea1dcf263bedb0908c134eb74f14f81ee22facb5441df2c"
+      },
+      "arms": {
+        "A": {
+          "answer": "{\"standard\":\"UX-7318\",\"exception\":\"UX-2640\"}",
+          "artifact": {
+            "standard": "UX-7318",
+            "exception": "UX-2640"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": true,
+          "staleUsed": true,
+          "probesInProjection": {
+            "old": [
+              "UX-7318"
+            ],
+            "revised": [],
+            "protected": [
+              "UX-2640"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "cac3813d6843ae0c52cbb941f6037bc2e96ff1c64316b579db1802dbe1120994",
+          "projectionBytes": 1535,
+          "usage": {
+            "input": 2104,
+            "output": 15,
+            "cacheRead": 640
+          },
+          "elapsedMs": 577
+        },
+        "B": {
+          "answer": "{\"standard\":\"UX-7318\",\"exception\":\"UX-2640\"}",
+          "artifact": {
+            "standard": "UX-7318",
+            "exception": "UX-2640"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": true,
+          "staleUsed": true,
+          "probesInProjection": {
+            "old": [
+              "UX-7318"
+            ],
+            "revised": [],
+            "protected": [
+              "UX-2640"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "cac3813d6843ae0c52cbb941f6037bc2e96ff1c64316b579db1802dbe1120994",
+          "projectionBytes": 1534,
+          "usage": {
+            "input": 2104,
+            "output": 15,
+            "cacheRead": 1664
+          },
+          "elapsedMs": 1101
+        },
+        "C": {
+          "answer": "{\"standard\":\"UX-5064\",\"exception\":\"UX-2640\"}",
+          "artifact": {
+            "standard": "UX-5064",
+            "exception": "UX-2640"
+          },
+          "format": "json",
+          "correct": true,
+          "standardCorrect": true,
+          "exceptionCorrect": true,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [],
+            "revised": [
+              "UX-5064"
+            ],
+            "protected": [
+              "UX-2640"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "859c4fb7d8fa6a8443b1cb5f0063c81f7d7163dfa696211d7dc8b5ce97be6d5e",
+          "projectionBytes": 1533,
+          "usage": {
+            "input": 2105,
+            "output": 15,
+            "cacheRead": 1664
+          },
+          "elapsedMs": 927
+        }
+      }
+    },
+    {
+      "id": "tentative",
+      "title": "棠街花絮",
+      "type": "ambiguous",
+      "scenario": {
+        "oldSummary": "棠街花絮的镜头归档清单默认为 AR-3785，版权待确认镜头仍使用 AR-2410。",
+        "oldUserMessage": "请记住项目约定：棠街花絮的镜头归档清单默认为 AR-3785，版权待确认镜头仍使用 AR-2410。",
+        "ownerMessage": "更正「棠街花絮的镜头归档清单默认为 AR-3785，版权待确认镜头仍使用 AR-2410。」：有人提出把默认换成 AR-9016，目前只是待审提议，我没有批准，先按现行约定执行。收到即可，这一轮不要调用工具。",
+        "returnQuestion": "为「棠街花絮」填一份供我核对的草稿。读取上下文中标记为 memory-store 的当前项目记忆索引，把已记录的项目约定作为填表依据。standard 填普通情况下镜头归档清单的编号；exception 填版权待确认镜头使用的镜头归档清单编号。每个值只抄对应的编号原样，只有索引没有给出对应编号才填 UNKNOWN。只返回一个恰好包含 standard 和 exception 两个字符串字段的 JSON 对象，不写说明、不展开模板、不调用工具、不查历史、不执行派工。",
+        "expected": {
+          "standard": "AR-3785",
+          "exception": "AR-2410"
+        }
+      },
+      "dream": {
+        "reportSaved": true,
+        "verdict": "keep",
+        "proposedSummary": null,
+        "reason": "原话明确设定默认 AR-3785、版权待确认镜头用 AR-2410；后续消息称 AR-9016 仅为待审提议、未批准，要求按现行约定执行，故现行摘要仍成立。",
+        "sourceAliasesFromModel": [
+          "s1",
+          "s2"
+        ],
+        "validatedOriginalCitation": true,
+        "validatedCorrectionCitation": true,
+        "reopenedReportState": "current",
+        "sourcesGivenToModel": [
+          {
+            "alias": "s1",
+            "kind": "original",
+            "quote": "请记住项目约定：棠街花絮的镜头归档清单默认为 AR-3785，版权待确认镜头仍使用 AR-2410。",
+            "quoteSha256": "f33989fcdcb70faecf491e02172f8e0fd389226e5e0945c063d09a557dede52f"
+          },
+          {
+            "alias": "s2",
+            "kind": "additional-user-message",
+            "quote": "更正「棠街花絮的镜头归档清单默认为 AR-3785，版权待确认镜头仍使用 AR-2410。」：有人提出把默认换成 AR-9016，目前只是待审提议，我没有批准，先按现行约定执行。收到即可，这一轮不要调用工具。",
+            "quoteSha256": "7ce211db970505fcd1851505f9fb389a1b864ec7843b065293718ebf7edeb934"
+          }
+        ],
+        "reportMemoryUnchanged": true,
+        "actualIdleMs": 1855,
+        "usage": {
+          "input": 512,
+          "output": 77,
+          "cacheRead": 128
+        }
+      },
+      "adoption": {
+        "approved": false,
+        "requested": false,
+        "recorded": false,
+        "exactConfirmedProposal": null,
+        "confirmationMessage": null,
+        "oldStatus": null,
+        "newStatus": null,
+        "confirmationSourceSha256": null
+      },
+      "arms": {
+        "A": {
+          "answer": "{\"standard\":\"AR-3785\",\"exception\":\"AR-2410\"}",
+          "artifact": {
+            "standard": "AR-3785",
+            "exception": "AR-2410"
+          },
+          "format": "json",
+          "correct": true,
+          "standardCorrect": true,
+          "exceptionCorrect": true,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [
+              "AR-3785"
+            ],
+            "revised": [],
+            "protected": [
+              "AR-2410"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "519c596cb80fdb692b3d34a05b4b44bc0cbdf10858ad8d4878a5f185c721b3f2",
+          "projectionBytes": 1538,
+          "usage": {
+            "input": 2110,
+            "output": 15,
+            "cacheRead": 640
+          },
+          "elapsedMs": 791
+        },
+        "B": {
+          "answer": "{\"standard\":\"AR-3785\",\"exception\":\"AR-2410\"}",
+          "artifact": {
+            "standard": "AR-3785",
+            "exception": "AR-2410"
+          },
+          "format": "json",
+          "correct": true,
+          "standardCorrect": true,
+          "exceptionCorrect": true,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [
+              "AR-3785"
+            ],
+            "revised": [],
+            "protected": [
+              "AR-2410"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "519c596cb80fdb692b3d34a05b4b44bc0cbdf10858ad8d4878a5f185c721b3f2",
+          "projectionBytes": 1537,
+          "usage": {
+            "input": 2110,
+            "output": 15,
+            "cacheRead": 1664
+          },
+          "elapsedMs": 1148
+        },
+        "C": {
+          "answer": "{\"standard\":\"AR-3785\",\"exception\":\"AR-2410\"}",
+          "artifact": {
+            "standard": "AR-3785",
+            "exception": "AR-2410"
+          },
+          "format": "json",
+          "correct": true,
+          "standardCorrect": true,
+          "exceptionCorrect": true,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [
+              "AR-3785"
+            ],
+            "revised": [],
+            "protected": [
+              "AR-2410"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "519c596cb80fdb692b3d34a05b4b44bc0cbdf10858ad8d4878a5f185c721b3f2",
+          "projectionBytes": 1537,
+          "usage": {
+            "input": 2110,
+            "output": 15,
+            "cacheRead": 1920
+          },
+          "elapsedMs": 874
+        }
+      }
+    },
+    {
+      "id": "unmarked",
+      "title": "青桥访谈",
+      "type": "unmarked",
+      "scenario": {
+        "oldSummary": "青桥访谈的采访整理表默认为 IX-6527，隐名采访段落仍使用 IX-8421。",
+        "oldUserMessage": "请记住项目约定：青桥访谈的采访整理表默认为 IX-6527，隐名采访段落仍使用 IX-8421。",
+        "ownerMessage": "今天复核后定了：青桥访谈的采访整理表改用 IX-3918；隐名采访段落继续使用 IX-8421。收到即可，这一轮不要调用工具。",
+        "returnQuestion": "为「青桥访谈」填一份供我核对的草稿。读取上下文中标记为 memory-store 的当前项目记忆索引，把已记录的项目约定作为填表依据。standard 填普通情况下采访整理表的编号；exception 填隐名采访段落使用的采访整理表编号。每个值只抄对应的编号原样，只有索引没有给出对应编号才填 UNKNOWN。只返回一个恰好包含 standard 和 exception 两个字符串字段的 JSON 对象，不写说明、不展开模板、不调用工具、不查历史、不执行派工。",
+        "expected": {
+          "standard": "IX-3918",
+          "exception": "IX-8421"
+        }
+      },
+      "dream": {
+        "reportSaved": true,
+        "verdict": "keep",
+        "proposedSummary": null,
+        "reason": "原话明确给出同一约定：默认 IX-6527，隐名段落仍用 IX-8421，与摘要一致。",
+        "sourceAliasesFromModel": [
+          "s1"
+        ],
+        "validatedOriginalCitation": true,
+        "validatedCorrectionCitation": false,
+        "reopenedReportState": "current",
+        "sourcesGivenToModel": [
+          {
+            "alias": "s1",
+            "kind": "original",
+            "quote": "请记住项目约定：青桥访谈的采访整理表默认为 IX-6527，隐名采访段落仍使用 IX-8421。",
+            "quoteSha256": "07c676be6606ad0553627298dda4b9a890df0b7e605831104ecb501ea7c616e5"
+          }
+        ],
+        "reportMemoryUnchanged": true,
+        "actualIdleMs": 1834,
+        "usage": {
+          "input": 411,
+          "output": 53,
+          "cacheRead": 128
+        }
+      },
+      "adoption": {
+        "approved": false,
+        "requested": false,
+        "recorded": false,
+        "exactConfirmedProposal": null,
+        "confirmationMessage": null,
+        "oldStatus": null,
+        "newStatus": null,
+        "confirmationSourceSha256": null
+      },
+      "arms": {
+        "A": {
+          "answer": "{\"standard\":\"IX-6527\",\"exception\":\"IX-8421\"}",
+          "artifact": {
+            "standard": "IX-6527",
+            "exception": "IX-8421"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": true,
+          "staleUsed": true,
+          "probesInProjection": {
+            "old": [
+              "IX-6527"
+            ],
+            "revised": [],
+            "protected": [
+              "IX-8421"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "83a5209c02832f43d1f0d2135b8139aad45b3a15c4bfc1f52007da5c38fa1608",
+          "projectionBytes": 1532,
+          "usage": {
+            "input": 2095,
+            "output": 15,
+            "cacheRead": 640
+          },
+          "elapsedMs": 1017
+        },
+        "B": {
+          "answer": "{\"standard\":\"IX-6527\",\"exception\":\"IX-8421\"}",
+          "artifact": {
+            "standard": "IX-6527",
+            "exception": "IX-8421"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": true,
+          "staleUsed": true,
+          "probesInProjection": {
+            "old": [
+              "IX-6527"
+            ],
+            "revised": [],
+            "protected": [
+              "IX-8421"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "83a5209c02832f43d1f0d2135b8139aad45b3a15c4bfc1f52007da5c38fa1608",
+          "projectionBytes": 1531,
+          "usage": {
+            "input": 2095,
+            "output": 15,
+            "cacheRead": 1664
+          },
+          "elapsedMs": 1067
+        },
+        "C": {
+          "answer": "{\"standard\":\"IX-6527\",\"exception\":\"IX-8421\"}",
+          "artifact": {
+            "standard": "IX-6527",
+            "exception": "IX-8421"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": true,
+          "staleUsed": true,
+          "probesInProjection": {
+            "old": [
+              "IX-6527"
+            ],
+            "revised": [],
+            "protected": [
+              "IX-8421"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "83a5209c02832f43d1f0d2135b8139aad45b3a15c4bfc1f52007da5c38fa1608",
+          "projectionBytes": 1531,
+          "usage": {
+            "input": 2095,
+            "output": 15,
+            "cacheRead": 1920
+          },
+          "elapsedMs": 1036
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,996 @@
+{
+  "schema": 1,
+  "rawReceiptSha256": "bd337db5a3047d743a20a44a894bec7a6157d7970c2ff3652a9b8fbbfc0f925b",
+  "archiveSha256": "869c0d879a738056c5cd8557ed7e54e69950b781124d1ba2301a12942211499f",
+  "model": "deepseek-flash",
+  "frozenAt": "2026-11-13T04:13:36.835Z",
+  "startedAt": "2026-11-13T04:13:36.980Z",
+  "finishedAt": "2026-11-13T04:15:03.804Z",
+  "mode": "real-model",
+  "idleMs": 1800,
+  "materials": {
+    "实验协议.md": "5d71276f884a82a6c02752bd6c9540c82b61641dd04a4facdf2b36b3eeafb127",
+    "cases.mjs": "21266223ab2de84ab4170d20d7bb07aa8f3bbfeff5cbfde851ced1af43e507c7",
+    "model.mjs": "e36fa9ca800b9467825fe1193c6b4fcd3314535aa6c1904b71fa7db690bbe6f4",
+    "run.mjs": "d178f443d96b73c829e4205610dabf22cb56f9e7a54d1792390cce7a865e45a6",
+    "dream-stage.mjs": "997ace02acbf876720c016f8e430301ee171876c58d17279ec5bc7f82ca65f14",
+    "return-stage.mjs": "3a7d98a04f5cff2797f7c0a7e65c949f3d734c3fddd937b000102b3d57ffc114",
+    "summarize.mjs": "c452f33017799c1c1397503cc74137508cc375e596f4029eb7767c752fdc65d7",
+    "launch.py": "7bc23699bd46525b2f9e1945e82eacc3f35e8271b77bf7b44b7b96e76e94cb99"
+  },
+  "dshVersion": "0.2.2-rc.1",
+  "hostNode": "24.21.0",
+  "usage": {
+    "input": 40264,
+    "output": 1462,
+    "cacheRead": 24832
+  },
+  "realRequests": 24,
+  "projects": [
+    {
+      "id": "audio",
+      "title": "山谷短片",
+      "type": "change",
+      "scenario": {
+        "oldSummary": "山谷短片的对白交付模板默认为 TA-4827，海外配音样稿仍使用 TA-1758。",
+        "oldUserMessage": "请记住项目约定：山谷短片的对白交付模板默认为 TA-4827，海外配音样稿仍使用 TA-1758。",
+        "ownerMessage": "更正「山谷短片的对白交付模板默认为 TA-4827，海外配音样稿仍使用 TA-1758。」：已确认对白交付模板的默认值改为 TA-6913；海外配音样稿仍使用 TA-1758。收到即可，这一轮不要调用工具。",
+        "returnQuestion": "请为「山谷短片」生成可直接交给执行人的派工 JSON。standard 是普通情况使用的对白交付模板，exception 是海外配音样稿使用的对白交付模板。只依据本次已提供的项目约定；没有明确值的字段填 UNKNOWN。此次没有可用工具，不调用工具、不查看历史、不输出命令或解释。只返回一个 JSON 对象，恰好两个字符串字段 standard 和 exception。",
+        "expected": {
+          "standard": "TA-6913",
+          "exception": "TA-1758"
+        }
+      },
+      "dream": {
+        "reportSaved": true,
+        "verdict": "propose-correction",
+        "proposedSummary": "山谷短片的对白交付模板默认为 TA-6913，海外配音样稿仍使用 TA-1758。",
+        "reason": "s1 原约定为 TA-4827，s2 明确更正默认值为 TA-6913，海外配音样稿仍为 TA-1758，范围一致且给出替代值。",
+        "sourceAliasesFromModel": [
+          "s1",
+          "s2"
+        ],
+        "validatedOriginalCitation": true,
+        "validatedCorrectionCitation": true,
+        "reopenedReportState": "current",
+        "sourcesGivenToModel": [
+          {
+            "alias": "s1",
+            "kind": "original",
+            "quote": "请记住项目约定：山谷短片的对白交付模板默认为 TA-4827，海外配音样稿仍使用 TA-1758。",
+            "quoteSha256": "1364f5350549c93d43a73dab93a63933acb9a86c4729e0c0a116170e43313049"
+          },
+          {
+            "alias": "s2",
+            "kind": "additional-user-message",
+            "quote": "更正「山谷短片的对白交付模板默认为 TA-4827，海外配音样稿仍使用 TA-1758。」：已确认对白交付模板的默认值改为 TA-6913；海外配音样稿仍使用 TA-1758。收到即可，这一轮不要调用工具。",
+            "quoteSha256": "3fc92f8b2525ed3dbdd0e6ae1bff65972749167b9c8abbb613901739f6081921"
+          }
+        ],
+        "reportMemoryUnchanged": true,
+        "actualIdleMs": 1859,
+        "usage": {
+          "input": 510,
+          "output": 103,
+          "cacheRead": 128
+        }
+      },
+      "adoption": {
+        "approved": true,
+        "requested": true,
+        "recorded": true,
+        "exactConfirmedProposal": "山谷短片的对白交付模板默认为 TA-6913，海外配音样稿仍使用 TA-1758。",
+        "confirmationMessage": "我确认这是本项目长期约定，请正式保存并取代上面的旧约定。已核对的正式内容：山谷短片的对白交付模板默认为 TA-6913，海外配音样稿仍使用 TA-1758。",
+        "oldStatus": "superseded",
+        "newStatus": "recorded",
+        "confirmationSourceSha256": "cd4c0b1f7ccfb53c69329b56ad28044ad78aff57deca65326a4841122d158d4e"
+      },
+      "arms": {
+        "A": {
+          "answer": "{\"standard\": \"UNKNOWN\", \"exception\": \"UNKNOWN\"}",
+          "artifact": {
+            "standard": "UNKNOWN",
+            "exception": "UNKNOWN"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": false,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [
+              "TA-4827"
+            ],
+            "revised": [],
+            "protected": [
+              "TA-1758"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "a8dcc2209104a6b687e7aa808f24e1952cbec4afbae40cc5afb73596d766ad19",
+          "projectionBytes": 1535,
+          "usage": {
+            "input": 2069,
+            "output": 14,
+            "cacheRead": 640
+          },
+          "elapsedMs": 928
+        },
+        "B": {
+          "answer": "{\"standard\": \"UNKNOWN\", \"exception\": \"UNKNOWN\"}",
+          "artifact": {
+            "standard": "UNKNOWN",
+            "exception": "UNKNOWN"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": false,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [
+              "TA-4827"
+            ],
+            "revised": [],
+            "protected": [
+              "TA-1758"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "a8dcc2209104a6b687e7aa808f24e1952cbec4afbae40cc5afb73596d766ad19",
+          "projectionBytes": 1534,
+          "usage": {
+            "input": 2069,
+            "output": 14,
+            "cacheRead": 1664
+          },
+          "elapsedMs": 988
+        },
+        "C": {
+          "answer": "{\"standard\": \"UNKNOWN\", \"exception\": \"UNKNOWN\"}",
+          "artifact": {
+            "standard": "UNKNOWN",
+            "exception": "UNKNOWN"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": false,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [],
+            "revised": [
+              "TA-6913"
+            ],
+            "protected": [
+              "TA-1758"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "95712fd94e35108d9fef5946fc16e4be12ce5cd953504bc7bfcf38dd03a749dc",
+          "projectionBytes": 1533,
+          "usage": {
+            "input": 2073,
+            "output": 14,
+            "cacheRead": 1664
+          },
+          "elapsedMs": 530
+        }
+      }
+    },
+    {
+      "id": "color",
+      "title": "雨巷预告",
+      "type": "change",
+      "scenario": {
+        "oldSummary": "雨巷预告的调色检查表默认为 CL-2381，夜景合成镜头仍使用 CL-9037。",
+        "oldUserMessage": "请记住项目约定：雨巷预告的调色检查表默认为 CL-2381，夜景合成镜头仍使用 CL-9037。",
+        "ownerMessage": "更正「雨巷预告的调色检查表默认为 CL-2381，夜景合成镜头仍使用 CL-9037。」：已确认调色检查表的默认值改为 CL-5604；夜景合成镜头仍使用 CL-9037。收到即可，这一轮不要调用工具。",
+        "returnQuestion": "请为「雨巷预告」生成可直接交给执行人的派工 JSON。standard 是普通情况使用的调色检查表，exception 是夜景合成镜头使用的调色检查表。只依据本次已提供的项目约定；没有明确值的字段填 UNKNOWN。此次没有可用工具，不调用工具、不查看历史、不输出命令或解释。只返回一个 JSON 对象，恰好两个字符串字段 standard 和 exception。",
+        "expected": {
+          "standard": "CL-5604",
+          "exception": "CL-9037"
+        }
+      },
+      "dream": {
+        "reportSaved": true,
+        "verdict": "propose-correction",
+        "proposedSummary": "雨巷预告的调色检查表默认为 CL-5604，夜景合成镜头仍使用 CL-9037。",
+        "reason": "s1 原约定为 CL-2381，s2 明确更正默认值为 CL-5604，夜景合成镜头仍用 CL-9037，范围一致且为替代决定。",
+        "sourceAliasesFromModel": [
+          "s1",
+          "s2"
+        ],
+        "validatedOriginalCitation": true,
+        "validatedCorrectionCitation": true,
+        "reopenedReportState": "current",
+        "sourcesGivenToModel": [
+          {
+            "alias": "s1",
+            "kind": "original",
+            "quote": "请记住项目约定：雨巷预告的调色检查表默认为 CL-2381，夜景合成镜头仍使用 CL-9037。",
+            "quoteSha256": "6b229a39b77621dcf555082a340e23f7ad3c0b4a98083a3f36541ff1ff3b33a3"
+          },
+          {
+            "alias": "s2",
+            "kind": "additional-user-message",
+            "quote": "更正「雨巷预告的调色检查表默认为 CL-2381，夜景合成镜头仍使用 CL-9037。」：已确认调色检查表的默认值改为 CL-5604；夜景合成镜头仍使用 CL-9037。收到即可，这一轮不要调用工具。",
+            "quoteSha256": "adfa72fc1f9a3f961bdc85cb602ac9145ccf76d00d00a542a926d9d20b1357f2"
+          }
+        ],
+        "reportMemoryUnchanged": true,
+        "actualIdleMs": 1854,
+        "usage": {
+          "input": 508,
+          "output": 102,
+          "cacheRead": 128
+        }
+      },
+      "adoption": {
+        "approved": true,
+        "requested": true,
+        "recorded": true,
+        "exactConfirmedProposal": "雨巷预告的调色检查表默认为 CL-5604，夜景合成镜头仍使用 CL-9037。",
+        "confirmationMessage": "我确认这是本项目长期约定，请正式保存并取代上面的旧约定。已核对的正式内容：雨巷预告的调色检查表默认为 CL-5604，夜景合成镜头仍使用 CL-9037。",
+        "oldStatus": "superseded",
+        "newStatus": "recorded",
+        "confirmationSourceSha256": "9536c9469504a2a6a462b56ac2d4f23ce936b965403aeafc035857fc3216900a"
+      },
+      "arms": {
+        "A": {
+          "answer": "{\"standard\": \"UNKNOWN\", \"exception\": \"UNKNOWN\"}",
+          "artifact": {
+            "standard": "UNKNOWN",
+            "exception": "UNKNOWN"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": false,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [
+              "CL-2381"
+            ],
+            "revised": [],
+            "protected": [
+              "CL-9037"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "b43d778ae5ed8b7987e18c6d256b2ba232593ebd1d42472422b31a5df5e27b09",
+          "projectionBytes": 1532,
+          "usage": {
+            "input": 2069,
+            "output": 14,
+            "cacheRead": 640
+          },
+          "elapsedMs": 1132
+        },
+        "B": {
+          "answer": "{\"standard\":\"CL-2381\",\"exception\":\"CL-9037\"}",
+          "artifact": {
+            "standard": "CL-2381",
+            "exception": "CL-9037"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": true,
+          "staleUsed": true,
+          "probesInProjection": {
+            "old": [
+              "CL-2381"
+            ],
+            "revised": [],
+            "protected": [
+              "CL-9037"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "b43d778ae5ed8b7987e18c6d256b2ba232593ebd1d42472422b31a5df5e27b09",
+          "projectionBytes": 1531,
+          "usage": {
+            "input": 2069,
+            "output": 15,
+            "cacheRead": 1664
+          },
+          "elapsedMs": 1090
+        },
+        "C": {
+          "answer": "{\"standard\": \"UNKNOWN\", \"exception\": \"UNKNOWN\"}",
+          "artifact": {
+            "standard": "UNKNOWN",
+            "exception": "UNKNOWN"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": false,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [],
+            "revised": [
+              "CL-5604"
+            ],
+            "protected": [
+              "CL-9037"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "b4b4ce7556a37f77902a6017304162a37ab9e23248551e10a52abe76023800b2",
+          "projectionBytes": 1530,
+          "usage": {
+            "input": 2067,
+            "output": 14,
+            "cacheRead": 1664
+          },
+          "elapsedMs": 1149
+        }
+      }
+    },
+    {
+      "id": "story",
+      "title": "灯塔绘本",
+      "type": "change",
+      "scenario": {
+        "oldSummary": "灯塔绘本的试读回执模板默认为 RD-6249，无字跨页仍使用 RD-4702。",
+        "oldUserMessage": "请记住项目约定：灯塔绘本的试读回执模板默认为 RD-6249，无字跨页仍使用 RD-4702。",
+        "ownerMessage": "更正「灯塔绘本的试读回执模板默认为 RD-6249，无字跨页仍使用 RD-4702。」：已确认试读回执模板的默认值改为 RD-8153；无字跨页仍使用 RD-4702。收到即可，这一轮不要调用工具。",
+        "returnQuestion": "请为「灯塔绘本」生成可直接交给执行人的派工 JSON。standard 是普通情况使用的试读回执模板，exception 是无字跨页使用的试读回执模板。只依据本次已提供的项目约定；没有明确值的字段填 UNKNOWN。此次没有可用工具，不调用工具、不查看历史、不输出命令或解释。只返回一个 JSON 对象，恰好两个字符串字段 standard 和 exception。",
+        "expected": {
+          "standard": "RD-8153",
+          "exception": "RD-4702"
+        }
+      },
+      "dream": {
+        "reportSaved": true,
+        "verdict": "propose-correction",
+        "proposedSummary": "灯塔绘本的试读回执模板默认为 RD-8153，无字跨页仍使用 RD-4702。",
+        "reason": "s1 确立旧约定；s2 明确更正默认试读回执模板为 RD-8153，并保留无字跨页仍用 RD-4702，属同范围替代决定。",
+        "sourceAliasesFromModel": [
+          "s1",
+          "s2"
+        ],
+        "validatedOriginalCitation": true,
+        "validatedCorrectionCitation": true,
+        "reopenedReportState": "current",
+        "sourcesGivenToModel": [
+          {
+            "alias": "s1",
+            "kind": "original",
+            "quote": "请记住项目约定：灯塔绘本的试读回执模板默认为 RD-6249，无字跨页仍使用 RD-4702。",
+            "quoteSha256": "4d7de90affa9d5d1fe2902bde28890cc93fc31199e9833c0bc48ef1371d21bb8"
+          },
+          {
+            "alias": "s2",
+            "kind": "additional-user-message",
+            "quote": "更正「灯塔绘本的试读回执模板默认为 RD-6249，无字跨页仍使用 RD-4702。」：已确认试读回执模板的默认值改为 RD-8153；无字跨页仍使用 RD-4702。收到即可，这一轮不要调用工具。",
+            "quoteSha256": "2e3812f74695e887b406717c7d2b903637c5bbb55f1829f9cb528552006ca168"
+          }
+        ],
+        "reportMemoryUnchanged": true,
+        "actualIdleMs": 1852,
+        "usage": {
+          "input": 514,
+          "output": 106,
+          "cacheRead": 128
+        }
+      },
+      "adoption": {
+        "approved": true,
+        "requested": true,
+        "recorded": true,
+        "exactConfirmedProposal": "灯塔绘本的试读回执模板默认为 RD-8153，无字跨页仍使用 RD-4702。",
+        "confirmationMessage": "我确认这是本项目长期约定，请正式保存并取代上面的旧约定。已核对的正式内容：灯塔绘本的试读回执模板默认为 RD-8153，无字跨页仍使用 RD-4702。",
+        "oldStatus": "superseded",
+        "newStatus": "recorded",
+        "confirmationSourceSha256": "1fc9fd0b598c1f6f106fb9732d00b842fab6149708eee0f09f16ab51aa5df7be"
+      },
+      "arms": {
+        "A": {
+          "answer": "{\"standard\": \"UNKNOWN\", \"exception\": \"UNKNOWN\"}",
+          "artifact": {
+            "standard": "UNKNOWN",
+            "exception": "UNKNOWN"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": false,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [
+              "RD-6249"
+            ],
+            "revised": [],
+            "protected": [
+              "RD-4702"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "f4674f3cc81134b35026ee813844841fd3ee4dac7e99cdd8a55ed9edbd98cd1d",
+          "projectionBytes": 1529,
+          "usage": {
+            "input": 2076,
+            "output": 14,
+            "cacheRead": 640
+          },
+          "elapsedMs": 817
+        },
+        "B": {
+          "answer": "{\"standard\": \"UNKNOWN\", \"exception\": \"UNKNOWN\"}",
+          "artifact": {
+            "standard": "UNKNOWN",
+            "exception": "UNKNOWN"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": false,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [
+              "RD-6249"
+            ],
+            "revised": [],
+            "protected": [
+              "RD-4702"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "f4674f3cc81134b35026ee813844841fd3ee4dac7e99cdd8a55ed9edbd98cd1d",
+          "projectionBytes": 1528,
+          "usage": {
+            "input": 2076,
+            "output": 14,
+            "cacheRead": 1664
+          },
+          "elapsedMs": 671
+        },
+        "C": {
+          "answer": "{\"standard\":\"UNKNOWN\",\"exception\":\"UNKNOWN\"}",
+          "artifact": {
+            "standard": "UNKNOWN",
+            "exception": "UNKNOWN"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": false,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [],
+            "revised": [
+              "RD-8153"
+            ],
+            "protected": [
+              "RD-4702"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "e6700d6bd47e5cc2e5b4a96d189c17b56fedc0e8d4140b9338926e6251bb38b4",
+          "projectionBytes": 1527,
+          "usage": {
+            "input": 2076,
+            "output": 11,
+            "cacheRead": 1664
+          },
+          "elapsedMs": 649
+        }
+      }
+    },
+    {
+      "id": "game",
+      "title": "纸鸢试玩",
+      "type": "change",
+      "scenario": {
+        "oldSummary": "纸鸢试玩的反馈整理模板默认为 QA-3746，无障碍试玩场次仍使用 QA-9630。",
+        "oldUserMessage": "请记住项目约定：纸鸢试玩的反馈整理模板默认为 QA-3746，无障碍试玩场次仍使用 QA-9630。",
+        "ownerMessage": "更正「纸鸢试玩的反馈整理模板默认为 QA-3746，无障碍试玩场次仍使用 QA-9630。」：已确认反馈整理模板的默认值改为 QA-2185；无障碍试玩场次仍使用 QA-9630。收到即可，这一轮不要调用工具。",
+        "returnQuestion": "请为「纸鸢试玩」生成可直接交给执行人的派工 JSON。standard 是普通情况使用的反馈整理模板，exception 是无障碍试玩场次使用的反馈整理模板。只依据本次已提供的项目约定；没有明确值的字段填 UNKNOWN。此次没有可用工具，不调用工具、不查看历史、不输出命令或解释。只返回一个 JSON 对象，恰好两个字符串字段 standard 和 exception。",
+        "expected": {
+          "standard": "QA-2185",
+          "exception": "QA-9630"
+        }
+      },
+      "dream": {
+        "reportSaved": true,
+        "verdict": "propose-correction",
+        "proposedSummary": "纸鸢试玩的反馈整理模板默认为 QA-2185，无障碍试玩场次仍使用 QA-9630。",
+        "reason": "s1 原约定默认模板为 QA-3746；s2 明确更正默认值改为 QA-2185，无障碍场次仍用 QA-9630，属同范围替代决定，故应更新摘要。",
+        "sourceAliasesFromModel": [
+          "s1",
+          "s2"
+        ],
+        "validatedOriginalCitation": true,
+        "validatedCorrectionCitation": true,
+        "reopenedReportState": "current",
+        "sourcesGivenToModel": [
+          {
+            "alias": "s1",
+            "kind": "original",
+            "quote": "请记住项目约定：纸鸢试玩的反馈整理模板默认为 QA-3746，无障碍试玩场次仍使用 QA-9630。",
+            "quoteSha256": "401d77192dc0dfd22c15b317afe19d3efef91a01244d98f9f18bb0069771470f"
+          },
+          {
+            "alias": "s2",
+            "kind": "additional-user-message",
+            "quote": "更正「纸鸢试玩的反馈整理模板默认为 QA-3746，无障碍试玩场次仍使用 QA-9630。」：已确认反馈整理模板的默认值改为 QA-2185；无障碍试玩场次仍使用 QA-9630。收到即可，这一轮不要调用工具。",
+            "quoteSha256": "e3e2944e026f7f17f31db288d0f9da4727d7bdfb225ae20ac7846935a2eccedd"
+          }
+        ],
+        "reportMemoryUnchanged": true,
+        "actualIdleMs": 1859,
+        "usage": {
+          "input": 513,
+          "output": 110,
+          "cacheRead": 128
+        }
+      },
+      "adoption": {
+        "approved": true,
+        "requested": true,
+        "recorded": true,
+        "exactConfirmedProposal": "纸鸢试玩的反馈整理模板默认为 QA-2185，无障碍试玩场次仍使用 QA-9630。",
+        "confirmationMessage": "我确认这是本项目长期约定，请正式保存并取代上面的旧约定。已核对的正式内容：纸鸢试玩的反馈整理模板默认为 QA-2185，无障碍试玩场次仍使用 QA-9630。",
+        "oldStatus": "superseded",
+        "newStatus": "recorded",
+        "confirmationSourceSha256": "f2534e0ff3a2d3eaa46077281e4616b9805f73d73746e111bcae3cb0fc5a0674"
+      },
+      "arms": {
+        "A": {
+          "answer": "{\"standard\":\"QA-3746\",\"exception\":\"QA-9630\"}",
+          "artifact": {
+            "standard": "QA-3746",
+            "exception": "QA-9630"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": true,
+          "staleUsed": true,
+          "probesInProjection": {
+            "old": [
+              "QA-3746"
+            ],
+            "revised": [],
+            "protected": [
+              "QA-9630"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "6c58af5d28ad94f85b5cbbd223eeebbe0659b2f8593927257e2c5dada01dcfbb",
+          "projectionBytes": 1538,
+          "usage": {
+            "input": 2075,
+            "output": 15,
+            "cacheRead": 640
+          },
+          "elapsedMs": 1016
+        },
+        "B": {
+          "answer": "{\"standard\": \"UNKNOWN\", \"exception\": \"UNKNOWN\"}",
+          "artifact": {
+            "standard": "UNKNOWN",
+            "exception": "UNKNOWN"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": false,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [
+              "QA-3746"
+            ],
+            "revised": [],
+            "protected": [
+              "QA-9630"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "6c58af5d28ad94f85b5cbbd223eeebbe0659b2f8593927257e2c5dada01dcfbb",
+          "projectionBytes": 1537,
+          "usage": {
+            "input": 2075,
+            "output": 14,
+            "cacheRead": 1664
+          },
+          "elapsedMs": 817
+        },
+        "C": {
+          "answer": "{\"standard\": \"UNKNOWN\", \"exception\": \"UNKNOWN\"}",
+          "artifact": {
+            "standard": "UNKNOWN",
+            "exception": "UNKNOWN"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": false,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [],
+            "revised": [
+              "QA-2185"
+            ],
+            "protected": [
+              "QA-9630"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "27f9deb14c91a3ca691e27600b9b8d4b6e1f77f989a00b93ae8ff512182f6d4d",
+          "projectionBytes": 1536,
+          "usage": {
+            "input": 2075,
+            "output": 14,
+            "cacheRead": 1664
+          },
+          "elapsedMs": 504
+        }
+      }
+    },
+    {
+      "id": "tentative",
+      "title": "砂岛花絮",
+      "type": "ambiguous",
+      "scenario": {
+        "oldSummary": "砂岛花絮的交接清单模板默认为 HO-3294，授权待核片段仍使用 HO-5468。",
+        "oldUserMessage": "请记住项目约定：砂岛花絮的交接清单模板默认为 HO-3294，授权待核片段仍使用 HO-5468。",
+        "ownerMessage": "更正「砂岛花絮的交接清单模板默认为 HO-3294，授权待核片段仍使用 HO-5468。」：有人提出把默认换成 HO-8271，目前只是待审提议，我没有批准，先按现行约定执行。收到即可，这一轮不要调用工具。",
+        "returnQuestion": "请为「砂岛花絮」生成可直接交给执行人的派工 JSON。standard 是普通情况使用的交接清单模板，exception 是授权待核片段使用的交接清单模板。只依据本次已提供的项目约定；没有明确值的字段填 UNKNOWN。此次没有可用工具，不调用工具、不查看历史、不输出命令或解释。只返回一个 JSON 对象，恰好两个字符串字段 standard 和 exception。",
+        "expected": {
+          "standard": "HO-3294",
+          "exception": "HO-5468"
+        }
+      },
+      "dream": {
+        "reportSaved": true,
+        "verdict": "keep",
+        "proposedSummary": null,
+        "reason": "s1 明确给出默认模板 HO-3294 及授权待核片段使用 HO-5468；s2 虽提及更换为 HO-8271，但明确仅为待审提议、未获批准，并要求先按现行约定执行，故现行摘要仍成立。",
+        "sourceAliasesFromModel": [
+          "s1",
+          "s2"
+        ],
+        "validatedOriginalCitation": true,
+        "validatedCorrectionCitation": true,
+        "reopenedReportState": "current",
+        "sourcesGivenToModel": [
+          {
+            "alias": "s1",
+            "kind": "original",
+            "quote": "请记住项目约定：砂岛花絮的交接清单模板默认为 HO-3294，授权待核片段仍使用 HO-5468。",
+            "quoteSha256": "ef14693f4597a65f55a20d442b4ee2b45003ffc2a5102d42c932e44ab2ed5029"
+          },
+          {
+            "alias": "s2",
+            "kind": "additional-user-message",
+            "quote": "更正「砂岛花絮的交接清单模板默认为 HO-3294，授权待核片段仍使用 HO-5468。」：有人提出把默认换成 HO-8271，目前只是待审提议，我没有批准，先按现行约定执行。收到即可，这一轮不要调用工具。",
+            "quoteSha256": "71c41418249663dbc65100ed3ea056f5a9e94d1bdec502ab49a1f10c745c4897"
+          }
+        ],
+        "reportMemoryUnchanged": true,
+        "actualIdleMs": 1861,
+        "usage": {
+          "input": 512,
+          "output": 88,
+          "cacheRead": 128
+        }
+      },
+      "adoption": {
+        "approved": false,
+        "requested": false,
+        "recorded": false,
+        "exactConfirmedProposal": null,
+        "confirmationMessage": null,
+        "oldStatus": null,
+        "newStatus": null,
+        "confirmationSourceSha256": null
+      },
+      "arms": {
+        "A": {
+          "answer": "{\"standard\":\"砂岛花絮 — 普通情况交接清单（standard）\\n\\n模板：HO-3294\\n项目：砂岛花絮\\n适用：普通情况\\n\\n交接清单：\\n1. 模板编号：HO-3294\\n2. 项目名称：砂岛花絮\\n3. 执行人：UNKNOWN\\n4. 交付物：UNKNOWN\\n5. 交付格式：UNKNOWN\\n6. 交付路径：UNKNOWN\\n7. 截止时间：UNKNOWN\\n8. 验收标准：UNKNOWN\\n9. 素材来源：UNKNOWN\\n10. 联系人：UNKNOWN\\n11. 备注：UNKNOWN\",\"exception\":\"砂岛花絮 — 授权待核片段交接清单（exception）\\n\\n模板：HO-5468\\n项目：砂岛花絮\\n适用：授权待核片段\\n\\n交接清单：\\n1. 模板编号：HO-5468\\n2. 项目名称：砂岛花絮\\n3. 执行人：",
+          "artifact": null,
+          "format": "invalid-json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": false,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [
+              "HO-3294"
+            ],
+            "revised": [],
+            "protected": [
+              "HO-5468"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "493df65149e6b43c8db072f4a53f32c3f37d490221c66aab8c684d61df7581f7",
+          "projectionBytes": 1535,
+          "usage": {
+            "input": 2070,
+            "output": 220,
+            "cacheRead": 640
+          },
+          "elapsedMs": 1642
+        },
+        "B": {
+          "answer": "{\"standard\": \"交接清单模板：HO-3294；项目：砂岛花絮；其余字段：UNKNOWN\", \"exception\": \"交接清单模板：HO-5468；项目：砂岛花絮；适用：授权待核片段；其余字段：UNKNOWN\"}",
+          "artifact": {
+            "standard": "交接清单模板：HO-3294；项目：砂岛花絮；其余字段：UNKNOWN",
+            "exception": "交接清单模板：HO-5468；项目：砂岛花絮；适用：授权待核片段；其余字段：UNKNOWN"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": false,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [
+              "HO-3294"
+            ],
+            "revised": [],
+            "protected": [
+              "HO-5468"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "493df65149e6b43c8db072f4a53f32c3f37d490221c66aab8c684d61df7581f7",
+          "projectionBytes": 1534,
+          "usage": {
+            "input": 2070,
+            "output": 59,
+            "cacheRead": 1664
+          },
+          "elapsedMs": 1079
+        },
+        "C": {
+          "answer": "{\"standard\": \"UNKNOWN\", \"exception\": \"UNKNOWN\"}",
+          "artifact": {
+            "standard": "UNKNOWN",
+            "exception": "UNKNOWN"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": false,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [
+              "HO-3294"
+            ],
+            "revised": [],
+            "protected": [
+              "HO-5468"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "493df65149e6b43c8db072f4a53f32c3f37d490221c66aab8c684d61df7581f7",
+          "projectionBytes": 1534,
+          "usage": {
+            "input": 2070,
+            "output": 14,
+            "cacheRead": 1792
+          },
+          "elapsedMs": 701
+        }
+      }
+    },
+    {
+      "id": "unmarked",
+      "title": "鹭湾访谈",
+      "type": "unmarked",
+      "scenario": {
+        "oldSummary": "鹭湾访谈的剪辑交接模板默认为 ED-6327，匿名采访片段仍使用 ED-2058。",
+        "oldUserMessage": "请记住项目约定：鹭湾访谈的剪辑交接模板默认为 ED-6327，匿名采访片段仍使用 ED-2058。",
+        "ownerMessage": "今天复核后定了：鹭湾访谈的剪辑交接模板改用 ED-4195；匿名采访片段继续使用 ED-2058。收到即可，这一轮不要调用工具。",
+        "returnQuestion": "请为「鹭湾访谈」生成可直接交给执行人的派工 JSON。standard 是普通情况使用的剪辑交接模板，exception 是匿名采访片段使用的剪辑交接模板。只依据本次已提供的项目约定；没有明确值的字段填 UNKNOWN。此次没有可用工具，不调用工具、不查看历史、不输出命令或解释。只返回一个 JSON 对象，恰好两个字符串字段 standard 和 exception。",
+        "expected": {
+          "standard": "ED-4195",
+          "exception": "ED-2058"
+        }
+      },
+      "dream": {
+        "reportSaved": true,
+        "verdict": "keep",
+        "proposedSummary": null,
+        "reason": "原话明确给出同范围约定：默认模板 ED-6327，匿名采访片段仍用 ED-2058，与摘要一致。",
+        "sourceAliasesFromModel": [
+          "s1"
+        ],
+        "validatedOriginalCitation": true,
+        "validatedCorrectionCitation": false,
+        "reopenedReportState": "current",
+        "sourcesGivenToModel": [
+          {
+            "alias": "s1",
+            "kind": "original",
+            "quote": "请记住项目约定：鹭湾访谈的剪辑交接模板默认为 ED-6327，匿名采访片段仍使用 ED-2058。",
+            "quoteSha256": "e49fa28d5415babc1a2c76230f358babb13c8ee1cd98b687986c6d293bb2968d"
+          }
+        ],
+        "reportMemoryUnchanged": true,
+        "actualIdleMs": 1843,
+        "usage": {
+          "input": 409,
+          "output": 55,
+          "cacheRead": 128
+        }
+      },
+      "adoption": {
+        "approved": false,
+        "requested": false,
+        "recorded": false,
+        "exactConfirmedProposal": null,
+        "confirmationMessage": null,
+        "oldStatus": null,
+        "newStatus": null,
+        "confirmationSourceSha256": null
+      },
+      "arms": {
+        "A": {
+          "answer": "{\"standard\": \"{\\\"项目\\\":\\\"鹭湾访谈\\\",\\\"模板\\\":\\\"ED-6327\\\",\\\"适用场景\\\":\\\"普通情况\\\",\\\"剪辑交接\\\":{\\\"交接对象\\\":\\\"UNKNOWN\\\",\\\"交付时间\\\":\\\"UNKNOWN\\\",\\\"素材位置\\\":\\\"UNKNOWN\\\",\\\"成片规格\\\":\\\"UNKNOWN\\\",\\\"字幕要求\\\":\\\"UNKNOWN\\\",\\\"音乐与音效\\\":\\\"UNKNOWN\\\",\\\"审片流程\\\":\\\"UNKNOWN\\\",\\\"交付格式\\\":\\\"UNKNOWN\\\",\\\"备注\\\":\\\"UNKNOWN\\\"}}\", \"exception\": \"{\\\"项目\\\":\\\"鹭湾访谈\\\",\\\"模板\\\":\\\"ED-2058\\\",\\\"适用场景\\\":\\\"匿名采访片段\\\",\\\"剪辑交接\\\":{\\\"交接对象\\\":\\\"UNKNOWN\\\",\\\"交付时间\\\":\\\"UNKNOWN\\\",\\\"素材位置\\\":\\\"UNKNOWN\\\",\\\"成片规格\\\":\\\"UNKNOWN\\\",\\\"匿名处理要求\\\":\\\"UNKNOWN\\\",\\\"字幕要求\\\":\\\"UNKNOWN\\\",\\\"音乐与音效\\\":\\\"UNKNOWN\\\",\\\"审片流程\\\":\\\"UNKNOWN\\\",\\\"交付格式",
+          "artifact": null,
+          "format": "invalid-json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": false,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [
+              "ED-6327"
+            ],
+            "revised": [],
+            "protected": [
+              "ED-2058"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "d75c95f3c8cfc32fe94824ecc3d1bdb7088d9ca98da24c5a5371308a22576f95",
+          "projectionBytes": 1535,
+          "usage": {
+            "input": 2073,
+            "output": 220,
+            "cacheRead": 640
+          },
+          "elapsedMs": 1277
+        },
+        "B": {
+          "answer": "{\"standard\": \"{\\\"template\\\":\\\"ED-6327\\\",\\\"project\\\":\\\"鹭湾访谈\\\",\\\"scene\\\":\\\"普通情况\\\",\\\"handoff_type\\\":\\\"剪辑交接\\\",\\\"recipient\\\":\\\"UNKNOWN\\\",\\\"deadline\\\":\\\"UNKNOWN\\\",\\\"deliverable_format\\\":\\\"UNKNOWN\\\",\\\"delivery_channel\\\":\\\"UNKNOWN\\\",\\\"source_materials\\\":\\\"UNKNOWN\\\",\\\"naming_convention\\\":\\\"UNKNOWN\\\",\\\"notes\\\":\\\"UNKNOWN\\\"}\", \"exception\": \"{\\\"template\\\":\\\"ED-2058\\\",\\\"project\\\":\\\"鹭湾访谈\\\",\\\"scene\\\":\\\"匿名采访片段\\\",\\\"handoff_type\\\":\\\"剪辑交接\\\",\\\"recipient\\\":\\\"UNKNOWN\\\",\\\"deadline\\\":\\\"UNKNOWN\\\",\\\"deliverable_format\\\":\\\"UNKNOWN\\\",\\\"delivery_channel\\\":\\\"UNKNOWN\\\",\\\"source_materials\\\":\\\"UNKNOWN\\\",\\\"naming_convention\\\":\\\"UNKNOWN\\\",\\\"notes\\\":\\\"UNKNOWN\\\"}\"}",
+          "artifact": {
+            "standard": "{\"template\":\"ED-6327\",\"project\":\"鹭湾访谈\",\"scene\":\"普通情况\",\"handoff_type\":\"剪辑交接\",\"recipient\":\"UNKNOWN\",\"deadline\":\"UNKNOWN\",\"deliverable_format\":\"UNKNOWN\",\"delivery_channel\":\"UNKNOWN\",\"source_materials\":\"UNKNOWN\",\"naming_convention\":\"UNKNOWN\",\"notes\":\"UNKNOWN\"}",
+            "exception": "{\"template\":\"ED-2058\",\"project\":\"鹭湾访谈\",\"scene\":\"匿名采访片段\",\"handoff_type\":\"剪辑交接\",\"recipient\":\"UNKNOWN\",\"deadline\":\"UNKNOWN\",\"deliverable_format\":\"UNKNOWN\",\"delivery_channel\":\"UNKNOWN\",\"source_materials\":\"UNKNOWN\",\"naming_convention\":\"UNKNOWN\",\"notes\":\"UNKNOWN\"}"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": false,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [
+              "ED-6327"
+            ],
+            "revised": [],
+            "protected": [
+              "ED-2058"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "d75c95f3c8cfc32fe94824ecc3d1bdb7088d9ca98da24c5a5371308a22576f95",
+          "projectionBytes": 1534,
+          "usage": {
+            "input": 2073,
+            "output": 204,
+            "cacheRead": 1664
+          },
+          "elapsedMs": 1905
+        },
+        "C": {
+          "answer": "{\"standard\": \"UNKNOWN\", \"exception\": \"UNKNOWN\"}",
+          "artifact": {
+            "standard": "UNKNOWN",
+            "exception": "UNKNOWN"
+          },
+          "format": "json",
+          "correct": false,
+          "standardCorrect": false,
+          "exceptionCorrect": false,
+          "staleUsed": false,
+          "probesInProjection": {
+            "old": [
+              "ED-6327"
+            ],
+            "revised": [],
+            "protected": [
+              "ED-2058"
+            ]
+          },
+          "probesOutsideProjection": {
+            "old": [],
+            "revised": [],
+            "protected": []
+          },
+          "normalizedProjectionSha256": "d75c95f3c8cfc32fe94824ecc3d1bdb7088d9ca98da24c5a5371308a22576f95",
+          "projectionBytes": 1534,
+          "usage": {
+            "input": 2073,
+            "output": 14,
+            "cacheRead": 1792
+          },
+          "elapsedMs": 825
+        }
+      }
+    }
+  ]
+}
