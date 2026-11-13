@@ -18,17 +18,17 @@ We took our cue from an Anthropic experiment in which Claude played Pokémon. Cl
 
 ## What changed in a fresh session?
 
-We compared three conditions for each fictional project. All three started with the same saved rule and heard the same user correction.
+We compared three conditions for each fictional project. We started each condition with the same saved rule and the same messages from the user.
 
-| Condition | What happened before the next session |
-| --- | --- |
-| A · Dreaming off | The old rule stayed in project memory. |
-| B · Report only | SoloPup wrote a report and left project memory as it was. |
-| C · Correction adopted | We reviewed B’s report and saved its proposal if it passed the preset checks. |
+| Condition | What SoloPup did | What the new session received |
+| --- | --- | --- |
+| A · Dreaming off | Kept project memory as it was | The old rule |
+| B · Report only | Wrote a report for review | The old rule |
+| C · Correction adopted | Saved the proposal if it passed our checks | The new rule if saved, otherwise the old rule |
 
-Each condition opened a fresh session with no task history and asked for the same handoff draft with two fields, the current default and the original exception. The prompt gave no reference codes. Each round had four projects with explicit corrections, one with an unapproved proposal, and one with a correction stated in ordinary language without a marker.
+We opened a new session for each condition. It had no earlier chat history and received the same request for a handoff draft with two fields, the current default and the original exception. The prompt gave no reference codes. Each round had four projects with explicit corrections, one with an unapproved proposal, and one with a correction stated in ordinary language without a marker.
 
-### Round one: the new rule reached the model, and all four drafts came back unknown
+### Round one: the model got the correction but left both fields unknown
 
 All four explicit corrections passed review and went into project memory. We checked the requests sent to the model. Every request in C contained both the new default and the original exception. Every draft still said `UNKNOWN` in both fields.
 
@@ -40,29 +40,15 @@ We picked six new cases of the same kinds. We asked all three groups to fill a d
 
 ![Correct drafts in both rounds. The three conditions scored 0/4 in round one. In round two they scored 0/4, 0/4 and 3/4.](assets/comparison-en.png)
 
-*Figure 2. The chart counts drafts that used the new default and kept the original exception. All three groups kept all four original exceptions in round two.*
+*Figure 2. In each round, four projects had an explicit correction. A draft counted only if it used the new default and kept the original exception. All three groups scored 0/4 in round one. In round two, only the group that saved corrections used the new rule (3/4). All three groups kept all four original exceptions.*
 
 Generating a report left project memory unchanged in all six projects. The fourth proposed correction was accurate, but our review rule missed one way of saying “changed to” in Chinese. We counted that case as a miss. All three conditions used the old default. The unapproved proposal also left the old rule in place. In the case without a correction marker, the new message never got linked to the old rule, so the review saw only the original statement. Both the cases and the prompt changed between rounds, which leaves the effect of the wording on its own open. [Round two data](data/round-2.json)
-
-## What did the earlier comparisons tell us?
-
-The two rounds above asked whether saving a correction changed the next handoff. Three earlier comparisons looked at the proposals themselves, what happens when the original messages are already available, and what happens when a new session has to rely on saved project memory.
-
-![Three earlier comparisons. Review scores were 9/10 and 10/10. The four groups with source excerpts scored similarly. On four changed rules without excerpts, scores went from 0/4 with old memory to 4/4 after adoption.](assets/prior-comparisons-en.png)
-
-*Figure 3. Each comparison used its own cases and scoring. Read the counts within each panel.*
-
-- **Could dreaming make a well-supported suggestion?** An AI reviewer scored the same ten cases without seeing which executor ran them. Ordinary DSH passed **9/10**, and Super Agent passed **10/10**, with no critical errors in either mode. In two earlier attempts, the model proposed corrections even though no replacement had been confirmed. The review passed after we revised the instructions. Both modes also passed **2/2** holdout cases on the candidate with corrected token accounting. The samples are too small to rank the two modes.
-- **What if the agent already has the original messages?** All four groups got the same excerpts and five questions. The excerpts alone scored **5/5**, old memory plus excerpts **4/5**, report only plus excerpts **5/5**, and revised memory plus excerpts **5/5**. On the question we picked in advance, both the old-memory and revised-memory groups answered correctly from the excerpts. **The test missed its preset improvement criterion.**
-- **What if the original messages are absent?** In a separate ten-project comparison, old memory scored **6/10** and adopted memory **10/10** under strict grading. All four changed rules went from the old code to the new one. The empty-store group scored **0/10**. It returned text resembling tool calls on every attempt, and no tools ran. We reran only the two questions with insufficient evidence, this time explicitly saying tools were unavailable. All six replies correctly said they did not know. The original 0/10 needs that context.
-
-[Full comparisons, case-level data, and storage measurements](SCIENCE.en.md)
 
 ## The old checkpoint was still there the next day
 
 The fresh-session tests showed what happens when a new session receives a correction. We wanted to see what happens when the agent reopens a task that still carries the old rule.
 
-In the fictional White Pier documentary, we changed the standard preset for delivering ambient audio and kept the separate preset for the festival cut’s credits. The agent’s first-day progress note, or checkpoint, still listed the old standard preset. We first checked the optional Super Agent background reviewer on three cases. It found the source of both explicit corrections and left an unapproved proposal out of project memory. Ordinary DSH sessions used both corrections after we saved them. Then we resumed the original Super Agent tasks. [Super Agent review data](data/super-agent-dream.json)
+In the fictional White Pier documentary, we changed the standard preset for delivering ambient audio and kept the separate preset for the festival cut’s credits. We also tested a rule change in a fictional comic project. The agent’s first-day progress note, or checkpoint, still listed the old default in both projects.
 
 Each group started with a saved task and a checkpoint containing the old default. We stopped DSH. In the correction group, a separate background worker checked the source messages and the proposal went through the regular write process. We restarted DSH and sent a follow-up in the original task thread. We verified that the task, execution record, worker session, and Git working directory all matched day one. The follow-up asked the agent to consult its task record and current project rules. It gave no codes and left the choice between the two sources to the agent.
 
@@ -70,18 +56,47 @@ The request the agent received still contained the old checkpoint. The current p
 
 ![The resumed worker receives the old task record and the newly confirmed project rule. Its draft uses the new default and keeps the original exception.](assets/resume-en.png)
 
-*Figure 4. The worker could still see the old default in its progress note. Both resumed tasks used the new default after we saved the correction.*
+*Figure 3. What the worker received when it resumed a task after we saved the correction. The old progress note was still there. The table below shows what each group returned.*
 
 | Project | Old checkpoint | Dreaming off | Correction adopted | Exception both groups kept |
 | --- | --- | --- | --- | --- |
 | White Pier documentary | `AS-5146` | [`AS-5146`](data/audio-A-day2.json) | [`AS-8732`](data/audio-C-day2.json) | Festival cut credits, `AS-2605` |
 | Cedar Path comic | `PF-4162` | [`PF-4162`](data/story-A-day2.json) | [`PF-7903`](data/story-C-day2.json) | Bilingual spread, `PF-2589` |
 
-The two comparisons show that an agent can keep its old progress note and follow a revised project rule. We tested the updated memory and SoloPup’s built-in guidance together. Their individual contributions remain open. [Resumption data and request checks](data/super-agent-resume.json)
+The two comparisons show that an agent can keep its old progress note and follow a revised project rule. We tested the updated memory and SoloPup’s built-in guidance together. Their individual contributions remain open. A separate three-case check covered the Super Agent background reviewer, including whether it could find the original messages and save a confirmed correction. [Resumption data and request checks](data/super-agent-resume.json) · [Background review data](data/super-agent-dream.json)
+
+## What did the earlier comparisons tell us?
+
+The two rounds and the restart test looked at what the agent put in its draft. Three earlier experiments looked at the quality of the report itself and at how new sessions answered with and without excerpts from the original conversation.
+
+### Could the report tell which rule needed correcting?
+
+Ordinary DSH and Super Agent reviewed the same ten cases with the same model. An AI reviewer used the same rubric for both and could not see which mode wrote each report. Ordinary DSH passed **9/10** and Super Agent passed **10/10**, with no critical errors. In two earlier attempts, both modes proposed changes before a replacement rule had been confirmed. Both met the preset bar after we revised the review instructions. Both also passed two new cases after we fixed token accounting. These scores describe the reports. The sample is too small to rank the two modes. [Blind review scores](data/blind-review-summary.json)
+
+### Does saving a correction help if the prompt already contains it?
+
+We put the same relevant messages in each group’s prompt and asked the model to answer from those messages and cite them. All four groups answered the same five questions. We varied the project memory the new session received. To pass, an answer had to get the decision and its scope right and cite the right evidence.
+
+| What the session received | Questions passed |
+| --- | ---: |
+| Messages only | 5/5 |
+| Messages and the old rule | 4/5 |
+| Messages and the old rule (report generated, correction unsaved) | 5/5 |
+| Messages and the saved correction | 5/5 |
+
+We picked one question in advance to test for improvement. Which language should the sample’s formal delivery notes use by default? An earlier message said Chinese. A later message explicitly changed the default to English. **All four groups found the answer in the prompt and chose English.** The old-memory group even pointed out that the saved rule still said Chinese and followed the newer message. Our test required that group to miss this question and the updated-memory group to get it right. Both groups answered correctly, and the messages-only group already had a perfect score across all five questions.
+
+The old-memory group lost a point on a separate question about templates. The report-only group got it right despite receiving the same old memory. We can’t attribute that one-point difference to saving the correction. **With the relevant messages already in the prompt, this test did not establish an accuracy gain from saving the correction.** [Original messages for the key question](../../../eval/dream-review-cases.mjs#L35-L40) · [Four-group scores](data/source-excerpt-summary.json)
+
+### Does saving a correction change the answer when the messages are absent?
+
+In a separate test across ten fictional projects, we opened new sessions with the same questions, without excerpts or executable tools. Under strict scoring, the old-memory group got **6/10** and the group with saved corrections got **10/10**. All four gains came from questions where the rule had changed, going from **0/4** to **4/4**. The two groups matched on the other six questions.
+
+The empty-store group scored **0/10**, but all ten replies looked like tool calls and no tool ran. We reran just the two questions that lacked enough evidence, this time explicitly saying that tools were unavailable. All six replies, two per group, correctly said they didn’t know. [Ten-question results](data/paired-return.csv) · [Full methods, comparison figure, and storage measurements](SCIENCE.en.md)
 
 ## What we learned
 
-Keep a record of what the agent did, and keep an up-to-date record of which rules apply. Dreaming helps find a stale rule and bring the original messages back for review. After confirmation, we check the agent’s draft to see whether it followed the revision. The first round showed how much we would miss by checking the report or the request alone. When the task already included the original messages, our test did not establish that revising memory improved the answer.
+Keep a record of what the agent did, and keep an up-to-date record of which rules apply. Dreaming helps find a stale rule and bring the original messages back for review. After confirmation, we check the agent’s draft to see whether it followed the revision. The first round showed how much we would miss by checking the report or the request alone. When the prompt already contained the user’s correction, both the old-memory and updated-memory groups got the key question right.
 
 These tests used one model, a single-user DSH setup, and a small set of fictional projects scored against exact answers. We restarted DSH and reopened real saved sessions. The task engine’s clock simulated the overnight interval, and a local follow-up in the original thread resumed each task. The agent produced a draft for review. We used fixed rules to simulate user confirmation and the model’s validation of memory writes. The tests leave open unattended wake-up, crash recovery, external actions, and broader coverage of unmarked corrections. We also did not measure the additional benefit of dreaming over confirming and saving a correction directly, or compare the quality of the ordinary and Super Agent executors.
 

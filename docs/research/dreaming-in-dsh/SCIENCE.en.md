@@ -15,9 +15,13 @@ We gave ordinary DSH and Super Agent the same fictional project evidence and the
 
 The ten-case blind review used the beta.1 archive from before the accounting fix. The final beta.1 archive repeated the held-out cases. An AI reviewer performed the blind scoring, and the sample is too small to rank the executors. The full prerelease pilot made 40 real model calls, including failures, reruns, accounting checks, and the next-session tests below. [Blind review scores](data/blind-review-summary.json) · [Release validation and archive details](../../runs/2026-11-13-dream-review-beta1.md)
 
-## When the original messages are available, how much does the correction add?
+![Three earlier comparisons. The blind review scores were 9/10 and 10/10. With excerpts, three groups scored 5/5 and one scored 4/5. Without excerpts, the four changed-rule answers went from 0/4 with old memory to 4/4 with saved corrections.](assets/prior-comparisons-en.png)
 
-We ran the same five questions in four fresh-session conditions, for 20 real model calls. Each condition received the same excerpts from the original conversation.
+*Overview. The first panel scores reports. The second scores answers to five questions with the same excerpts. The third shows only the four changed-rule questions from a separate test without excerpts.*
+
+## When the prompt includes the original messages, how much does the correction add?
+
+We ran the same five questions in four fresh-session conditions, for 20 real model calls. We put the same relevant excerpts directly into the prompt for each condition and asked the model to answer from them and cite them.
 
 | Condition | Blind semantic score |
 | --- | ---: |
@@ -26,9 +30,9 @@ We ran the same five questions in four fresh-session conditions, for 20 real mod
 | Report only, with excerpts | 5/5 |
 | Saved correction and excerpts | 5/5 |
 
-On the prespecified question about a language change, both the old-memory and saved-correction groups got the right answer from the excerpts. **The preset improvement criterion failed.** The old-memory group made one unsupported inference on another question. The report-only group received identical injected memory and answered that question correctly. That single difference cannot be attributed to adoption.
+On the key question we chose in advance, both the old-memory and saved-correction groups read in the excerpts that the default language had changed from Chinese to English. We required the first group to miss that question and the second to get it right. Both answered correctly, and the excerpts-only group got all five questions right. The old-memory group made one unsupported inference on another question. The report-only group received identical injected memory and answered that question correctly. We cannot attribute that single difference to saving the correction. These results describe accuracy when the relevant excerpts are already in the prompt.
 
-We ran a separate, one-question check without excerpts. The old-memory and report-only sessions chose Chinese. The session with the saved correction chose English. The first two sessions received identical injected memory. The report-only answer expressed the right choice in a sentence and failed the strict one-word format check. [Four-condition scores](data/source-excerpt-summary.json) · [One-question check and validation notes](../../runs/2026-11-13-dream-review-beta1.md)
+We asked the same language question in a separate check without excerpts, using a different answer format and rubric. The old-memory and report-only sessions chose Chinese. The session with the saved correction chose English. The first two sessions received identical injected memory. The report-only answer gave the old value, Chinese, in a full sentence and also failed the one-word format check. [Four-condition scores](data/source-excerpt-summary.json) · [One-question check and validation notes](../../runs/2026-11-13-dream-review-beta1.md)
 
 ## Ten projects tested in fresh sessions
 
