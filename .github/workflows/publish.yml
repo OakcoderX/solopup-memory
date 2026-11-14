@@ -22,7 +22,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: npm-release-${{ inputs.tag || github.ref_name }}
+  # Different beta versions must not publish/finalize concurrently.
+  group: solopup-memory-beta-release
   cancel-in-progress: false
 
 env:
@@ -61,7 +62,7 @@ jobs:
         with:
           node-version: '24'
           package-manager-cache: false
-      - run: node --test ci/release.test.mjs
+      - run: node --test ci/*.test.mjs
       - run: npm test
       - run: node ci/eval-gate.mjs
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
@@ -164,3 +165,32 @@ jobs:
       - run: node ci/release.mjs finalize
         env:
           GH_TOKEN: ${{ github.token }}
+
+  version-audit:
+    needs: [publish, github-and-market]
+    if: ${{ always() && needs.publish.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: verified-published-release
+          path: release/
+      - run: node ci/promotion-audit.mjs --receipt-dir release
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: public-beta-version-sync
+          path: release/version-sync/
+          if-no-files-found: error
+          retention-days: 30
