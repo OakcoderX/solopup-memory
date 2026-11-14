@@ -748,7 +748,7 @@ test('作业接线：明确放弃未决调用后旧结果不落库，插件重�
   } finally { box.cleanup() }
 })
 
-test('作业接线：损坏账本暂停自动捕获，六工具与主注入保持可用', async () => {
+test('作业接线：损坏账本暂停自动捕获，前台工具与主注入保持可用', async () => {
   const box = sandbox()
   try {
     mkdirSync(box.store, { recursive: true }); writeFileSync(join(box.store, '.capture-jobs.json'), '{bad')
@@ -756,7 +756,8 @@ test('作业接线：损坏账本暂停自动捕获，六工具与主注入保�
     const { ctx, handlers, captured } = mount(box, { llm })
     const { applyWithValidationFixture: apply } = await import('../fixture-host.mjs'); prepareMountedFixture(); apply(ctx)
     assert.equal(handlers.filter(([name]) => name === 'session/event').length, 1); assert.equal(llm.calls, 0)
-    assert.equal(captured.tools.length, 6); assert.equal(typeof captured.context.text, 'function')
+    assert.equal(captured.tools.length, 7); assert.equal(typeof captured.context.text, 'function')
+    assert.ok(captured.tools.some(tool => tool.name === 'memory_document'))
     const marker = JSON.parse(readFileSync(join(box.store, '.loaded.json')))
     assert.equal(marker.autoCapture.enabled, false)
     assert.equal(marker.autoCapture.reason, 'capture-jobs-unavailable')

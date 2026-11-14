@@ -1,11 +1,11 @@
-# 邀请 DSH 用户做一次小范围试用
+# 用两版假稿试一遍隔天续写
 
-状态：可复用文案，尚未投放第三方平台。 / Copy prepared; not posted to third-party platforms.
+我是 SoloPup Memory 的维护者。如果你已经在用 DeepSeek Harness，欢迎帮我试一个长项目里容易出错的场景。
 
-如果你已经在使用 DeepSeek Harness，欢迎试用 SoloPup Memory beta.3。请只输入非敏感的虚构项目约定，分别检查当轮写入、新会话召回和跨项目边界。无需购买插件，但所配置的模型服务可能产生费用。反馈请带版本、实际结果和错误码。我们希望找到真实缺口，不用测试数量替代使用体验。
+1. 新建一个测试项目，写两份虚构的 Markdown 稿。记下一条明确决定「第七章用第二版，结尾照旧」。
+2. 检查它是否确实写入，再开新会话询问。想测试对话压缩，就先按指南为测试项目开启做梦，提交一条明确更正，执行 `/compact`，再查看复核报告能否引用作者原话。
+3. 如果试了 Markdown 引用，改动原文件后检查是否给出变更提示。撤回更正，再检查旧决定是否退出当前记忆。若发现问题，请附 DSH 和插件版本、简单步骤、实际结果，以及可用的非敏感错误码。
 
-项目 / Project: https://github.com/OakcoderX/solopup-memory
+插件按 MIT 许可发布。配置的模型服务可能收费。反馈时请用虚构材料，保留自己的项目原稿和聊天记录。
 
-试用入口 / Start: https://github.com/OakcoderX/solopup-memory/blob/main/docs/guides/quickstart.md
-
-发布时披露作者/维护者关系；不要伪装成独立推荐。 / Disclose affiliation when posting.
+[安装](../guides/quickstart.md) · [做梦复核](../dream-review.md) · [Markdown 引用](../guides/markdown-reference.md) · [反馈入口](../feedback.md)

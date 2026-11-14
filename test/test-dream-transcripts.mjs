@@ -7,7 +7,8 @@ import { join } from 'node:path'
 import test from 'node:test'
 import { pathToFileURL } from 'node:url'
 import { buildDreamEvidence } from '../dream-review.mjs'
-import { readDreamTranscripts } from '../dream-transcripts.mjs'
+import { observeDreamCorrection, readDreamTranscripts } from '../dream-transcripts.mjs'
+import { createDreamReplayIndex } from '../dream-replay-index.mjs'
 import { probeEnvironment } from '../scripts/probe-env.mjs'
 
 const digest = (value) => createHash('sha256').update(value).digest('hex')
@@ -117,6 +118,72 @@ test('missing, replaced, inherited, delegated, and changed cuts cannot become so
     assert.equal(result.skips[0].reason, scenario.reason)
     assert.equal(state.disposed, 1)
   }
+})
+
+function compactCheckpoint(start, shadowed, kind = 'compact-checkpoint') {
+  const compactionId = `compaction-${start}`
+  const range = { start: shadowed[0], end: shadowed.at(-1) }
+  const lifecycle = { compactionId, turn: null }
+  const generated = user(start + 2, '第七章改用 V3。', {
+    surfaceOp: { op: 'replace', startSeq: range.start, endSeq: range.end },
+    sourceEventSeqs: [start, start + 1, ...shadowed],
+  })
+  generated.data.source = { kind, compactionId, ...(kind === 'plugin' ? { plugin: 'compact' } : {}) }
+  return [
+    { seq: start, type: 'compaction/start', data: lifecycle },
+    { seq: start + 1, type: 'compaction/summary', data: { ...lifecycle, shadowedRange: range, shadowedSeqs: shadowed } },
+    generated,
+    { seq: start + 3, type: 'compaction/end', data: lifecycle },
+  ]
+}
+
+test('only verified compaction keeps covered author evidence, including across repeated compaction', async () => {
+  const valid = [user(0), user(1), ...compactCheckpoint(2, [0]), ...compactCheckpoint(6, [4, 1], 'plugin')]
+  const ok = await collect(fixture({ events: valid }).query)
+  assert.equal(ok.additionalEvidenceByTarget[targetId][0].quote, text)
+
+  const forged = [{ ...valid[0] }, ...compactCheckpoint(1, [0])].slice(0, -1)
+  const result = await collect(fixture({ events: forged }).query)
+  assert.equal(result.skips[0].reason, 'source-replaced')
+  const actualEdit = user(10, 'Replaced.', {
+    surfaceOp: { op: 'replace', startSeq: 8, endSeq: 8 }, sourceEventSeqs: [8],
+  })
+  const blocked = await collect(fixture({ events: [...valid, actualEdit] }).query)
+  assert.equal(blocked.skips[0].reason, 'source-replaced')
+})
+
+test('long owner replay binds the final declared paragraph and refuses incomplete or ambiguous evidence', async () => {
+  const header = { id: sessionId, cwd: workspace, createdAt, version: 4, isSeeded: false }
+  const correction = '更正「第七章用 V1」：第七章用 V2，结尾照旧。'
+  const prefix = '这段是反复讨论的备选。'.repeat(250)
+  const original = user(0, `${prefix}\n\n${correction}`)
+  const observed = observeDreamCorrection({ id: sessionId, header }, original)
+  assert.equal(observed.targetSummary, '第七章用 V1')
+  const verified = await collect(fixture({ events: [original] }).query, [observed.pointer])
+  assert.equal(verified.additionalEvidenceByTarget[targetId][0].quote, correction)
+  for (const body of [`${prefix}\n${correction}`, `${correction}\n\n${prefix}\n\n${correction}`, `${prefix}\n\n${correction}\n暂勿采用`]) {
+    assert.equal(observeDreamCorrection({ id: sessionId, header }, user(0, body)), undefined)
+  }
+
+  const root = mkdtempSync(join(tmpdir(), 'solopup-replay-index-test-'))
+  try {
+    const sidecar = createDreamReplayIndex(join(root, 'memory'))
+    const session = { id: sessionId, header, seq: 1, eventAt: () => original }
+    assert.equal(sidecar.save(session, [observed.pointer], 'a'), true)
+    const preflight = { source: 'prepared', header, sizeBytes: 300_000, revision: 'a' }
+    const query = { observeSession() { assert.fail('would open the oversized log') } }
+    const options = { preflightSession: () => preflight, readIndexedSession: sidecar.read }
+    assert.equal((await collect(query, [observed.pointer], options)).additionalEvidenceByTarget[targetId][0].quote, correction)
+    const path = join(root, 'memory.dream', 'replay', `${digest(sessionId).slice(0, 2)}.json`)
+    const saved = JSON.parse(readFileSync(path, 'utf8'))
+    assert.ok(!JSON.stringify(saved).includes(prefix))
+    assert.equal((await collect(query, [observed.pointer], {
+      ...options, preflightSession: () => ({ ...preflight, revision: 'b' }),
+    })).skips[0].reason, 'stored-size-cap')
+    saved.entries[0].text = '第七章改用 V3，替换整个结尾。'
+    writeFileSync(path, JSON.stringify(saved))
+    assert.equal((await collect(query, [observed.pointer], options)).skips[0].reason, 'stored-size-cap')
+  } finally { rmSync(root, { recursive: true, force: true }) }
 })
 
 test('tool/runtime messages, mixed modalities, private and truncated text, and revoked source IDs stay out', async () => {

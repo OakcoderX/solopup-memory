@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.25.0-beta.1 — source recall for long project work
+
+- Dream Review can verify author corrections hidden by DSH compaction, including repeated compaction. A generated checkpoint cannot supply owner approval. Ordinary replacements and withdrawals still block the old source.
+- An explicit correction in the final paragraph of a long author message can keep its exceptions and scope together. For opted-in projects, a small local cache tied to the saved session revision lets Dream Review recheck those known sources without opening an oversized log.
+- `memory_document` opens a precisely approved Markdown version and heading. Each page is bounded and rechecks the current decision and file fingerprint. If the approved file changed or is missing, the tool returns its status.
+- [Long-history review](https://github.com/OakcoderX/solopup-memory/blob/main/docs/dream-review.md) · [Markdown guide](https://github.com/OakcoderX/solopup-memory/blob/main/docs/guides/markdown-reference.md) · [Host test results](https://github.com/OakcoderX/solopup-memory/blob/main/docs/runs/2026-11-14-long-project-beta.md)
+
 ## 0.24.0-beta.2 — idle project memory review
 
 - Opt-in Dream Review waits for DSH to be idle, checks one selected project at a time, and creates a source-linked report for user review.

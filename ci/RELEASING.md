@@ -18,7 +18,9 @@ then push the matching `vX.Y.Z-beta.N` tag. Only beta versions reachable from
 main are accepted. Stable releases are deliberately outside this automation.
 
 The pipeline runs source tests on Linux and macOS, tests the actual packed
-archive, and passes that immutable artifact to the OIDC publishing job. It waits
+archive, and runs the DSH long-history probe against those exact archive bytes.
+The publisher requires the passing probe receipt to match the archive digest.
+It waits
 for the public npm download and checks SHA256/SHA512. Identical already-published
 versions are verified without republishing; a different immutable version fails.
 After verification it creates the GitHub prerelease and updates the configured

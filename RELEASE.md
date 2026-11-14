@@ -1,3 +1,13 @@
+# 0.25.0-beta.1 — source recall for long project work
+
+Keep the author’s correction available after DSH condenses the chat. A correction placed in its own final paragraph can retain qualifiers such as “chapter seven only, leave the ending unchanged.” Dream Review uses the original evidence and waits for a normal confirmed write before the suggested change enters memory.
+
+- DSH can keep compacting the conversation. SoloPup recognizes original messages covered by a verified compaction checkpoint and checks them again when opening a report.
+- An opted-in project may create a small, revision-bound cache of explicitly marked corrections. A pre-existing oversized session without a matching cache can still report its source as unavailable.
+- Approved Markdown references bind the draft, heading, and file fingerprint. The read tool returns a bounded page or explains which check failed.
+
+The release receipts distinguish isolated host probes from semantic model evaluation. [Host comparison and reproduction](docs/runs/2026-11-14-long-project-beta.md) · [Dream Review setup](docs/dream-review.md) · [Markdown guide](docs/guides/markdown-reference.md)
+
 # 0.24.0-beta.2 — idle project memory review
 
 Public beta. SoloPup can review a selected project's memory after DSH has been idle, reopen a bounded source quote and prepare a report for the user. The reviewed change enters project memory through the existing confirmed write flow. Ordinary DSH can run the review on its own. A supported macOS Super Agent companion can run the same review through an isolated Worker.

@@ -108,7 +108,7 @@ const tool = (captured, toolName) => captured.tools.find((item) => item.name ===
 
 // ── 注册形态 ────────────────────────────────────────────────────────────────
 
-test('注册形态：名字、依赖、上下文条目、六个工具', () => {
+test('注册形态：名字、依赖、上下文条目、七个工具', () => {
   const box = sandbox()
   try {
     const captured = mount()
@@ -122,6 +122,7 @@ test('注册形态：名字、依赖、上下文条目、六个工具', () => {
     // 关键回归：宿主的 refreshContext 是同步取值，不能给异步函数
     assert.equal(captured.context.text.constructor.name, 'Function')
     assert.deepEqual(captured.tools.map((item) => item.name).sort(), [
+      'memory_document',
       'memory_forget',
       'memory_links',
       'memory_prune',

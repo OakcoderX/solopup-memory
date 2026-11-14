@@ -78,7 +78,7 @@ function walk(node, path, problems) {
 test('所有工具的 parameters 与 output.schema 都过宿主的 schema 规则', () => {
   const { list, cleanup } = tools()
   try {
-    assert.equal(list.length, 6)
+    assert.equal(list.length, 7)
     for (const tool of list) {
       const problems = []
       walk(tool.parameters, `${tool.name}.parameters`, problems)
@@ -172,13 +172,14 @@ test('原生工具输出：无版本链或未找到的 links 不带未定义属�
   } finally { box.cleanup() }
 })
 
-test('原生工具输出：六工具完整生命周期均保持 JSON 结果契约', async () => {
+test('原生工具输出：完整生命周期均保持 JSON 结果契约', async () => {
   const box = tools()
   try {
     const call = async (name,args) => {const value=await box.list.find(t => t.name === name).execute({scope:'global',...args}, {});lossless(value);return value}
     await call('memory_write',{type:'user',summary:'固定使用紫罗兰色的画板'})
     assert.ok((await call('memory_search',{query:'紫罗兰色'})).hits.length)
     assert.equal((await call('memory_links',{match:'紫罗兰色'})).found, true)
+    assert.equal((await call('memory_document',{recordId:'a'.repeat(64)})).status, 'record-unavailable')
     assert.equal((await call('memory_status',{})).index.lines, 1)
     assert.equal((await call('memory_prune',{})).applied, false)
     assert.equal((await call('memory_forget',{match:'紫罗兰色'})).removed, 1)

@@ -1,19 +1,19 @@
-# SoloPup Memory — press kit / 媒体资料
+# SoloPup Memory 媒体资料 / Press kit
 
-**English:** Source-linked, layered text memory for DeepSeek Harness. Public beta.
+**English:** An MIT-licensed text-memory plugin for DeepSeek Harness. It keeps confirmed project decisions with their scope, source, and revision history so users can pick up work in a fresh chat. SoloPup Memory is in public beta.
 
-**中文：** 面向 DeepSeek Harness，保留原话来源、项目边界和修改历史的分层文字记忆。公开测试版。
+**中文：** 给 DeepSeek Harness 用的开源文字记忆插件。换新会话继续写时，可以查到已经确认的项目约定、它适用的范围、当时的原话和后来的改动。目前为公开测试版。
 
-Product: SoloPup Memory · Maintainer: OakcoderX · License: MIT · Current described version: 0.22.0-beta.3.
+| | |
+| --- | --- |
+| Product | SoloPup Memory |
+| Maintainer | OakcoderX |
+| License | MIT |
+| Package | [npm](https://www.npmjs.com/package/solopup-memory) |
+| Public versions | [GitHub Releases](https://github.com/OakcoderX/solopup-memory/releases) |
+| Install | [Exact version, host requirements, and first check](guides/quickstart.md) |
+| Artwork | [Project icon](../icon.svg) |
 
-Repository: https://github.com/OakcoderX/solopup-memory
+Describe tested host and feature combinations using the release evidence. SoloPup Memory is a community-maintained plugin. Models configured for review can incur service charges. [Privacy and cost](guides/privacy.md)
 
-Package: https://www.npmjs.com/package/solopup-memory
-
-Releases: https://github.com/OakcoderX/solopup-memory/releases
-
-Install: `dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.22.0-beta.3 --ignore-scripts`.
-
-Use the existing [icon](../icon.svg). No independent endorsement, comparative superiority, stable acceptance, user count or traction is claimed. The plugin is free to license; configured model services may charge. Describe local storage separately from remote model processing.
-
-[Release evidence](../RELEASE.md) · [English overview](../README.en.md) · [中文说明](../README.md) · [Feedback](feedback.md)
+[Release evidence](../RELEASE.md) · [English overview](../README.en.md) · [中文说明](../README.md) · [长篇稿件用法](guides/markdown-reference.md) · [Feedback](feedback.md)

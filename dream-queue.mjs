@@ -438,6 +438,14 @@ export function openDreamQueue(dataRoot, {
     return Object.fromEntries(rows.map(({targetId, ...pointer}) => [targetId, [pointer]]))
   }
 
+  function sessionReplaySources(sessionId) {
+    identifier(sessionId, 'session-id')
+    return db.prepare(`
+      SELECT DISTINCT session_id AS sessionId, created_at AS createdAt, seq, source_hash AS hash
+      FROM replay_sources WHERE session_id=? ORDER BY seq DESC LIMIT 12
+    `).all(sessionId)
+  }
+
   function claim({ owner, manual = false, projectId, projectIds, runId } = {}) {
     identifier(owner, 'owner')
     if (typeof manual !== 'boolean') fail('invalid-manual')
@@ -708,6 +716,7 @@ export function openDreamQueue(dataRoot, {
     enqueue,
     recordReplaySource,
     replaySources,
+    sessionReplaySources,
     claim,
     beginDispatch,
     markRunning,

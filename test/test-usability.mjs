@@ -473,13 +473,13 @@ test('memory_forget 工具：match 与 expired 互斥', async () => {
 
 // ── 工具面 ─────────────────────────────────────────────────────────────────
 
-test('注册了 6 个工具，新工具都能通过 execute 调用', async () => {
+test('注册了七个工具，并通过 execute 验证常用入口', async () => {
   const box = sandbox()
   try {
     const mounted = mount(box.cwd)
     assert.deepEqual(
       mounted.tools.map((item) => item.name).sort(),
-      ['memory_forget', 'memory_links', 'memory_prune', 'memory_search', 'memory_status', 'memory_write'],
+      ['memory_document', 'memory_forget', 'memory_links', 'memory_prune', 'memory_search', 'memory_status', 'memory_write'],
     )
 
     const write = mounted.tools.find((item) => item.name === 'memory_write')
@@ -492,6 +492,9 @@ test('注册了 6 个工具，新工具都能通过 execute 调用', async () =>
     const status = mounted.tools.find((item) => item.name === 'memory_status')
     const snapshot = await status.execute({ scope: 'global' }, exec)
     assert.equal(snapshot.byType.user, 1)
+
+    const document = mounted.tools.find((item) => item.name === 'memory_document')
+    assert.deepEqual(await document.execute({ recordId: 'a'.repeat(64) }, exec), { status: 'record-unavailable' })
 
     const compact = mounted.tools.find((item) => item.name === 'memory_prune')
     const planned = await compact.execute({ scope: 'global' }, exec)

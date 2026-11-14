@@ -3,9 +3,12 @@
 - New DSH user: https://github.com/OakcoderX/solopup-memory/blob/main/docs/guides/quickstart.md
 - English reader: https://github.com/OakcoderX/solopup-memory/blob/main/README.en.md
 - Corrections: https://github.com/OakcoderX/solopup-memory/blob/main/docs/examples/revised-decision.md
+- Compaction, source evidence, and feedback: https://github.com/OakcoderX/solopup-memory/blob/main/docs/outreach/engineering-note.md
+- Resume an approved Markdown draft and heading: https://github.com/OakcoderX/solopup-memory/blob/main/docs/guides/markdown-reference.md
+- Dream Review and cross-day Super Agent research: https://github.com/OakcoderX/solopup-memory/blob/main/docs/research/dreaming-in-dsh/README.md
 - Project boundaries: https://github.com/OakcoderX/solopup-memory/blob/main/docs/examples/two-projects.md
 - Privacy and cost: https://github.com/OakcoderX/solopup-memory/blob/main/docs/guides/privacy.md
 - Reproducible feedback: https://github.com/OakcoderX/solopup-memory/issues/new/choose
 - Actual beta evidence: https://github.com/OakcoderX/solopup-memory/blob/main/RELEASE.md
 
-按讨论主题分享一个相关入口，披露维护者关系，遵守社区规则。不要批量回复、不相关贴链接或重复催促。These links are owned resources, not third-party listings or endorsements.
+按讨论主题分享相关入口，说明维护者身份。目录收录状态与公开版本分别查证。
