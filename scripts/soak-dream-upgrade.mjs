@@ -15,7 +15,10 @@ const SCRIPT = fileURLToPath(import.meta.url)
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const CLI = process.env.DSH_CLI ?? '/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh'
 const PROFILE = 'dream-upgrade'
-const BASELINE = 'ed4df03b865a1c5742c251815cee780708b119bf55a25f08af5320b1bb666acf'
+const BASELINES = new Map([
+  ['ed4df03b865a1c5742c251815cee780708b119bf55a25f08af5320b1bb666acf', { version: '0.23.0-beta.2', dream: null }],
+  ['869c0d879a738056c5cd8557ed7e54e69950b781124d1ba2301a12942211499f', { version: '0.24.0-beta.2', dream: false }],
+])
 const OLD = 'Project Moss review reports default to plain text'
 const CURRENT = 'Project Moss review reports default to Markdown'
 const WITHDRAWN = 'Project Moss discarded summit checklists'
@@ -326,7 +329,8 @@ async function soak({ baseline, candidate }) {
   let stub
   try {
     const baselineTgz = realpathSync(resolve(baseline))
-    assert.equal(digest(readFileSync(baselineTgz)), BASELINE, 'The baseline must match the published npm archive SHA-256')
+    const baselineSpec = BASELINES.get(digest(readFileSync(baselineTgz)))
+    assert.ok(baselineSpec, 'The baseline must match a validated published npm archive SHA-256')
     initialLayout(base, env)
     result.hostVersion = run(CLI, ['--version'], { env })
     if (!candidate) {
@@ -336,6 +340,7 @@ async function soak({ baseline, candidate }) {
       candidate = join(base, packed.filename)
     } else candidate = realpathSync(resolve(candidate))
     result.baseline = replaceArchive(env.HOME, env, baselineTgz)
+    assert.equal(result.baseline.version, baselineSpec.version)
     const seed = JSON.parse(run(process.execPath, [SCRIPT, '--fixture', 'seed', base], { env }))
     const memoryBefore = memoryFingerprint(root)
     const verify = () => {
@@ -346,7 +351,7 @@ async function soak({ baseline, candidate }) {
       return verified
     }
     stub = await modelStub()
-    result.stages.push(await hostPhase(base, env, stub, 'baseline', null))
+    result.stages.push(await hostPhase(base, env, stub, 'baseline', baselineSpec.dream))
     verify()
     result.candidate = replaceArchive(env.HOME, env, candidate, true)
     assert.notEqual(result.candidate.archiveSha256, result.baseline.archiveSha256)
@@ -383,7 +388,7 @@ async function soak({ baseline, candidate }) {
     const dreamBefore = digest(readFileSync(join(root + '.dream', 'state.sqlite')))
     result.backout = replaceArchive(env.HOME, env, baselineTgz, true)
     assert.deepEqual(result.backout, result.baseline)
-    result.stages.push(await hostPhase(base, env, stub, 'backout', null))
+    result.stages.push(await hostPhase(base, env, stub, 'backout', baselineSpec.dream))
     result.preservedMemory = verify()
     assert.equal(digest(readFileSync(join(root + '.dream', 'state.sqlite'))), dreamBefore)
     const reopened = openDreamQueue(root, { existingOnly: true })
