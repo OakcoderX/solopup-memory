@@ -1,0 +1,35 @@
+name: Audit public beta entry points
+
+on:
+  workflow_dispatch:
+
+# No write token, npm credential, downloaded executable, or third-party mutation.
+permissions:
+  contents: read
+
+concurrency:
+  group: solopup-memory-version-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Run trusted default-branch code; this standalone recheck is read-only.
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: node ci/promotion-audit.mjs
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: public-beta-version-sync
+          path: release/version-sync/
+          if-no-files-found: error
+          retention-days: 30

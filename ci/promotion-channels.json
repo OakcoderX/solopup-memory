@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "scope": "Public existing market entries only; the private promotion worklist remains private. No external write operations are implemented.",
+  "channels": [
+    {
+      "id": "https://github.com/deepseek-ai/deepseek-harness/discussions/11641",
+      "kind": "discussion",
+      "url": "https://github.com/deepseek-ai/deepseek-harness/discussions/11641",
+      "nextAction": "If stale, review and edit the existing author post only; do not create a new discussion."
+    },
+    {
+      "id": "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/11026",
+      "kind": "catalog",
+      "url": "https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/main/data/plugins/OakcoderX__solopup-memory.yml",
+      "nextAction": "Reuse the existing correction branch/request after permission and duplicate checks. A prior connector create-PR returned 403; do not automatically retry or bypass it. Updating tarball alone does not change the npm-latest install route."
+    },
+    {
+      "id": "https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/11026#version-correction",
+      "kind": "pull-requests",
+      "url": "https://api.github.com/repos/awesome-dsh-plugin/awesome-dsh-plugin/pulls?state=all&head=OakcoderX:update-solopup-memory-0-24-beta2",
+      "nextAction": "Inspect any existing request and its outcome before further action; a missing request does not authorize retrying the denied API operation."
+    },
+    {
+      "id": "https://github.com/imsai-sh/awesome-deepseek-harness-plugins/pull/770",
+      "kind": "1024",
+      "url": "https://deepseek1024.com/api/v1/plugins/OakcoderX/solopup-memory",
+      "nextAction": "Track existing correction issue #36, not a new submission. Manifest version and npm install target are separate observations."
+    },
+    {
+      "id": "https://github.com/imsai-sh/dsh-1024store/issues/36",
+      "kind": "issue",
+      "url": "https://api.github.com/repos/imsai-sh/dsh-1024store/issues/36",
+      "nextAction": "Read new feedback in the existing issue before a necessary authorized response; do not duplicate the request."
+    },
+    {
+      "id": "https://duink.com/plugins/1440422822",
+      "kind": "directory",
+      "url": "https://duink.com/plugins/1440422822",
+      "nextAction": "Metadata discovery is not an installation or compatibility check. Inspect the original listing; never count a refresh as a new listing."
+    }
+  ]
+}
