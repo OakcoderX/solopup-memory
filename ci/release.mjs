@@ -4,6 +4,7 @@ import {tmpdir} from 'node:os'
 import {createHash} from 'node:crypto'
 import {execFileSync,spawnSync} from 'node:child_process'
 import {pathToFileURL} from 'node:url'
+import {validateReceipt,assertLatestUnchanged,assertBetaNotOlder,syncReleaseFiles} from './release-sync.mjs'
 
 const repo='OakcoderX/solopup-memory', registry='https://registry.npmjs.org'
 const json=file=>JSON.parse(readFileSync(file,'utf8'))
@@ -84,20 +85,31 @@ async function publish(){
   const {m}=loadArtifact()
   if(run('git',['rev-parse','HEAD']).trim()!==m.commit)throw Error('checkout does not match tested source')
   if(!process.env.ACTIONS_ID_TOKEN_REQUEST_URL||!process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN)throw Error('GitHub OIDC identity is required; no long-lived-token fallback')
+  const latestBefore=(await fetchJson(`${registry}/solopup-memory/latest`))?.version
+  if(typeof latestBefore!=='string')throw Error('cannot snapshot npm latest; stop before publishing')
+  const betaBefore=(await fetchJson(`${registry}/solopup-memory/beta`))?.version
   const existing=await fetchJson(`${registry}/solopup-memory/${m.version}?preflight=${Date.now()}`)
   if(existing){if(existing.dist?.integrity!==m.integrity)throw Error('immutable public version differs from tested archive');console.log('Identical version already public; verifying without republishing')}
   else{
+    assertBetaNotOlder(m.version,betaBefore)
     if(!maySubmit(process.env.GITHUB_EVENT_NAME,process.env.GITHUB_RUN_ATTEMPT,process.env.RELEASE_CONFIRM_UNSUBMITTED==='true'))throw Error('Prior submission outcome must be inspected before another publish; a public 404 does not prove a version was never submitted')
     writeFileSync('release/submission.json',JSON.stringify({version:m.version,sha256:m.sha256,phase:'attempting',at:new Date().toISOString()})+'\n')
     run('npm',['publish','./'+join('release',m.filename),'--tag','beta','--access','public','--ignore-scripts','--registry',registry],{stdio:'inherit',timeout:180000})
     writeFileSync('release/submission.json',JSON.stringify({version:m.version,sha256:m.sha256,phase:'accepted-by-cli',at:new Date().toISOString()})+'\n')
   }
-  const verified=await verifyPublic(m),receipt={...m,...verified,publisher:'GitHub Actions OIDC',runUrl:`https://github.com/${repo}/actions/runs/${process.env.GITHUB_RUN_ID}`,publishedAt:new Date().toISOString()}
+  const verified=await verifyPublic(m)
+  const latestAfter=(await fetchJson(`${registry}/solopup-memory/latest`))?.version
+  assertLatestUnchanged(latestBefore,latestAfter)
+  const receipt={...m,...verified,latestBefore,latestAfter,publisher:'GitHub Actions OIDC',runUrl:`https://github.com/${repo}/actions/runs/${process.env.GITHUB_RUN_ID}`,publishedAt:new Date().toISOString()}
   writeFileSync('release/npm-receipt.json',JSON.stringify(receipt,null,2)+'\n');console.log(JSON.stringify(verified))
 }
 async function finalize(){
   const {m}=loadArtifact(),receipt=json('release/npm-receipt.json')
-  if(receipt.sha256!==m.sha256||!receipt.publicDownloadVerified)throw Error('verified public receipt required')
+  validateReceipt(m,receipt)
+  // An old workflow replay must not replace the current public-beta guidance.
+  const currentBeta=(await fetchJson(`${registry}/solopup-memory/beta`))?.version
+  if(currentBeta!==m.version)throw Error('release is not the current npm beta; inspect before synchronizing current documentation')
+  if(receipt.latestAfter!==undefined)assertLatestUnchanged(receipt.latestAfter,(await fetchJson(`${registry}/solopup-memory/latest`))?.version)
   const release=spawnSync('gh',['release','view',m.tag,'--json','tagName'],{encoding:'utf8'})
   const assets=[m.filename,'SHA256SUMS','manifest.json','npm-receipt.json'].map(f=>join('release',f))
   if(release.status!==0)run('gh',['release','create',m.tag,...assets,'--verify-tag','--prerelease','--latest=false','--title',`SoloPup Memory ${m.version}`,'--notes-file','release/notes.md'],{stdio:'inherit'})
@@ -105,13 +117,11 @@ async function finalize(){
     const root=mkdtempSync(join(tmpdir(),'solopup-existing-release-'))
     try{run('gh',['release','download',m.tag,'--pattern',m.filename,'--dir',root]);checkDigest(readFileSync(join(root,m.filename)),m)}finally{rmSync(root,{recursive:true,force:true})}
   }
-  const index=json('market/index.json'),entry=index.plugins.find(p=>p.name==='solopup-memory')
-  if(!entry)throw Error('market entry missing')
-  const version={version:m.version,publishTimestamp:Math.floor(Date.parse(receipt.publishedAt)/1000),engines:m.engines?.dsh?{dsh:m.engines.dsh}:{},source:{type:'npm',registry:registry+'/'}}
-  if(!entry.versions.some(v=>v.version===m.version))entry.versions.unshift(version)
-  writeFileSync('market/index.json',JSON.stringify(index,null,2)+'\n')
-  run('git',['config','user.name','github-actions[bot]']);run('git',['config','user.email','41898282+github-actions[bot]@users.noreply.github.com']);run('git',['add','market/index.json'])
-  if(spawnSync('git',['diff','--cached','--quiet']).status!==0){run('git',['commit','-m',`Publish market entry for ${m.version}`]);run('git',['push','origin','HEAD:main'],{stdio:'inherit'})}
+  const plan=syncReleaseFiles(m,receipt)
+  run('git',['config','user.name','github-actions[bot]']);run('git',['config','user.email','41898282+github-actions[bot]@users.noreply.github.com']);run('git',['add',...Object.keys(plan.files)])
+  // A concurrent main update rejects this ordinary push. Never force, reset, or
+  // replay a whole README over newer work; a recovery starts from fresh main.
+  if(spawnSync('git',['diff','--cached','--quiet']).status!==0){run('git',['commit','-m',`Synchronize verified beta ${m.version}`]);run('git',['push','origin','HEAD:main'],{stdio:'inherit'})}
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
   const command=process.argv[2];if(!['prepare','publish','finalize'].includes(command))throw Error('expected prepare, publish, or finalize')

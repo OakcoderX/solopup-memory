@@ -66,9 +66,13 @@ Ordinary DSH can run the entire review. An optional Super Agent Worker can run i
 
 Requires an installed DeepSeek Harness and Node >=24.9. For the desktop profile:
 
+<!-- solopup:beta-install:start -->
 ```sh
-dsh plugin --profile desktop add solopup-memory@0.24.0-beta.2 --ignore-scripts
+dsh plugin --profile desktop add solopup-memory@beta --ignore-scripts
 ```
+
+`beta` resolves the public-beta channel when you install; it does not upgrade an existing installation automatically. See the [current release and verification record](https://github.com/OakcoderX/solopup-memory/blob/main/docs/releases/current-beta.md) for an exact version and checksums.
+<!-- solopup:beta-install:end -->
 
 Restart that profile's host, then use `memory_status` to check the loaded version and status. If upgrading from `dsh-memory`, back up and remove the old plugin first; do not enable both. See [installation details](#install-in-dsh) for exact versions, legacy-store review and removal.
 
@@ -100,7 +104,7 @@ The Chinese message asks to keep this project's delivery notes in Chinese. Curre
 
 Use the official plugin-manager command in [Quick install](#quick-install).
 
-`solopup-memory@beta` follows the public beta tag. Git installation is available with `github:OakcoderX/solopup-memory#v0.24.0-beta.2`. The release page supplies a full commit SHA for an immutable Git pin. This package ships executable ESM and has no dependency installation or build scripts. You can also download the release tarball and install it with `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.24.0-beta.2.tgz --offline --ignore-scripts`.
+The `beta` tag is a moving public-beta channel, not a guarantee of host compatibility or model quality. Exact npm versions, prebuilt archives and checksums are maintained on the [current release and verification record](https://github.com/OakcoderX/solopup-memory/blob/main/docs/releases/current-beta.md) page. For immutable Git installs use the full source commit recorded there instead of unpinned main. The package ships executable ESM with no install-time build scripts.
 
 Restart the profile and use `memory_status`. Existing legacy stores may require explicit local review. Do not delete control files to bypass that review. If upgrading from `dsh-memory`, create a full private backup, stop the hosts using that data, remove the old package, then install SoloPup Memory. Do not run both packages together. The data location and legacy format identifiers are intentionally retained.
 
