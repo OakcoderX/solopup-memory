@@ -1,5 +1,7 @@
 # 0.25.0-beta.1 — source recall for long project work
 
+Public beta. The npm `beta` tag points to this version. The npm and GitHub downloads match the archive used for local cold-restart, Super Agent mode-switch and rollback checks. Archive SHA-256 `d824b33a3277d63f26ba162a67b88037ae8cc6f193a5aaf43c9612dcc2255e63`. [GitHub Release](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.25.0-beta.1) · [npm](https://www.npmjs.com/package/solopup-memory/v/0.25.0-beta.1) · [Release workflow](https://github.com/OakcoderX/solopup-memory/actions/runs/43623687448)
+
 Keep the author’s correction available after DSH condenses the chat. A correction placed in its own final paragraph can retain qualifiers such as “chapter seven only, leave the ending unchanged.” Dream Review uses the original evidence and waits for a normal confirmed write before the suggested change enters memory.
 
 - DSH can keep compacting the conversation. SoloPup recognizes original messages covered by a verified compaction checkpoint and checks them again when opening a report.
