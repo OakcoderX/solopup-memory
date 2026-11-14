@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {createHash} from 'node:crypto'
-import {releaseIdentity,checkDigest,checkFiles,maySubmit} from './release.mjs'
+import {releaseIdentity,checkDigest,checkFiles,checkLongHistory,maySubmit} from './release.mjs'
 test('unknown prior submissions cannot be automatically repeated after a 404',()=>{
   assert.equal(maySubmit('push',1),true)
   assert.equal(maySubmit('push',2),false)
@@ -31,6 +31,14 @@ test('release tags must match the beta version and exact repository',()=>{
 test('archive verification refuses modified bytes and mismatched independent digests',()=>{
   const b=Buffer.from('synthetic public archive'),m={sha256:createHash('sha256').update(b).digest('hex'),integrity:'sha512-'+createHash('sha512').update(b).digest('base64')}
   checkDigest(b,m);assert.throws(()=>checkDigest(Buffer.from('changed'),m));assert.throws(()=>checkDigest(b,{...m,integrity:'sha512-wrong'}))
+})
+test('history acceptance must describe the exact successful release archive', () => {
+  const manifest = { version: '0.25.0-beta.1', sha256: 'example-archive-sha' }
+  const receipt = { passed: true, pluginVersion: manifest.version, archiveSha256: manifest.sha256 }
+  checkLongHistory(receipt, manifest)
+  assert.throws(() => checkLongHistory(undefined, manifest))
+  assert.throws(() => checkLongHistory({ ...receipt, passed: false }, manifest))
+  assert.throws(() => checkLongHistory({ ...receipt, archiveSha256: 'different-archive' }, manifest))
 })
 test('private stores, research, credentials and traversal cannot enter the release',()=>{
   checkFiles([{path:'index.mjs'},{path:'README.md'}])

@@ -54,7 +54,9 @@ After a prepare failure, the prototype can retry without project memory. Workers
 
 ## Review project memory while DSH is idle
 
-The 0.24 beta adds an optional idle review. Suppose you first say “Deliver reports as plain text” and later explicitly switch to PDF. A review can surface both statements and suggest a correction for you to check.
+Dream Review is opt-in. Suppose you first say “Deliver reports as plain text” and later explicitly switch to PDF. A review can surface both statements and suggest a correction for you to check.
+
+For longer projects, write the explicit correction as its own final paragraph. SoloPup can check that original statement after DSH compacts the chat. You can also bind an approved decision to a Markdown draft and heading, then reopen that section in a new chat with the version fingerprint checked. [Reviewing long chats](docs/dream-review.md) · [Opening an approved Markdown draft](docs/guides/markdown-reference.md) · [0.25 host test results](docs/runs/2026-11-14-long-project-beta.md)
 
 1. Enable `dream` for the projects you choose and select a configured model. Keep DSH running. By default, it checks after 20 minutes of foreground inactivity, with up to two model requests per day.
 2. In a fresh session for the same project, ask DSH to open the latest dream report. SoloPup rechecks the cited sources and displays suggestions it can still verify.

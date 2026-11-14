@@ -52,6 +52,11 @@ try {
   const historyOutput = run(process.execPath, ['scripts/probe-history.mjs'], unpacked, { env: { ...cleanEnv, DSH_CLI: CLI } })
   report.historyContract = JSON.parse(historyOutput.trim().split('\n').at(-1))
   if (!report.historyContract.passed) throw new Error('package-probe-history-contract-failed')
+  const longHistoryOutput = run(process.execPath, ['scripts/probe-long-history.mjs', '--tgz', archive], unpacked, { env: { ...cleanEnv, DSH_CLI: CLI } })
+  report.longHistory = JSON.parse(longHistoryOutput)
+  if (!report.longHistory.passed || report.longHistory.archiveSha256 !== report.archiveSha256) {
+    throw new Error('package-probe-long-history-contract-failed')
+  }
 
   // Entire profile is authored here; no copy of the user's desktop configuration.
   const home = join(root, 'home'); const profile = join(home, 'profiles', 'clean')
@@ -74,7 +79,7 @@ try {
     await sleep(100)
   }
   if (!stamp) throw new Error(`package-probe-host-load-failed:${hostError ?? host.exitCode ?? 'timeout'}`)
-  const expected = ['memory_write', 'memory_forget', 'memory_links', 'memory_search', 'memory_prune', 'memory_status']
+  const expected = ['memory_write', 'memory_forget', 'memory_links', 'memory_search', 'memory_prune', 'memory_status', 'memory_document']
   if (stamp.version !== pkg.version || expected.some((tool) => !stamp.tools.includes(tool)) || stamp.degraded.length || stamp.sourceControl?.state !== 'managed' || stamp.memoryHistory?.available !== true) throw new Error('package-probe-host-registration-failed')
   report.hostLoad = { version: stamp.version, node: stamp.node, tools: stamp.tools, cleanHome: true, profileCopied: false, sourceControl: stamp.sourceControl, memoryHistory: stamp.memoryHistory,
     environmentAllowlist: Object.keys(cleanEnv).sort(), parentEnvironmentInherited: false }
@@ -93,7 +98,7 @@ try {
     report.archivePath = artifact
   }
   report.passed = true
-  console.log(`[PASS] 实际安装包 ${pkg.version}：${report.packagedTests} 项测试；全新 DSH_HOME 加载六工具；配置卸载保留合成数据`)
+  console.log(`[PASS] 实际安装包 ${pkg.version}：${report.packagedTests} 项测试；全新 DSH_HOME 加载 ${expected.length} 项工具；配置卸载保留合成数据`)
 } catch (error) {
   report.passed = false; report.error = error.message
   console.error(`[FAIL] ${error.message}`); process.exitCode = 1

@@ -281,16 +281,18 @@ async function hostPhase(base, env, stub, name, expectedDream, runCheck) {
   })
   try {
     const marker = join(home, 'memory', '.loaded.json')
+    const baselineTools = ['memory_write', 'memory_forget', 'memory_links', 'memory_search', 'memory_prune', 'memory_status']
+    const ready = stamp => stamp?.pid === child.pid && stamp.version && baselineTools.every(name => stamp.tools?.includes(name))
     let stamp
     const deadline = Date.now() + 15_000
     while (Date.now() < deadline) {
       if (launchError) throw launchError
       assert.equal(child.exitCode, null, errors)
       try { stamp = json(marker) } catch { /* Marker is not available yet. */ }
-      if (stamp?.pid === child.pid && stamp.version && stamp.tools?.length === 6) break
+      if (ready(stamp)) break
       await delay(60)
     }
-    assert.equal(stamp?.pid, child.pid, errors)
+    assert.ok(ready(stamp), errors)
     assert.equal(stamp.sourceControl?.state, 'managed')
     assert.equal(stamp.memoryHistory?.available, true)
     assert.equal(stamp.dream?.enabled ?? null, expectedDream)

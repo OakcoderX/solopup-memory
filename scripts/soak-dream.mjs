@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import { spawn, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { createServer } from 'node:http'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import { createInterface } from 'node:readline'
@@ -22,6 +22,8 @@ const PROJECT = 'project-a'
 const MEMORY = 'Project Pine uses plain text for reports'
 const QUOTE = `Remember: ${MEMORY}.`
 const REPLAY_PROMPT = `Correction: "${MEMORY}" -> Project Pine uses PDF for reports.`
+const LONG_REPLAY_PROMPT = `${'This is unrelated drafting background. '.repeat(72)}\n\n${REPLAY_PROMPT}`
+const LARGE_HISTORY_MARKER = 'Synthetic long history for cold-replay acceptance:'
 const REPORT_PROMPT = 'Open the latest project dream review report for this smoke test.'
 const OTHER_MEMORY = 'Other project Cedar keeps separate layout notes'
 const PROJECT_MEMORIES = new Map([[PROJECT, MEMORY], ['project-b', OTHER_MEMORY], ['project-c', 'Project Ash requires numbered review pages']])
@@ -118,7 +120,7 @@ function fingerprint(root) {
   return hash(JSON.stringify(data))
 }
 
-function startModelStub(idleMs, replay = false, dual = false) {
+function startModelStub(idleMs, replay = false, dual = false, longCold = false) {
   const requests = []
   const errors = []
   const server = createServer(async (req, res) => {
@@ -133,7 +135,7 @@ function startModelStub(idleMs, replay = false, dual = false) {
       let bytes = 0
       for await (const chunk of req) {
         bytes += chunk.length
-        assert.ok(bytes <= 512_000)
+        assert.ok(bytes <= (longCold ? 1_700_000 : 512_000))
         chunks.push(chunk)
       }
       const body = JSON.parse(Buffer.concat(chunks).toString('utf8'))
@@ -148,7 +150,7 @@ function startModelStub(idleMs, replay = false, dual = false) {
       record.requestHash = hash(JSON.stringify(body))
       record.bytes = bytes
       let response, toolCall
-      if (replay && userTexts.at(-1)?.includes(REPORT_PROMPT)) {
+      if (replay && userTexts.some(value => value.includes(REPORT_PROMPT))) {
         const toolResult = body.messages.find(message => message.role === 'tool' && message.tool_call_id === 'call_smoke_dream_report')
         if (!toolResult) {
           record.kind = 'report-tool-request'
@@ -163,6 +165,10 @@ function startModelStub(idleMs, replay = false, dual = false) {
           assert.match(content, /Remember: Project Pine uses plain text for reports/)
           response = 'Report opened.'
         }
+      } else if (longCold && userTexts.some(value => value.includes(LARGE_HISTORY_MARKER)) &&
+        !userTexts.some(value => value.includes(REPLAY_PROMPT))) {
+        record.kind = 'history-filler'
+        response = 'OK'
       } else if (userTexts.some(value => value.includes(replay ? REPLAY_PROMPT : FOREGROUND_PROMPT))) {
         record.kind = 'foreground'
         // Hold a real host turn open past the entire idle window.
@@ -251,7 +257,7 @@ function startHost(home, base, env, foreground) {
       try { response = JSON.parse(line) } catch { log(line); return }
       if (response.method === 'session.event' && response.params?.sessionId === FOREGROUND_SESSION &&
           ['turn/start', 'turn/end'].includes(response.params.event?.type)) {
-        events.push({ at: Date.now(), type: response.params.event.type, reason: response.params.event.data?.reason })
+        events.push({ at: Date.now(), seq: response.params.event.seq, type: response.params.event.type, reason: response.params.event.data?.reason })
       }
       const settle = pending.get(response.id)
       if (settle) settle(response)
@@ -324,11 +330,11 @@ function install(home, env, tgz, foreground) {
   return dir
 }
 
-function configure(dir, url, projectPath, enabled, idleMs, dual) {
+function configure(dir, url, projectPath, enabled, idleMs, dual, longCold = false) {
   const patches = [
     { id: 'llm-pi-ai', config: { providers: { [PROVIDER]: {
       api: 'openai-completions', baseURL: url, apiKeyEnv: 'SOLOPUP_SOAK_DREAM_KEY',
-      models: [{ id: MODEL, contextWindow: 32768, maxTokens: 2048 }],
+      models: [{ id: MODEL, contextWindow: longCold ? 1_000_000 : 32768, maxTokens: 2048 }],
     } } } },
     { id: 'memory', config: {
       autoCapture: { enabled: false },
@@ -337,6 +343,7 @@ function configure(dir, url, projectPath, enabled, idleMs, dual) {
     } },
   ]
   if (dual?.companion) patches.push({ insert: [dual.companion] })
+  if (longCold) patches.push({ id: 'compaction-basic', config: { auto: false } })
   writeFileSync(join(dir, 'cordis.patch.yml'), JSON.stringify(patches, null, 2) + '\n', { mode: 0o600 })
 }
 
@@ -457,7 +464,8 @@ export async function soakDreamDual({ tgz, prototypeBundle, expectedBundleSha256
   return result
 }
 
-export async function soakDream({ tgz, foreground = false, replay = false } = {}) {
+export async function soakDream({ tgz, foreground = false, replay = false, longCold = false } = {}) {
+  replay ||= longCold
   foreground ||= replay
   const idleMs = foreground ? FOREGROUND_IDLE_MS : BOOT_IDLE_MS
   const base = realpathSync(mkdtempSync(join(tmpdir(), 'solopup-soak-dream-')))
@@ -467,7 +475,7 @@ export async function soakDream({ tgz, foreground = false, replay = false } = {}
   let stub, host
   const result = {
     kind: 'real-dsh-ordinary-dream-with-synthetic-loopback-provider',
-    trigger: replay ? 'sdk-owner-correction-replay' : foreground ? 'sdk-foreground-turn-end' : 'boot-idle',
+    trigger: longCold ? 'sdk-oversized-cold-replay' : replay ? 'sdk-owner-correction-replay' : foreground ? 'sdk-foreground-turn-end' : 'boot-idle',
     idleMs, passed: false,
   }
   try {
@@ -482,8 +490,8 @@ export async function soakDream({ tgz, foreground = false, replay = false } = {}
     const expected = JSON.parse(run(process.execPath, [SCRIPT, '--seed', base], { env }))
     const before = fingerprint(memoryRoot)
 
-    stub = await startModelStub(idleMs, replay)
-    configure(profile, stub.url, join(base, PROJECT), false, idleMs)
+    stub = await startModelStub(idleMs, replay, false, longCold)
+    configure(profile, stub.url, join(base, PROJECT), false, idleMs, undefined, longCold)
     host = startHost(home, base, env, foreground)
     const off = await host.marker()
     assert.equal(off.version, VERSION)
@@ -496,18 +504,30 @@ export async function soakDream({ tgz, foreground = false, replay = false } = {}
     host = undefined
     result.disabledRequests = 0
 
-    configure(profile, stub.url, join(base, PROJECT), true, idleMs)
+    configure(profile, stub.url, join(base, PROJECT), true, idleMs, undefined, longCold)
     host = startHost(home, base, env, foreground)
     const on = await host.marker()
     assert.equal(on.version, VERSION)
     result.hostNode = on.node
     assert.equal(on.sourceControl?.state, 'managed', JSON.stringify(on))
     assert.deepEqual(on.dream, { enabled: true, mode: 'ordinary' })
+    let foregroundEvents
     if (foreground) {
       await host.rpc('initialize', { cwd: join(base, PROJECT), provider: PROVIDER, model: MODEL, maxTokens: 256 })
+      if (longCold) {
+        const filler = Array.from({ length: 9200 }, (_, i) => hash(`cold-replay-hook-fixture-${i}`)).join('\n')
+        await host.rpc('session/prompt', {
+          sessionId: FOREGROUND_SESSION,
+          contentBlocks: [{ type: 'text', text: `${LARGE_HISTORY_MARKER}\n${filler}` }],
+        })
+        await host.rpc('session/wait', { sessionId: FOREGROUND_SESSION })
+        assert.equal(stub.requests.filter(request => request.kind === 'history-filler').length, 1)
+        assert.notEqual(host.events.at(-1).reason?.kind, 'error')
+        host.events.length = 0
+      }
       await host.rpc('session/prompt', {
         sessionId: FOREGROUND_SESSION,
-        contentBlocks: [{ type: 'text', text: replay ? REPLAY_PROMPT : FOREGROUND_PROMPT }],
+        contentBlocks: [{ type: 'text', text: longCold ? LONG_REPLAY_PROMPT : replay ? REPLAY_PROMPT : FOREGROUND_PROMPT }],
       })
       await host.rpc('session/wait', { sessionId: FOREGROUND_SESSION })
       assert.deepEqual(host.events.map(event => event.type), ['turn/start', 'turn/end'])
@@ -515,6 +535,90 @@ export async function soakDream({ tgz, foreground = false, replay = false } = {}
       assert.equal(stub.requests.filter(request => request.kind === 'foreground').length, 1)
       assert.equal(stub.requests.filter(request => request.kind === 'dream').length, 0)
       assert.ok(host.events[1].at - host.events[0].at >= idleMs, 'Foreground turn did not outlast idle threshold')
+      foregroundEvents = host.events.slice()
+      if (longCold) {
+        const replayPath = memoryRoot + '.dream/replay/' + hash(FOREGROUND_SESSION).slice(0, 2) + '.json'
+        const deadline = Date.now() + idleMs - 250
+        let replayRecord
+        while (Date.now() < deadline) {
+          if (existsSync(replayPath)) {
+            replayRecord = JSON.parse(readFileSync(replayPath, 'utf8'))
+            if (replayRecord.cursor >= foregroundEvents[1].seq) break
+          }
+          await delay(40)
+        }
+        assert.ok(replayRecord?.cursor >= foregroundEvents[1].seq, 'Installed plugin did not save a revision-bound replay entry after the foreground turn')
+        assert.equal(replayRecord.id, FOREGROUND_SESSION)
+        assert.equal(replayRecord.entries[0].text, REPLAY_PROMPT)
+        const diagnosticDriver = join(base, 'verify-cold-source.mjs')
+        const diagnosticReceipt = join(base, 'cold-source.json')
+        writeFileSync(diagnosticDriver, `
+import { writeFileSync } from 'node:fs'
+import { openDreamQueue } from ${JSON.stringify(installed(home, 'dream-queue.mjs'))}
+import { createDreamReplayIndex } from ${JSON.stringify(installed(home, 'dream-replay-index.mjs'))}
+import { readDreamTranscripts } from ${JSON.stringify(installed(home, 'dream-transcripts.mjs'))}
+export const name = 'solopup-cold-source-diagnostic'
+export const inject = ['sessions', 'sessionPersistence', 'sessionQuery']
+export async function apply(ctx) {
+  const root = ${JSON.stringify(memoryRoot)}
+  const id = ${JSON.stringify(FOREGROUND_SESSION)}
+  const project = ${JSON.stringify(expected.projectId)}
+  const cwd = ${JSON.stringify(join(base, PROJECT))}
+  const target = ${JSON.stringify(expected.recordId)}
+  const queue = openDreamQueue(root, { existingOnly: true })
+  let diagnostic
+  try {
+    const pointer = queue.replaySources(project)[target]?.[0]
+    const saved = await ctx.sessionPersistence.stat(id)
+    const persisted = saved && { source: 'prepared', header: saved.header, sizeBytes: saved.sizeBytes, revision: saved.revision }
+    const replayIndex = createDreamReplayIndex(root)
+    const revisionMatched = Boolean(persisted && replayIndex.read(id, persisted))
+    let readCalls = 0
+    const result = pointer && await readDreamTranscripts({
+      projectId: project, resolveProjectId: path => path === cwd ? project : undefined,
+      pointersByTarget: { [target]: [pointer] },
+      query: { observeSession(...args) { readCalls++; return ctx.sessionQuery.observeSession(...args) } },
+      preflightSession: () => persisted,
+      readIndexedSession: replayIndex.read,
+    })
+    diagnostic = { sizeBytes: saved?.sizeBytes, revisionMatched, readCalls, pointerFound: Boolean(pointer),
+      live: Boolean(ctx.sessions.get(id)), outcome: result?.skips[0]?.reason ?? 'verified' }
+    if (!revisionMatched && persisted) {
+      const view = await ctx.sessionQuery.observeSession(id, { projectionMode: 'none' })
+      try { diagnostic.mismatch = {
+        indexedCursor: ${JSON.stringify(replayRecord.cursor)},
+        persistedCursor: view.cursor,
+        indexedRevision: ${JSON.stringify(replayRecord.revision)},
+        persistedRevision: saved.revision,
+        durableTail: view.events.slice(-8).map(event => event.type),
+      } } finally { view[Symbol.dispose]() }
+    }
+  } catch (error) { diagnostic = { error: error.message } }
+  finally { queue.close() }
+  writeFileSync(${JSON.stringify(diagnosticReceipt)}, JSON.stringify(diagnostic))
+}
+`)
+        const patchPath = join(profile, 'cordis.patch.yml')
+        const patches = JSON.parse(readFileSync(patchPath, 'utf8'))
+        patches.push({ insert: [{ id: 'cold-source-diagnostic', name: pathToFileURL(diagnosticDriver).href }] })
+        writeFileSync(patchPath, JSON.stringify(patches))
+        const persistedLogs = readdirSync(join(home, 'sessions'), { recursive: true }).filter(name => /\.jsonl(?:\.zstd?)?$/.test(name))
+        const savedBytes = persistedLogs.map(name => statSync(join(home, 'sessions', name)).size)
+        const maxSavedBytes = Math.max(...savedBytes)
+        assert.ok(maxSavedBytes > 256 * 1024, `The persisted fixture must exceed the normal read cap. Found ${maxSavedBytes} bytes`)
+        assert.equal(stub.requests.filter(request => request.kind === 'dream').length, 0)
+        await host.close()
+        host = startHost(home, base, env, true)
+        await host.marker()
+        result.productionCache = { savedBytes: maxSavedBytes, freshProcess: true, sourceSessionResumedByProbe: false }
+        const diagnosticDeadline = Date.now() + 1500
+        while (!existsSync(diagnosticReceipt) && Date.now() < diagnosticDeadline) await delay(40)
+        assert.ok(existsSync(diagnosticReceipt), host.logs())
+        result.productionCache.diagnostic = JSON.parse(readFileSync(diagnosticReceipt, 'utf8'))
+        assert.deepEqual(result.productionCache.diagnostic, {
+          sizeBytes: maxSavedBytes, revisionMatched: true, readCalls: 0, pointerFound: true, live: false, outcome: 'verified',
+        })
+      }
     }
     const { openDreamQueue } = await import(installed(home, 'dream-queue.mjs'))
     const queue = openDreamQueue(memoryRoot, { existingOnly: true })
@@ -550,15 +654,16 @@ export async function soakDream({ tgz, foreground = false, replay = false } = {}
       await delay(idleMs + 250)
       const dreamRequests = stub.requests.filter(request => request.kind === 'dream')
       assert.equal(dreamRequests.length, 1)
-      assert.equal(stub.requests.length, foreground ? 2 : 1)
+      const expectedRequests = longCold ? 3 : foreground ? 2 : 1
+      assert.equal(stub.requests.length, expectedRequests)
       assert.deepEqual(stub.errors, [])
       assert.ok(dreamRequests[0].at >= host.start + idleMs)
       if (foreground) {
-        assert.ok(dreamRequests[0].at >= host.events[1].at + idleMs - 100, 'Dream did not wait for post-turn idle')
+        assert.ok(dreamRequests[0].at >= foregroundEvents[1].at + idleMs - 100, 'Dream did not wait for post-turn idle')
         result.foreground = {
-          observedEvents: host.events.map(event => event.type),
-          turnMs: host.events[1].at - host.events[0].at,
-          postTurnIdleMs: dreamRequests[0].at - host.events[1].at,
+          observedEvents: foregroundEvents.map(event => event.type),
+          turnMs: foregroundEvents[1].at - foregroundEvents[0].at,
+          postTurnIdleMs: dreamRequests[0].at - foregroundEvents[1].at,
         }
       }
       assert.equal(queue.listReports().length, 1)
@@ -582,18 +687,19 @@ export async function soakDream({ tgz, foreground = false, replay = false } = {}
       assert.equal(state.mode, 'ordinary')
       assert.equal(state.pendingMode, null)
       assert.equal(state.epoch, 1)
-      assert.equal(stub.requests.length, foreground ? 2 : 1)
+      assert.equal(stub.requests.length, expectedRequests)
       result.unavailableSuperAgentSwitch = { status: 'rejected', mode: state.mode, epoch: state.epoch }
       if (replay) {
         assert.ok(on.tools.includes('memory_dream_report'))
+        if (longCold) await host.rpc('initialize', { cwd: join(base, PROJECT), provider: PROVIDER, model: MODEL, maxTokens: 256 })
         await host.rpc('session/prompt', {
-          sessionId: FOREGROUND_SESSION,
+          sessionId: longCold ? 'solopup-smoke-open-cold-report' : FOREGROUND_SESSION,
           contentBlocks: [{ type: 'text', text: REPORT_PROMPT }],
         })
-        await host.rpc('session/wait', { sessionId: FOREGROUND_SESSION })
+        await host.rpc('session/wait', { sessionId: longCold ? 'solopup-smoke-open-cold-report' : FOREGROUND_SESSION })
         assert.deepEqual(stub.errors, [])
         assert.deepEqual(stub.requests.slice(-2).map(request => request.kind), ['report-tool-request', 'report-tool-result'])
-        assert.notEqual(host.events.at(-1).reason?.kind, 'error')
+        if (!longCold) assert.notEqual(host.events.at(-1).reason?.kind, 'error')
         result.report.openedInProjectWithVerifiedQuotes = true
       }
     } finally { queue.close() }
@@ -624,11 +730,11 @@ if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.m
   const args = process.argv.slice(2)
   if (args[0] === '--seed') console.log(JSON.stringify(await seed(args[1], args[2] === '--dual')))
   else {
-    const foreground = args.includes('--foreground'), replay = args.includes('--replay'), dual = args.includes('--dual')
-    const rest = args.filter(arg => !['--foreground', '--replay', '--dual'].includes(arg))
-    assert.ok(rest.length === 0 || (rest.length === 2 && rest[0] === '--tgz'), 'usage: node scripts/soak-dream.mjs [--foreground|--replay|--dual] [--tgz file]')
+    const foreground = args.includes('--foreground'), replay = args.includes('--replay'), dual = args.includes('--dual'), longCold = args.includes('--long-cold')
+    const rest = args.filter(arg => !['--foreground', '--replay', '--dual', '--long-cold'].includes(arg))
+    assert.ok(rest.length === 0 || (rest.length === 2 && rest[0] === '--tgz'), 'usage: node scripts/soak-dream.mjs [--foreground|--replay|--dual|--long-cold] [--tgz file]')
     const result = dual ? await soakDreamDual({ tgz: rest[1], prototypeBundle: process.env.SOLOPUP_DREAM_BUNDLE,
-      expectedBundleSha256: process.env.SOLOPUP_DREAM_BUNDLE_SHA256 }) : await soakDream({ tgz: rest[1], foreground, replay })
+      expectedBundleSha256: process.env.SOLOPUP_DREAM_BUNDLE_SHA256 }) : await soakDream({ tgz: rest[1], foreground, replay, longCold })
     console.log(JSON.stringify(result, null, 2))
     process.exitCode = result.passed ? 0 : 1
   }

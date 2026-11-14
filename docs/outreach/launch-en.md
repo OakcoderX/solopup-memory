@@ -1,11 +1,11 @@
-# SoloPup Memory: source-linked text memory for DSH
+# Pick up the right draft in DeepSeek Harness
 
-状态：可复用文案，尚未投放第三方平台。 / Copy prepared; not posted to third-party platforms.
+I maintain SoloPup Memory, an MIT-licensed text-memory plugin for DeepSeek Harness (DSH).
 
-SoloPup Memory is an MIT-licensed text-memory plugin for DeepSeek Harness. It separates global preferences from project decisions and retains source citations, conditions and revision history. Version 0.22.0-beta.3 is a public beta. Retrieval is lexical, and model-assisted review can miss or misinterpret information. Try one synthetic convention, inspect the real write result, and query it in a fresh conversation. Reproducible failures are welcome.
+Say you've written three versions of a chapter and decide, “Use the second draft for chapter seven. Keep the original ending.” The next chat needs the draft choice and the exception. SoloPup keeps confirmed decisions with their project scope, source, and revision history so you can check what you actually said.
 
-项目 / Project: https://github.com/OakcoderX/solopup-memory
+Try it with two fictional Markdown drafts. Save a decision with an exception, open a fresh chat, and ask which draft to use, what stays the same, and where that decision came from. If the answer goes wrong, please share your versions, steps, and a synthetic example we can reproduce.
 
-试用入口 / Start: https://github.com/OakcoderX/solopup-memory/blob/main/docs/guides/quickstart.md
+[Dream Review for long chats](../dream-review.md) · [Link an approved Markdown heading](../guides/markdown-reference.md)
 
-发布时披露作者/维护者关系；不要伪装成独立推荐。 / Disclose affiliation when posting.
+[Project](https://github.com/OakcoderX/solopup-memory) · [Public beta quickstart](../guides/quickstart.md) · [Release and verification notes](../../RELEASE.md) · [Feedback](../feedback.md)

@@ -53,6 +53,8 @@ import { createDreamRuntime } from './dream-runtime.mjs'
 import { openDreamQueue } from './dream-queue.mjs'
 import { createOrdinaryDreamExecutor } from './dream-ordinary.mjs'
 import { observeDreamCorrection, readDreamTranscripts } from './dream-transcripts.mjs'
+import { createDreamReplayIndex } from './dream-replay-index.mjs'
+import { defineMarkdownReferenceTool } from './markdown-reference.mjs'
 import { createSuperAgentDreamExecutor, SUPER_AGENT_DREAM_SERVICE, SUPER_AGENT_DREAM_ISOLATION_SERVICE } from './dream-superagent.mjs'
 export { Config } from './plugin-config.mjs'
 
@@ -3035,6 +3037,20 @@ export function apply(ctx, config = {}) {
     const autoCapture = startup.state==='managed'?setupAutoCapture(ctx, config):{enabled:false,reason:startup.code}
     dream = startup.state === 'managed' ? setupDreamReview(ctx, root, config.dream) : { enabled: false, reason: startup.code }
     const tools = canRegisterTools ? ['memory_write', 'memory_forget', 'memory_links', 'memory_search', 'memory_prune', 'memory_status'] : []
+    if (canRegisterTools && startup.state === 'managed') {
+      ctx.tools.register(runtimeTool(defineMarkdownReferenceTool({ resolve(recordId, exec) {
+        if (!captureSessionEligible(exec?.agent?.session)) return undefined
+        const cwd = realpathSync(sessionCwd(ctx, exec, 'memory_document'))
+        const dir = storeDirFor('project', cwd)
+        return managedRead(dir, () => {
+          assertPublicationClear(dir)
+          const record = publicMemoryRecords(effectiveSourceRecords(dir, 'project', undefined, true))
+            .find(candidate => candidate.id === recordId)
+          return record && { root: findProjectRoot(cwd), record }
+        })
+      } }), startup))
+      tools.push('memory_document')
+    }
     if (canRegisterTools && dream.enabled) {
       ctx.tools.register(runtimeTool(defineDreamReportTool(ctx, sourceInputs, dream), startup))
       tools.push('memory_dream_report')
@@ -3100,6 +3116,31 @@ function setupDreamReview(ctx, root, options) {
   let runtime, queue, controlWatch
   try {
     const resolveProjectId = cwd => resolveDreamProject(root, cwd)?.projectId
+    const replayIndex = createDreamReplayIndex(root)
+    const savingReplay = new WeakSet()
+    function scheduleReplayIndex(session) {
+      if (savingReplay.has(session)) return
+      savingReplay.add(session)
+      setImmediate(async () => {
+        savingReplay.delete(session)
+        if (!runtime) return
+        try {
+          const pointers = queue.sessionReplaySources(session.id)
+          if (!pointers.length) return
+          const registry = sessions.refresh(), persistence = sessionPersistence.refresh()
+          if (registry.value?.get?.(session.id) !== session || typeof registry.value.flush !== 'function' ||
+              typeof persistence.value?.stat !== 'function') return
+          const signal = AbortSignal.any([registry.signal, persistence.signal])
+          const cut = session.seq
+          if (!await registry.value.flush(session) || !runtime || signal.aborted || session.seq !== cut) return
+          const saved = await persistence.value.stat(session.id, { signal })
+          if (!runtime || signal.aborted || session.seq !== cut || registry.value.get(session.id) !== session ||
+              saved?.header?.id !== session.id || saved.header.createdAt !== session.header.createdAt ||
+              saved.header.version !== session.header.version || !Number.isSafeInteger(saved.sizeBytes)) return
+          replayIndex.save(session, pointers, saved.revision)
+        } catch { /* A missing or stale cache must leave the original read guard in effect. */ }
+      })
+    }
     const trackCorrection = (session, event) => {
       const observed = observeDreamCorrection(session, event)
       if (!observed) return
@@ -3122,7 +3163,8 @@ function setupDreamReview(ctx, root, options) {
       if (!runtime || !captureSessionEligible(session)) return
       switch (event?.type) {
         case 'turn/start': runtime.scheduler.enter(session.id); break
-        case 'turn/end': runtime.scheduler.leave(session.id); break
+        case 'turn/end': runtime.scheduler.leave(session.id); scheduleReplayIndex(session); break
+        case 'compaction/end': scheduleReplayIndex(session); break
         case 'user/message': runtime.scheduler.activity(); trackCorrection(session, event); break
       }
     }
@@ -3153,6 +3195,7 @@ function setupDreamReview(ctx, root, options) {
       return readDreamTranscripts({
         query: canPreflight ? query.value : undefined, projectId: snapshot.projectId,
         pointersByTarget: snapshot.pointers, withdrawnSourceIds: snapshot.withdrawnSourceIds, resolveProjectId,
+        readIndexedSession: replayIndex.read,
         signal: AbortSignal.any([signal, query.signal, registry.signal, persistence.signal]),
         async preflightSession(id, { signal }) {
           const live = registry.value.get(id)

@@ -1,11 +1,9 @@
-# Why source-linked memory needs correction history
+# What survives a compacted DSH conversation?
 
-状态：可复用文案，尚未投放第三方平台。 / Copy prepared; not posted to third-party platforms.
+I maintain SoloPup Memory, a text-memory plugin for DeepSeek Harness. A writing project gave me a useful test case. The author picked draft two for chapter seven and kept the original ending. Both details have to survive when the assistant picks up the work later.
 
-A remembered sentence is not always a timeless rule. A project export format may change, a client may require an exception, and a self-report may remain unverified. SoloPup Memory represents these distinctions explicitly: sources support candidates, reviewed proposals become effective memories, and revisions distinguish the current value from history. This structure makes inspection possible; it cannot make a model infallible. The beta still needs prospective semantic evaluation and sustained use. Start with a small synthetic correction, inspect the underlying sources, and report a failure when the stored meaning differs from the original.
+DSH compacts the model's working context and keeps the earlier events in the session log. That gives us a concrete regression test. Supply a summary that leaves out the ending, then check whether the plugin can still locate the author's original words. A second case withdraws the decision and checks that the old wording stays out of current memory. This separates a source-retrieval result from a model's ability to continue the draft.
 
-项目 / Project: https://github.com/OakcoderX/solopup-memory
+SoloPup records a decision's scope and revision history. Model-assisted review can still miss a decision or misread an exception. The release notes record the tested hosts, cases, and limits. [DSH compaction](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/subsystems/compaction.md) · [Release evidence](../../RELEASE.md) · [Dream Review research](../research/dreaming-in-dsh/README.en.md)
 
-试用入口 / Start: https://github.com/OakcoderX/solopup-memory/blob/main/docs/guides/quickstart.md
-
-发布时披露作者/维护者关系；不要伪装成独立推荐。 / Disclose affiliation when posting.
+If you build against DSH's session log, I'd like to hear which compaction or withdrawal cases you test. [Project](https://github.com/OakcoderX/solopup-memory) · [Feedback](../feedback.md)

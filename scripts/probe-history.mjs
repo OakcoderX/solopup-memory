@@ -27,7 +27,7 @@ export async function apply(ctx) {
     if (typeof owner?.await === 'function') await owner.await()
     const stamp = JSON.parse(readFileSync(${JSON.stringify(join(env.HOME, 'memory', '.loaded.json'))}, 'utf8'))
     assert.equal(stamp.memoryHistory.available, true)
-    assert.equal(stamp.tools.length, 6)
+    assert.ok(stamp.tools.includes('memory_document'))
     const key = 'solopup:synthetic-projection-probe'
     const definition = { ...memoryContextProjection(), key }
     const register = async () => {
