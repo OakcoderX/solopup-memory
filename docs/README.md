@@ -1,8 +1,8 @@
 # SoloPup Memory — start here / 试用导航
 
-DeepSeek Harness 公开测试版 `0.24.0-beta.2`，采用 MIT 许可。配置的模型服务可能计费。
+SoloPup Memory 是 DeepSeek Harness 的公开测试版记忆插件，采用 MIT 许可。配置的模型服务可能计费。
 
-第一次使用可以从快速上手开始，用一个虚构项目试试保存和回忆。想让 DSH 在闲置后检查哪些约定已经变了，可开启 0.24 的做梦复核。 [交互演示](https://oakcoderx.github.io/solopup-memory/dreaming/) · [做梦设置](dream-review.md) · [0.24 宿主与真实模型验收](runs/2026-11-13-dream-review-beta1.md)
+第一次使用可以从快速上手开始，用一个虚构项目试试保存和回忆。想在 DSH 压缩聊天后核对作者原话，可开启做梦复核。长稿可以按采用版本和章节回查。 [交互演示](https://oakcoderx.github.io/solopup-memory/dreaming/) · [做梦设置](dream-review.md) · [0.25 验收](runs/2026-11-14-long-project-beta.md) · [0.24 做梦验收](runs/2026-11-13-dream-review-beta1.md)
 
 下列案例提供操作步骤。历史离线样例的实际结果见其记录。 [离线来源回查记录](runs/2026-11-07-source-recall.md)
 
@@ -10,6 +10,7 @@ DeepSeek Harness 公开测试版 `0.24.0-beta.2`，采用 MIT 许可。配置的
 - [适合谁 / Who it is for](guides/who-its-for.md)
 - [明确记住 / Explicit remember](guides/remember.md)
 - [换聊天验收 / Fresh-chat recall](guides/fresh-chat.md)
+- [Markdown 稿件回查](guides/markdown-reference.md)
 - [项目与全局 / Project and global scope](guides/scope.md)
 - [改主意 / Corrections](guides/corrections.md)
 - [条件与例外 / Conditions and exceptions](guides/conditions.md)

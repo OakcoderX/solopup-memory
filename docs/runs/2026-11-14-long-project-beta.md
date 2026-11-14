@@ -1,6 +1,6 @@
 # 0.25 长项目回读验收
 
-2026 年 11 月 14 日至 15 日 · SoloPup Memory 0.25.0-beta.1 候选
+2026 年 11 月 14 日至 15 日 · SoloPup Memory 0.25.0-beta.1 公开测试版
 
 **这轮要确认的是，DSH 在压缩、重启或历史文件超限后，SoloPup 还能引用作者实际确认的改动和例外。** 样本使用虚构小说《雾港来信》。作者只确认第七章采用 V2，结尾照旧。压缩生成的检查点故意写成 V3。用同一试验分别跑 0.24 已发布包和 0.25 候选包。
 
@@ -27,6 +27,10 @@ Super Agent 单独做双模式烟测。普通模式 → Super Agent → 普通�
 
 同一个本机安装包还走过 0.24.0-beta.2 → 0.25.0-beta.1 → 0.24.0-beta.2。升级、重启和回滚后核对了当前决定、撤回记录和待处理做梦队列。
 
+GitHub 构建的发布包在 macOS 上复做冷回读、双模式和回滚三个检查，全部通过。随后从 npm 和 GitHub 分别下载，文件内容一致，SHA-256 为 `d824b33a3277d63f26ba162a67b88037ae8cc6f193a5aaf43c9612dcc2255e63`。正式流程的 Linux 和 macOS 源码检查以及两版 DSH 宿主兼容检查均通过。归档清单 1,093 项，本地解包运行 1,087 项通过，6 项条件探针跳过，对应的宿主流程单独测试。 [GitHub 发布回执](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.25.0-beta.1) · [正式流程](https://github.com/OakcoderX/solopup-memory/actions/runs/43623687448)
+
+另用 DeepSeek Flash 做了一次真实模型案例。约 669 KB 的已保存会话冷重启后，从原话核对「普通报告改用 PDF，无障碍报告仍用纯文本」。模型保留了例外，并引用两条来源。本次只测一个普通模式案例，共 548 tokens。脚本原来按固定英文答案判定，模型返回中文后改用已保存的报告结构、原话及指纹核验，没有重发请求。
+
 ## 复跑与释放条件
 
 用项目脚本直接比较归档。测试记录宿主版本、归档 SHA-256、日志大小和整段历史查询次数。后台整理由宿主执行，测试输入和摘要固定，公开对照可离线重现。
@@ -38,4 +42,4 @@ node scripts/probe-package.mjs --report /absolute/path/to/packaged-acceptance.js
 node scripts/soak-dream.mjs --long-cold --tgz /absolute/path/to/solopup-memory-0.25.0-beta.1.tgz
 ```
 
-发布工作流还会运行 Linux 与 macOS 源码测试、DSH 兼容检查、归档完整性验证和 npm 下载读回。每份验收回执用于它标出的归档 SHA，发布归档以对应 CI 回执和 npm 下载校验为准。0.25 的结论限于已测试的来源回查和流程行为。本试验未调用在线模型衡量摘要质量，也未衡量小说续写的文学质量。
+每份验收回执用于它标出的归档 SHA。0.25 的结论覆盖这些来源回查和流程行为。真实模型的证据限于上述单案例。压缩摘要本身的质量和续写质量属于另外的评测问题。
