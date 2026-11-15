@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.25.0-beta.2 — resume conversations on DSH 0.2.2-rc.3
+
+- Fix `memory-context-render-mismatch`, which could stop a turn before the model received it. SoloPup now recognizes the runtime-context formats used by DSH 0.2.2-rc.3 and earlier supported hosts.
+- Existing chats can be resumed after installing this version and restarting DSH. The original conversation history is retained. When SoloPup replaces stale memory in an active request, it preserves the other context sections and still rejects mismatched content.
+- The history regression now sends multiple turns through a real DSH host with an in-process model adapter. The new format was reproduced and tested on desktop DSH 0.2.2-rc.3.
+
 ## 0.25.0-beta.1 — source recall for long project work
 
 - Dream Review can verify author corrections hidden by DSH compaction, including repeated compaction. A generated checkpoint cannot supply owner approval. Ordinary replacements and withdrawals still block the old source.
