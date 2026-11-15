@@ -6,13 +6,25 @@ export const MEMORY_CONTEXT_NAME = 'memory:index'
 export const HISTORY_PROJECTION_KEY = 'dsh-memory:context-history'
 const MAX_TRACKED = 4096
 const SNAPSHOT_HEADER = 'Current runtime context. This snapshot supersedes earlier runtime-context snapshots.'
+const REMINDER_HEADERS = [
+  'The following information describes your current session:',
+  'The following information describes your current session. It replaces earlier versions of this context, including any retained in conversation summaries.',
+]
 const CLEARED = '[dsh-memory] The memory:index section of this historical snapshot has been removed.'
 const fail = (code) => { throw new Error(code) }
 const sectionOwned = (message) => message?.source?.kind === 'runtime-context' &&
   Array.isArray(message.source.sections) && message.source.sections.some(s => s?.name === MEMORY_CONTEXT_NAME)
 const framed = (message) => message?.source?.kind === 'runtime-context' &&
   message.content?.some(b => b?.type === 'text' && typeof b.text === 'string' && b.text.includes('<memory-store>'))
-const joinSections = (sections) => sections.length ? `${SNAPSHOT_HEADER}\n\n${sections.map(s=>s.text).join('\n\n')}` : CLEARED
+
+function joinSections(sections, header) {
+  if (!sections.length) return CLEARED
+  const body = sections.map(section => section.text).join('\n\n')
+  if (header === SNAPSHOT_HEADER) return `${header}\n\n${body}`
+  // The newer DSH projection escapes closing tags within the reminder body.
+  const escaped = body.replace(/<\/system-reminder\s*>/gi, tag => `<\\${tag.slice(1)}`)
+  return `<system-reminder>\n${header}\n\n${escaped}\n</system-reminder>`
+}
 
 export function memoryContextProjection() {
   return {
@@ -44,7 +56,7 @@ export function memoryContextProjection() {
 }
 
 /** A section's recorded provenance must reproduce its exact rendered snapshot. */
-function ownedSection(message) {
+function ownedSnapshot(message) {
   if(!sectionOwned(message)){
     if(framed(message))fail('memory-context-unattributed-history')
     return undefined
@@ -52,23 +64,27 @@ function ownedSection(message) {
   const sections=message.source.sections
   if(message.role!=='user' || message.content?.length!==1 || message.content[0]?.type!=='text' ||
     sections.some(s=>!s || typeof s.name!=='string' || typeof s.text!=='string') ||
-    sections.filter(s=>s.name===MEMORY_CONTEXT_NAME).length!==1 || message.content[0].text!==joinSections(sections)) fail('memory-context-render-mismatch')
-  return sections.find(s=>s.name===MEMORY_CONTEXT_NAME)
+    sections.filter(s=>s.name===MEMORY_CONTEXT_NAME).length!==1) fail('memory-context-render-mismatch')
+  const text = message.content[0].text
+  const header = [SNAPSHOT_HEADER, ...REMINDER_HEADERS].find(candidate => text === joinSections(sections, candidate))
+  if (!header) fail('memory-context-render-mismatch')
+  const memory = sections.find(section => section.name === MEMORY_CONTEXT_NAME)
+  return { header, memory }
 }
 
 export function reconcileMemoryContext(session, state, currentText) {
   if(typeof session?.deriveMessages!=='function')return{replaced:0}
-  const visible=session.deriveMessages().map(message=>({message,owned:ownedSection(message)})).filter(row=>row.owned!==undefined)
+  const visible=session.deriveMessages().map(message=>({message,owned:ownedSnapshot(message)})).filter(row=>row.owned!==undefined)
   if(!visible.length)return{replaced:0}
-  if(visible.length===1&&visible[0].owned.text===currentText)return{replaced:0}
+  if(visible.length===1&&visible[0].owned.memory.text===currentText)return{replaced:0}
   if(!state || state.overflow)fail(state?.overflow?'memory-context-history-limit':'memory-context-history-unavailable')
   const byId=new Map(state.nodes.map(row=>[row.id,row.seq])), active=new Set(session.surface?.nodes??[])
   // Validate every replacement before the first append; never guess a source seq.
-  const plans=visible.map(({message})=>{
+  const plans=visible.map(({message,owned})=>{
     const seq=byId.get(message.id)
     if(!Number.isSafeInteger(seq)||!active.has(seq))fail('memory-context-unmapped-history')
     const sections=message.source.sections.filter(s=>s.name!==MEMORY_CONTEXT_NAME).map(s=>({...s}))
-    const replacement={id:randomUUID(),role:'user',content:[{type:'text',text:joinSections(sections)}],
+    const replacement={id:randomUUID(),role:'user',content:[{type:'text',text:joinSections(sections,owned.header)}],
       source:sections.length?{...message.source,sections}:{kind:'runtime-context'}}
     return{seq,replacement}
   })
@@ -81,11 +97,11 @@ export function reconcileMemoryContext(session, state, currentText) {
 
 /** Requests are frozen by the host: reject stale inputs instead of editing them. */
 export function assertCurrentMemoryRequest(messages,currentText) {
-  const sections=(messages??[]).map(ownedSection).filter(s=>s!==undefined)
+  const contexts=(messages??[]).map(ownedSnapshot).filter(context=>context!==undefined)
   // Other providers may change after our boundary check and cause the host to
   // append an otherwise identical memory section. Duplication alone is safe;
   // every retained copy must still equal the current memory view.
-  if(sections.some(s=>s.text!==currentText))fail('memory-context-stale-request')
+  if(contexts.some(context=>context.memory.text!==currentText))fail('memory-context-stale-request')
 }
 
 export function setupMemoryHistory(ctx,render) {

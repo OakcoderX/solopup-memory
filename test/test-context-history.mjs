@@ -55,6 +55,25 @@ test('来源节与渲染正文不一致时在第一笔改写之前拒绝，防�
  const a=context('valid','old'),b=context('tampered','old');b.content[0].text+=' unrelated prose'
  const f=fixture([a,b]);assert.throws(()=>reconcileMemoryContext(f,f.state,'new'),/render-mismatch/);assert.equal(f.events.length,2)
 })
+test('DSH 0.2.2-rc.3 首次与刷新包装可回放，撤换旧记忆时保留宿主包装与其他节',()=>{
+ const first='The following information describes your current session:'
+ const refresh='The following information describes your current session. It replaces earlier versions of this context, including any retained in conversation summaries.'
+ const other={name:'other-provider',text:'keep </SYSTEM-REMINDER > exactly'}
+ const renderedOther='keep <\\/SYSTEM-REMINDER > exactly'
+ const old=context('legacy','legacy memory'), initial=context('initial','first memory',[other]), updated=context('updated','current memory',[other])
+ initial.content[0].text=`<system-reminder>\n${first}\n\nfirst memory\n\n${renderedOther}\n</system-reminder>`
+ updated.content[0].text=`<system-reminder>\n${refresh}\n\ncurrent memory\n\n${renderedOther}\n</system-reminder>`
+ assert.doesNotThrow(()=>assertCurrentMemoryRequest([updated],'current memory'))
+ assert.throws(()=>assertCurrentMemoryRequest([initial],'current memory'),/stale-request/)
+ const f=fixture([old,initial,updated]);const original=JSON.stringify(f.events)
+ assert.deepEqual(reconcileMemoryContext(f,f.state,'current memory'),{replaced:3})
+ assert.equal(JSON.stringify(f.events.slice(0,3)),original)
+ assert.deepEqual(f.deriveMessages().slice(1).map(m=>m.source.sections),[[other],[other]])
+ assert.deepEqual(f.deriveMessages().slice(1).map(m=>m.content[0].text),[first,refresh].map(intro=>`<system-reminder>\n${intro}\n\n${renderedOther}\n</system-reminder>`))
+ assert.doesNotThrow(()=>assertCurrentMemoryRequest(f.deriveMessages(),'current memory'))
+ const tampered=structuredClone(updated);tampered.content[0].text=tampered.content[0].text.replace(renderedOther,other.text)
+ assert.throws(()=>assertCurrentMemoryRequest([tampered],'current memory'),/render-mismatch/)
+})
 test('映射缺失、非活动序号或超限状态不能猜位置改写',()=>{
  for(const state of [undefined,{nodes:[],overflow:false},{nodes:[{id:'old',seq:5}],overflow:false},{nodes:[{id:'old',seq:0}],overflow:true}]){
   const f=fixture([context('old','old')]);assert.throws(()=>reconcileMemoryContext(f,state,'new'),/history-unavailable|unmapped-history|history-limit/);assert.equal(f.events.length,1)

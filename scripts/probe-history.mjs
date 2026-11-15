@@ -18,9 +18,80 @@ writeFileSync(driver, `
 import assert from 'node:assert/strict'
 import { readFileSync, writeFileSync } from 'node:fs'
 import * as memory from ${JSON.stringify(pathToFileURL(join(source, 'index.mjs')).href)}
-import { memoryContextProjection, reconcileMemoryContext } from ${JSON.stringify(pathToFileURL(join(source, 'context-history.mjs')).href)}
+import { memoryContextProjection, reconcileMemoryContext, setupMemoryHistory } from ${JSON.stringify(pathToFileURL(join(source, 'context-history.mjs')).href)}
 export const name = 'solopup-history-probe'
-export const inject = ['sessions', 'sessionProjections', 'systemPrompt', 'workingDirectory', 'tools']
+export const inject = ['agents', 'llm', 'sessions', 'sessionProjections', 'systemPrompt', 'workingDirectory', 'tools']
+
+async function probeRequests(ctx) {
+  const route = { provider: 'solopup-history-fixture', model: 'fixture' }
+  const sessionId = 'solopup-generated-history-probe'
+  const requests = []
+  ctx.llm.registerAdapter([route.provider], {
+    providerInfo: id => ({ id, name: id }), providerRetryPolicy: () => undefined,
+    imageRequestPricing: () => undefined, listModels: async () => [],
+    resolveModel: async (provider, id) => ({ provider, id, name: id }),
+    async prepareCall(provider, model) {
+      return { model: await this.resolveModel(provider, model), stream: options => this.stream(options) }
+    },
+    async *stream(options) {
+      if (options.sessionId === sessionId && options.messages.some(m => m.source?.kind === 'runtime-context')) requests.push(options.messages)
+      const output = 'fixture response'
+      yield { type: 'block-start', index: 0, blockType: 'text' }
+      yield { type: 'text-delta', index: 0, text: output }
+      yield { type: 'block-end', index: 0, block: { type: 'text', text: output } }
+      yield { type: 'finish', reason: 'stop' }
+    },
+  })
+
+  let current = '<memory-store>original synthetic memory</memory-store>'
+  const initial = current
+  let other = 'old non-memory provider text with </SYSTEM-reminder > as data'
+  const originalOther = other
+  const history = await setupMemoryHistory(ctx, () => current)
+  assert.equal(history.available, true)
+  const handle = await ctx.agents.create({
+    sessionId, agentOptions: route,
+    setup(scoped) {
+      scoped.systemPrompt.context({ name: 'memory:index', order: 10, required: true, interpolate: false, text: () => current })
+      scoped.systemPrompt.context({ name: 'fixture:other', order: 20, required: true, interpolate: false, text: () => other })
+      scoped.tools.restrict({ allow: [] })
+    },
+  })
+  const { agent } = handle
+  try {
+    const submit = async turn => {
+      const text = 'ordinary synthetic input ' + turn
+      agent.followup({ id: 'user-' + turn, role: 'user', source: { kind: 'user' }, content: [{ type: 'text', text }] })
+      await agent.whenIdle()
+      const outcome = agent.session.snapshotEvents().findLast(e => e.type === 'turn/end')?.data.reason
+      assert.equal(requests.length, turn, 'turn ' + turn + ' must reach the in-process adapter: ' + JSON.stringify(outcome))
+      assert.notEqual(outcome?.kind, 'error')
+      const messages = requests[turn - 1]
+      assert.ok(messages.some(m => m.source?.kind === 'user' && m.content[0]?.text === text))
+      const snapshot = messages.findLast(m => m.source?.kind === 'runtime-context' && m.source.sections?.some(s => s.name === 'memory:index'))
+      assert.ok(snapshot, 'the host must assemble a memory snapshot')
+      assert.equal(snapshot.source.sections.find(s => s.name === 'memory:index').text, current)
+      return snapshot
+    }
+    const first = await submit(1)
+    const reminder = first.content[0].text.startsWith('<system-reminder>')
+    if (reminder) assert.match(first.content[0].text, /<\\\\\\/SYSTEM-reminder >/)
+    current = '<memory-store>updated synthetic memory</memory-store>'
+    other = 'current non-memory provider text'
+    const second = await submit(2)
+    if (reminder) assert.match(second.content[0].text, /replaces earlier versions of this context/)
+    await submit(3)
+    for (const messages of requests.slice(1)) {
+      assert.ok(!JSON.stringify(messages).includes(initial), 'old memory must leave the request')
+      assert.ok(messages.some(m => m.source?.sections?.some(s => s.name === 'fixture:other' && s.text === originalOther)))
+      assert.ok(messages.some(m => m.source?.kind === 'user' && m.content[0]?.text === 'ordinary synthetic input 1'))
+    }
+    assert.ok(agent.session.snapshotEvents().some(e => e.type === 'user/message' &&
+      e.data.source?.sections?.some(s => s.name === 'memory:index' && s.text === initial)), 'old memory remains in the append-only event log')
+    return { format: reminder ? 'system-reminder' : 'legacy-snapshot', completedTurns: requests.length }
+  } finally { await handle.dispose() }
+}
+
 export async function apply(ctx) {
   try {
     const owner = await ctx.plugin(memory, { autoCapture: { enabled: false } })
@@ -57,7 +128,8 @@ export async function apply(ctx) {
     if (replay.retained) assert.equal(replay.stateOf(replayed).nodes.length, 1, 'retained readers remain usable after owner disposal')
     await assert.rejects(async () => await ctx.sessionProjections.register({ ...definition, stateVersion: -1 }), /non-negative/)
     await owner.dispose()
-    writeFileSync(${JSON.stringify(reportFile)}, JSON.stringify({ passed: true, realDshHost: true, realModel: false, cleanHome: true, syntheticInput: true, tools: stamp.tools.length, projectionApi: handle.retained ? 'retained-handle' : 'legacy-registry', historyAvailable: stamp.memoryHistory.available, liveState: true, rewritePreservesOrdinaryAndOtherProvider: true, coldReplay: true, registrationRejected: true, ownerDisposed: true }) + '\\n')
+    const hostGeneratedRequests = await probeRequests(ctx)
+    writeFileSync(${JSON.stringify(reportFile)}, JSON.stringify({ passed: true, realDshHost: true, realModel: false, cleanHome: true, syntheticInput: true, tools: stamp.tools.length, projectionApi: handle.retained ? 'retained-handle' : 'legacy-registry', historyAvailable: stamp.memoryHistory.available, liveState: true, rewritePreservesOrdinaryAndOtherProvider: true, coldReplay: true, registrationRejected: true, ownerDisposed: true, hostGeneratedRequests }) + '\\n')
   } catch (error) {
     writeFileSync(${JSON.stringify(reportFile)}, JSON.stringify({ passed: false, error: error.stack }) + '\\n')
   }
@@ -78,7 +150,7 @@ try {
   if (!existsSync(reportFile)) throw Error(`history-probe-host-failed:${childError ?? child.exitCode ?? 'timeout'}\n${output.slice(-6000)}`)
   const report = JSON.parse(readFileSync(reportFile, 'utf8'))
   if (!report.passed) throw Error(report.error + '\n' + output.slice(-6000))
-  console.log('[PASS] Real DSH history registration, live state, rewrite, cold replay, rejection and disposal')
+  console.log('[PASS] Real DSH history registration, rewrite, cold replay and host-generated requests')
   console.log(JSON.stringify(report))
 } catch (error) {
   console.error('[FAIL] ' + error.message); process.exitCode = 1
