@@ -163,7 +163,7 @@ node /absolute/path/to/solopup-memory/scripts/superagent-worktree.mjs --owner /a
 
 使用上方[先试起来](#先试起来)的 DeepSeek Harness 官方插件管理器命令安装。代码为可直接执行的 ESM，无安装时构建脚本，也不需要 npm 账户。
 
-`beta` 标签跟随已公开并完成下载核验的测试版。固定到本版可指定 `solopup-memory@0.25.0-beta.1`。Git 安装可用 `dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.25.0-beta.1 --ignore-scripts`，需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。也可下载 `.tgz` 后运行 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.25.0-beta.1.tgz --offline --ignore-scripts`。 [发行页与校验值](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.25.0-beta.1)
+`beta` 标签跟随已公开并完成下载核验的测试版。固定到本版可指定 `solopup-memory@0.25.0-beta.2`。Git 安装可用 `dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.25.0-beta.2 --ignore-scripts`，需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。也可下载 `.tgz` 后运行 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.25.0-beta.2.tgz --offline --ignore-scripts`。 [发行页与校验值](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.25.0-beta.2)
 
 已安装旧名 `dsh-memory` 时，先完成完整备份、关闭使用该库的宿主，用官方管理器移除旧包，再安装新包；不要同时启用两个记忆插件。新名字继续使用原记忆库和控制格式。
 
