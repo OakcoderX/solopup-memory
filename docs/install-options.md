@@ -3,7 +3,7 @@
 Pin the public beta from npm for the desktop profile.
 
 ```sh
-dsh plugin --profile desktop add solopup-memory@0.25.0-beta.1 --ignore-scripts
+dsh plugin --profile desktop add solopup-memory@0.25.0-beta.2 --ignore-scripts
 ```
 
 `solopup-memory@beta` follows the beta tag and can change. The GitHub release also supplies a local archive. Install it with the official manager using its absolute path and `--offline --ignore-scripts`. See the root README for the full command and upgrade precautions.

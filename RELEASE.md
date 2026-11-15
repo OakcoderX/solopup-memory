@@ -1,6 +1,12 @@
+# 0.25.0-beta.2 — conversation recovery on DSH 0.2.2-rc.3
+
+Public beta. DSH 0.2.2-rc.3 changed the formatting of runtime context. SoloPup now verifies both supported formats, so affected conversations can continue after a plugin update and DSH restart. Replacing stale memory in an active request retains the original history and other context sections.
+
+The public npm and GitHub archives match. Archive SHA-256 `92b855410afe956fbb657f846c72c1fdc8520aefb926f7acdc2b9ac286e9638c`. [GitHub Release](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.25.0-beta.2) · [npm](https://www.npmjs.com/package/solopup-memory/v/0.25.0-beta.2) · [Release workflow](https://github.com/OakcoderX/solopup-memory/actions/runs/43737338127)
+
 # 0.25.0-beta.1 — source recall for long project work
 
-Public beta. The npm `beta` tag points to this version. The npm and GitHub downloads match the archive used for local cold-restart, Super Agent mode-switch and rollback checks. Archive SHA-256 `d824b33a3277d63f26ba162a67b88037ae8cc6f193a5aaf43c9612dcc2255e63`. [GitHub Release](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.25.0-beta.1) · [npm](https://www.npmjs.com/package/solopup-memory/v/0.25.0-beta.1) · [Release workflow](https://github.com/OakcoderX/solopup-memory/actions/runs/43623687448)
+Public beta. Superseded by 0.25.0-beta.2. The npm and GitHub downloads match the archive used for local cold-restart, Super Agent mode-switch and rollback checks. Archive SHA-256 `d824b33a3277d63f26ba162a67b88037ae8cc6f193a5aaf43c9612dcc2255e63`. [GitHub Release](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.25.0-beta.1) · [npm](https://www.npmjs.com/package/solopup-memory/v/0.25.0-beta.1) · [Release workflow](https://github.com/OakcoderX/solopup-memory/actions/runs/43623687448)
 
 Keep the author’s correction available after DSH condenses the chat. A correction placed in its own final paragraph can retain qualifiers such as “chapter seven only, leave the ending unchanged.” Dream Review uses the original evidence and waits for a normal confirmed write before the suggested change enters memory.
 
