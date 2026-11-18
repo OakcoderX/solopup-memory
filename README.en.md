@@ -74,7 +74,7 @@ Requires an installed DeepSeek Harness and Node >=24.9. For the desktop profile:
 dsh plugin --profile desktop add solopup-memory@0.26.0-beta.1 --ignore-scripts
 ```
 
-If a DSH update leaves a conversation stuck with `memory-context-render-mismatch`, install `0.25.0-beta.2`, restart DSH, and retry in the same conversation.
+If a DSH update leaves a conversation stuck with `memory-context-render-mismatch`, follow the [upgrade guide](docs/guides/quickstart.md) to install the current public beta, restart DSH, and retry in the same conversation.
 
 Restart that profile's host, then use `memory_status` to check the loaded version and status. If upgrading from `dsh-memory`, back up and remove the old plugin first; do not enable both. See [installation details](#install-in-dsh) for exact versions, legacy-store review and removal.
 

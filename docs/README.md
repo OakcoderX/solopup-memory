@@ -2,6 +2,14 @@
 
 SoloPup Memory 是 DeepSeek Harness 的公开测试版记忆插件，采用 MIT 许可。配置的模型服务可能计费。
 
+## 0.26 公开测试版 / Public beta
+
+第二天继续改稿，昨天确认的版本、结尾和例外，还能用到今天的文件里。0.26 会带上与当前任务相关的约定，并在支持的 DSH 中提示复核一次交付。两道小任务按最新约定交付的得分为关闭插件 **0/2**、0.25 **1/2**、0.26 **2/2**。独立续写中 0.26 仍漏验了文件末行。 [安装](guides/quickstart.md) · [得分与复现](runs/2026-11-18-memory-delivery.md)
+
+When you resume a project, 0.26 brings a few applicable decisions into the new task and can prompt a review after file edits on supported hosts. It followed the latest agreement on both local delivery tasks and missed an end-of-file requirement in a separate writing test. Download the source or fork it to share a case from your own workflow. [Release and source](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.1) · [Fork](https://github.com/OakcoderX/solopup-memory/fork)
+
+## 第一次使用 / Getting started
+
 第一次使用可以从快速上手开始，用一个虚构项目试试保存和回忆。想在 DSH 压缩聊天后核对作者原话，可开启做梦复核。长稿可以按采用版本和章节回查。 [交互演示](https://oakcoderx.github.io/solopup-memory/dreaming/) · [做梦设置](dream-review.md) · [0.25 验收](runs/2026-11-14-long-project-beta.md) · [0.24 做梦验收](runs/2026-11-13-dream-review-beta1.md)
 
 下列案例提供操作步骤。历史离线样例的实际结果见其记录。 [离线来源回查记录](runs/2026-11-07-source-recall.md)

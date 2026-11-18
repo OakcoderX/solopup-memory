@@ -76,7 +76,7 @@ Super Agent 原型准备失败后直接重试，Worker 可能缺少项目记忆�
 dsh plugin --profile desktop add solopup-memory@beta --ignore-scripts
 ```
 
-如果 DSH 更新后出现 `memory-context-render-mismatch`，请升级到 `0.25.0-beta.2`、重启 DSH，再回到原对话重试。原来的聊天记录可继续使用。
+如果 DSH 更新后出现 `memory-context-render-mismatch`，请按[升级指南](docs/guides/quickstart.md)安装当前公开测试版、重启 DSH，再回到原对话重试。原来的聊天记录可继续使用。
 
 重启该 profile 的宿主后，用 `memory_status` 确认插件版本与状态。升级旧名 `dsh-memory` 前先完整备份并移除旧插件，不能同时启用两个插件；固定版本、旧库检查和卸载见[安装与卸载](#安装与卸载)。
 
