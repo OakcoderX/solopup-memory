@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.26.0-beta.1 — apply current project decisions
+
+- Surface a short, source-linked view of applicable project decisions and preferences during a task. Preserve conditions, exceptions and source withdrawal through the live context refresh.
+- On supported DSH hosts, give the agent one end-of-turn review after a successful edit when an applicable saved agreement exists. The model checks the actual deliverables within the user's original task permissions. Set `deliveryReview: false` to turn off the extra step.
+- Recover evidence from prior conversations in the same work directory for explicit continuation requests. Keep historical excerpts identifiable as evidence. Source extraction keeps complete owner text up to 8 KiB within the existing request budget and reports omitted events.
+
 ## 0.25.0-beta.2 — resume conversations on DSH 0.2.2-rc.3
 
 - Fix `memory-context-render-mismatch`, which could stop a turn before the model received it. SoloPup now recognizes the runtime-context formats used by DSH 0.2.2-rc.3 and earlier supported hosts.

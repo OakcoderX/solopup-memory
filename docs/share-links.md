@@ -10,5 +10,7 @@
 - Privacy and cost: https://github.com/OakcoderX/solopup-memory/blob/main/docs/guides/privacy.md
 - Reproducible feedback: https://github.com/OakcoderX/solopup-memory/issues/new/choose
 - Actual beta evidence: https://github.com/OakcoderX/solopup-memory/blob/main/RELEASE.md
+- 0.26 delivery scores and reproduction: https://github.com/OakcoderX/solopup-memory/blob/main/docs/runs/2026-11-18-memory-delivery.md
+- Source improvements and forks: https://github.com/OakcoderX/solopup-memory/fork
 
 按讨论主题分享相关入口，说明维护者身份。目录收录状态与公开版本分别查证。

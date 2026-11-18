@@ -39,6 +39,31 @@ test('streamed response size failure is typed, bounded and never retried as an e
  const llm={async prepareCall(){calls++;return{config:{},async *stream(){yield{type:'text-delta',text:'x'.repeat(CAPTURE_RESPONSE_BYTES+1)}}}}}
  await assert.rejects(extractWithLlm({llm,messages:[],indexLines:[],includeDiagnostics:true}),error=>error.message==='capture-response-too-large');assert.equal(calls,1)
 })
+test('capture coverage distinguishes the message window and byte budget from a model no-op', async () => {
+ const messages = Array.from({ length: 31 }, (_, seq) => ({
+  id: `PRIVATE_EVENT_${seq}`,
+  seq,
+  role: [0, 1, 30].includes(seq) ? 'user' : 'assistant',
+  text: seq === 30 ? 'PRIVATE_CONTENT' : '长'.repeat(100),
+ }))
+ let coverage
+ let prompt
+ const llm = { async prepareCall() { return { config: {}, async *stream(request) {
+  prompt = request.messages[0].content[0].text
+  yield '[]'
+ } } } }
+ const batch = await extractWithLlm({
+  llm, messages, indexLines: [], maxInputBytes: 1024, includeDiagnostics: true, onInputPrepared: value => { coverage = value },
+ })
+ assert.equal(buildCaptureDiagnostic(batch).classification, 'model-noop')
+ assert.deepEqual(coverage, {
+  sourceMessages: 31, sourceUserMessages: 3, messageLimitOmissions: 1, byteBudgetOmissions: 29,
+  includedMessages: 1, includedUserMessages: 1, windowUserSeqs: [1, 30], includedUserSeqs: [30],
+  indexLines: 0, relationTargets: 0, structuredRecords: 0, maxInputBytes: 1024, promptBytes: Buffer.byteLength(prompt),
+ })
+ assert.ok(prompt.includes('PRIVATE_CONTENT'))
+ assert.doesNotMatch(JSON.stringify(coverage), /PRIVATE_/)
+})
 test('diagnostic enums, accounting and negative epistemic boundary cannot be forged by arbitrary metadata',()=>{
  const d=buildCaptureDiagnostic(parseCaptureBatch('[]',3))
  for(const patch of [{prompt:'PRIVATE'},{semanticCompletenessVerified:true},{responseItems:1},{classification:'recorded'},{codes:[{code:'PRIVATE_OUTPUT',count:1}]}])assert.throws(()=>normalizeCaptureDiagnostic({...d,...patch}),/capture-diagnostic-invalid/)
@@ -71,6 +96,12 @@ test('all parser-rejected items persist as failure and remain distinguishable th
  const value=await capture(f,[{type:'not-memory',summary:'PRIVATE_FILTERED_PAYLOAD'}]);assert.equal(value.state.lastOutcome,'rejected');assert.equal(value.state.lastError,'capture-parser-rejected');assert.equal(value.job.status,'failed');assert.equal(value.job.diagnostic.classification,'parser-rejected');assert.deepEqual(value.job.counts,{proposed:1,inserted:0,staged:0,rejected:1})
  const status=captureJobStatus(f.root);assert.equal(status.latest.diagnostic.parserRejected,1);assert.equal(status.semanticCompletenessVerified,false)
  for(const name of ['.capture-state.json','.capture-jobs.json','.audit.jsonl'])assert.ok(!readFileSync(join(f.root,name),'utf8').includes('PRIVATE_FILTERED_PAYLOAD'))
+ const audit=readFileSync(join(f.root,'.audit.jsonl'),'utf8').trim().split('\n').map(JSON.parse).find(entry=>entry.op==='capture')
+ assert.equal(audit.jobId,value.job.id)
+ assert.equal(audit.inputCoverage.source,'live-buffer')
+ assert.equal(audit.inputCoverage.includedUserMessages,1)
+ assert.equal(audit.diagnostic.parserRejected,1)
+ assert.doesNotMatch(JSON.stringify(audit.inputCoverage),/核对实际依据/)
  const tool=value.tools.find(tool=>tool.name==='memory_status'),data=await tool.execute({scope:'global'},{});assert.equal(data.capture.latest.diagnostic.classification,'parser-rejected');assert.match(tool.output.render({},data)[0].text,/解析拒绝1/)
 }))
 test('mixed invalid/valid capture writes the valid memory and reports partial rather than full success',()=>box(async f=>{

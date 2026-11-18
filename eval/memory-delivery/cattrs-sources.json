@@ -1,0 +1,74 @@
+{
+  "soloPupVersion": "0.25.0-beta.2",
+  "scope": "project",
+  "sourceRule": "All historical role-user text in all ten publisher-linked chronological trajectories, direct HTML article user text only.",
+  "indexRule": "Per user turn, first 110 characters after whitespace normalization, ascending source and turn number.",
+  "topicRule": "Every extracted user message in full, in original order, including natural distractors.",
+  "historicalUserTurns": 160,
+  "indexBytes": 23442,
+  "topicBytes": 141524,
+  "sources": [
+    {
+      "order": 1,
+      "url": "https://frontiermemory.com/traces/cattrs-compositional-changelog/01__mobly-raw/",
+      "sha256": "8b954cd1af2396529cb3f8a9bf3b36c561235c8d4ab364a755753eda2b2ca835",
+      "historicalUserTurns": 17
+    },
+    {
+      "order": 2,
+      "url": "https://frontiermemory.com/traces/cattrs-compositional-changelog/02__changelog-policy-first/",
+      "sha256": "971303885a3f3798646baf1064e7e9e4ed810b4a9032c49248a4fbda667abd07",
+      "historicalUserTurns": 12
+    },
+    {
+      "order": 3,
+      "url": "https://frontiermemory.com/traces/cattrs-compositional-changelog/03__awilix-raw/",
+      "sha256": "eee309f8892d5f9eafeaf703ecfc3095fe05829b9a917825e0701479d73d9c24",
+      "historicalUserTurns": 12
+    },
+    {
+      "order": 4,
+      "url": "https://frontiermemory.com/traces/cattrs-compositional-changelog/04__cli-shell-example/",
+      "sha256": "feb92f681007b7ec2f7ef5a25c0eb37fdae34f554e9d2cb2108cf38dd2b044ed",
+      "historicalUserTurns": 19
+    },
+    {
+      "order": 5,
+      "url": "https://frontiermemory.com/traces/cattrs-compositional-changelog/05__network-resilience-opt-in/",
+      "sha256": "26d711da105612764095692eeb4a45d9a9f7b17986c0a47680608b0948db4f5a",
+      "historicalUserTurns": 14
+    },
+    {
+      "order": 6,
+      "url": "https://frontiermemory.com/traces/cattrs-compositional-changelog/06__public-api-runnable-example/",
+      "sha256": "981fe61e55918720a0d857e78a65702487d9b67d934eca544be964993435fea6",
+      "historicalUserTurns": 16
+    },
+    {
+      "order": 7,
+      "url": "https://frontiermemory.com/traces/cattrs-compositional-changelog/07__async-cancellation-docs/",
+      "sha256": "d6cf9228a27bf4e498edf618915a3c5d3a3c8e147ef0f71bd4d2e38f161c9ac0",
+      "historicalUserTurns": 18
+    },
+    {
+      "order": 8,
+      "url": "https://frontiermemory.com/traces/cattrs-compositional-changelog/08__changelog-policy-second/",
+      "sha256": "17369be073a0cc88b054b6ad44aab5d8b852bc0d02b4be996e5ae03cb5edbe75",
+      "historicalUserTurns": 20
+    },
+    {
+      "order": 9,
+      "url": "https://frontiermemory.com/traces/cattrs-compositional-changelog/09__participle-raw/",
+      "sha256": "1d0771fbc80c0fb6ad7aa4e5f7258b6f4460182f49b3b6895f953bc4df71dd36",
+      "historicalUserTurns": 16
+    },
+    {
+      "order": 10,
+      "url": "https://frontiermemory.com/traces/cattrs-compositional-changelog/10__append-only-migrations/",
+      "sha256": "54dc35baf2f0e5ad573536740383378b4146fbdf9a14d8ee023496d25b05bf13",
+      "historicalUserTurns": 16
+    }
+  ],
+  "indexSha256": "ac8131728e4160e98a6ad84070fd9440278ca12c79a3e336ab1564a265cd3453",
+  "topicSha256": "70a84b4ffdbd1d30e0d07cdb5bbfaf6403eb98f8af37e6485df7f0a60a430c48"
+}

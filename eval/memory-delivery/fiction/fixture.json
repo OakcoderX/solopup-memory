@@ -1,0 +1,84 @@
+{
+  "cases": {
+    "fiction-ending": {
+      "task": "接着写《候潮旅社》的结尾，做成给编剧看的审读版。请先看看 story-so-far.md 里的前情，再续写约一百五十字。把正文写进 ending-review.md，完成后一句话告诉我文件名。",
+      "files": {
+        "story-so-far.md": "# 《候潮旅社》前情\n台风过后，旅社只剩前台一盏灯。许棠在登记簿里找到失踪旅客留给她的旧船票。妹妹还在锅边等水滚。段落从许棠把钥匙放回抽屉开始。\n"
+      },
+      "preferences": [
+        {
+          "id": "draft-route",
+          "kind": "decision",
+          "quote": "《候潮旅社》上轮末段试写，许棠原本沿南堤灯廊上船。",
+          "summary": "《候潮旅社》结尾许棠沿南堤灯廊离开。",
+          "sourceMessageSha256": "073533b1719b3cdd03948b91618dd54762b4a1dfc6e84173578179a5b6e30d8a"
+        },
+        {
+          "id": "approved-last-line",
+          "kind": "decision",
+          "quote": "《候潮旅社》结尾最后一句已经定了，必须原样落在段落末尾，写「把渡票压在碗下，天亮再问。」",
+          "summary": "《候潮旅社》结尾最后一句原样使用「把渡票压在碗下，天亮再问。」",
+          "sourceMessageSha256": "74a4da11ba8ef44dcfb6ee80fc789cc0c7d21c5da753ef342aadc01b40833ac9"
+        },
+        {
+          "id": "edition-sound-exception",
+          "kind": "preference",
+          "quote": "《候潮旅社》结尾默认留下「铜铃响了两下」。审读版是唯一例外，环境声改为「木檐滴水」，不要保留铜铃。",
+          "summary": "《候潮旅社》结尾默认保留「铜铃响了两下」，审读版例外改为「木檐滴水」，不用铜铃。",
+          "sourceMessageSha256": "74a4da11ba8ef44dcfb6ee80fc789cc0c7d21c5da753ef342aadc01b40833ac9"
+        },
+        {
+          "id": "revised-route",
+          "kind": "decision",
+          "quote": "把《候潮旅社》最后一次离开的地点改为西汛栈桥，替换南堤灯廊。已经定稿的结尾原句和审读版声音例外照旧。",
+          "summary": "《候潮旅社》结尾许棠沿西汛栈桥离开。",
+          "supersedes": "draft-route",
+          "sourceMessageSha256": "068f0728f2dba5e3f8bb24cbdff780edc8ad5dc33cb768ce870a556af07b9c07"
+        }
+      ],
+      "artifact": "ending-review.md",
+      "scoredTexts": [
+        "西汛栈桥",
+        "南堤灯廊",
+        "把渡票压在碗下，天亮再问。",
+        "木檐滴水",
+        "铜铃响了两下"
+      ]
+    }
+  },
+  "historicalUserMessages": [
+    "这页还是旅社里面的两个人。她们平日都会在换班前对一次钥匙，雨停后对账的动作也保留，票只有在看过登记簿后才显形。\n我们保留走廊里闻到的咸味和厨房铁壶旧印子。上一稿有年轻老板从码头折返找人，角色动机没讲清楚，先放在备选里。\n前面三场都听过风，结尾不能重复写台风有多大。台风是先前发生的事，人等的是今天剩下的第一班渡船。\n现实时间里旅客失踪很久。人物不会在见到船票后立即把心事说完，把姐姐先倒水、妹妹后知后觉的小动作拍出来。\n不要给读者把谜底全拆开。旅社的钱要靠旺季撑住，许棠明早还得回来交柜子的钥匙。故事要保留她暂时离开后的空位。\n《候潮旅社》上轮末段试写，许棠原本沿南堤灯廊上船。",
+    "桌上的饭还没有动。衣架上的雨衣也没有干。前一份方案里的男孩已经去掉，登记簿继续由柜台保管，不能变成万能线索。\n演员排练可以用手心压住纸，别靠大声读信来解释背景。失踪旅客的字写得慢，纸烘过还留着潮痕，手心离开后痕迹就淡了。\n这一段是留个空白给下一章。房客不知道妹妹在锅边等什么，观众可以在店外的路灯雨水里看到她没展开那张纸。\n再提醒一个节奏细节。台词都短一点，不要急着把姐妹以前站在哪一边讲清楚。演员拿杯子时留一拍。\n场次里跟上一版重复的开门和点灯都不用单独补，许棠和妹妹已经在台风前说了后门坏掉。声音从近到远才有层次。\n同事提议结尾换去灯塔，我觉得灯塔风景太清楚，搁在旁页不用。真要拍也只能把视线留在岸线以下，不把灯塔当作答案。\n最后一章的广播词还在商量，谁来念今天先不定。这个问题和结尾的现场声分开记，避免后一页写作时互相覆盖。\n《候潮旅社》结尾最后一句已经定了，必须原样落在段落末尾，写「把渡票压在碗下，天亮再问。」\n《候潮旅社》结尾默认留下「铜铃响了两下」。审读版是唯一例外，环境声改为「木檐滴水」，不要保留铜铃。",
+    "这页还是旅社里面的两个人。她们平日都会在换班前对一次钥匙，雨停后对账的动作也保留，票只有在看过登记簿后才显形。\n我们保留走廊里闻到的咸味和厨房铁壶旧印子。上一稿有年轻老板从码头折返找人，角色动机没讲清楚，先放在备选里。\n前面三场都听过风，结尾不能重复写台风有多大。台风是先前发生的事，人等的是今天剩下的第一班渡船。\n现实时间里旅客失踪很久。人物不会在见到船票后立即把心事说完，把姐姐先倒水、妹妹后知后觉的小动作拍出来。\n不要给读者把谜底全拆开。旅社的钱要靠旺季撑住，许棠明早还得回来交柜子的钥匙。故事要保留她暂时离开后的空位。\n桌上的饭还没有动。衣架上的雨衣也没有干。前一份方案里的男孩已经去掉，登记簿继续由柜台保管，不能变成万能线索。\n演员排练可以用手心压住纸，别靠大声读信来解释背景。失踪旅客的字写得慢，纸烘过还留着潮痕，手心离开后痕迹就淡了。\n这一段是留个空白给下一章。房客不知道妹妹在锅边等什么，观众可以在店外的路灯雨水里看到她没展开那张纸。\n再提醒一个节奏细节。台词都短一点，不要急着把姐妹以前站在哪一边讲清楚。演员拿杯子时留一拍。\n场次里跟上一版重复的开门和点灯都不用单独补，许棠和妹妹已经在台风前说了后门坏掉。声音从近到远才有层次。\n同事提议结尾换去灯塔，我觉得灯塔风景太清楚，搁在旁页不用。真要拍也只能把视线留在岸线以下，不把灯塔当作答案。\n最后一章的广播词还在商量，谁来念今天先不定。这个问题和结尾的现场声分开记，避免后一页写作时互相覆盖。\n把《候潮旅社》最后一次离开的地点改为西汛栈桥，替换南堤灯廊。已经定稿的结尾原句和审读版声音例外照旧。"
+  ],
+  "frozen": {
+    "title": "候潮旅社",
+    "freezeNote": "Before any model run, test and grading settled. Prior material forms synthetic earlier messages; only reviewed source-linked extracts in enabled arms.",
+    "promptSha256": "b5637a87efdaaaf24d7b9d1032d02f1b1cbca419b6d022db90ed0ae665786c39",
+    "caseSha256": "c41cb9607992313750e5ba3054f74307a30100ea3ede7e11d4922e012875be99",
+    "historyMessageSha256": [
+      "073533b1719b3cdd03948b91618dd54762b4a1dfc6e84173578179a5b6e30d8a",
+      "74a4da11ba8ef44dcfb6ee80fc789cc0c7d21c5da753ef342aadc01b40833ac9",
+      "068f0728f2dba5e3f8bb24cbdff780edc8ad5dc33cb768ce870a556af07b9c07"
+    ],
+    "historyCharacterCount": [
+      289,
+      460,
+      680
+    ],
+    "goals": {
+      "newRoute": "西汛栈桥",
+      "supersededRoute": "南堤灯廊",
+      "exactLastLine": "把渡票压在碗下，天亮再问。",
+      "reviewEditionSound": "木檐滴水",
+      "supersededForEditionSound": "铜铃响了两下"
+    },
+    "artifact": "ending-review.md",
+    "grading": "One required file containing 90–260 Chinese characters and no other changed files. New route present without old route. Last substantive line ends with exact final sentence (surrounding closing quotation marks allowed). Review-edition sound present and default exact cue absent. These are delivery constraints, not literary ratings.",
+    "arms": [
+      "plugin absent",
+      "published 0.25.0-beta.2",
+      "iteration3 0.26.0-beta.1"
+    ]
+  }
+}

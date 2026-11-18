@@ -127,18 +127,26 @@ export function parseCandidates(text, strict = false) {
 
 /** 把最近消息压成一段有限长度的输入。 */
 export function buildUserPrompt(messages, indexLines, maxEntries, maxInputBytes = 24 * 1024, relationTargets = [], structuredRecords = []) {
+  return prepareCapturePrompt(messages, indexLines, maxEntries, maxInputBytes, relationTargets, structuredRecords).text
+}
+
+function prepareCapturePrompt(messages, indexLines, maxEntries, maxInputBytes = 24 * 1024, relationTargets = [], structuredRecords = []) {
   if (!Number.isInteger(maxInputBytes) || maxInputBytes < 1024 || maxInputBytes > 64 * 1024) throw new Error('capture-invalid-input-budget')
-  const encoded = messages.slice(-30).map((message) => typeof message === 'string'
-    ? JSON.stringify({ role: 'unknown', text: redactSecrets(message) })
-    : JSON.stringify({ id: message.id, role: message.role, text: redactSecrets(message.text) }))
+  const window = messages.slice(-30)
+  const encoded = window.map(message => ({
+    message,
+    line: typeof message === 'string'
+      ? JSON.stringify({ role: 'unknown', text: redactSecrets(message) })
+      : JSON.stringify({ id: message.id, role: message.role, text: redactSecrets(message.text) }),
+  }))
   // Reserve framing overhead, retain complete JSON records and never split UTF-8.
-  const select = (lines, budget) => {
+  const select = (rows, budget, lineFor = row => row) => {
     const kept = []
     let bytes = 0
-    for (const line of [...lines].reverse()) {
-      const size = Buffer.byteLength(line, 'utf8') + 1
+    for (const row of [...rows].reverse()) {
+      const size = Buffer.byteLength(lineFor(row), 'utf8') + 1
       if (bytes + size > budget) continue
-      kept.unshift(line)
+      kept.unshift(row)
       bytes += size
     }
     return kept
@@ -148,10 +156,10 @@ export function buildUserPrompt(messages, indexLines, maxEntries, maxInputBytes 
   const targets=select(relationTargets.slice(-60).map(target=>JSON.stringify({scope:target.scope,recordId:target.recordId,kind:target.kind,summary:redactSecrets(target.summary)})),Math.floor(existingBudget*0.15))
   const projectedBytes=Buffer.byteLength(projected.join('\n')),targetBytes=Buffer.byteLength(targets.join('\n'))
   const indexes=select(indexLines.slice(-120).map(redactSecrets),existingBudget-projectedBytes-targetBytes)
-  const records=select(encoded,usable-projectedBytes-targetBytes-Buffer.byteLength(indexes.join('\n')))
-  const recent = records.join('\n')
+  const records=select(encoded,usable-projectedBytes-targetBytes-Buffer.byteLength(indexes.join('\n')),row=>row.line)
+  const recent = records.map(row => row.line).join('\n')
   const existing = indexes.join('\n')
-  return [
+  const text = [
     `最多输出 ${maxEntries} 条。`,
     `预算省略：消息 ${messages.length - records.length} 条、索引 ${indexLines.length - indexes.length} 条；未显示不代表不存在。`,
     '',
@@ -167,6 +175,28 @@ export function buildUserPrompt(messages, indexLines, maxEntries, maxInputBytes 
     '对话片段：',
     recent.length === 0 ? '（空）' : recent,
   ].join('\n')
+  const countUsers = rows => rows.filter(message => message?.role === 'user').length
+  const userSeqs = rows => rows.filter(message => message?.role === 'user' && Number.isSafeInteger(message.seq) && message.seq >= 0).map(message => message.seq)
+  const included = records.map(row => row.message)
+  // Only counts and local event numbers leave this function as diagnostics.
+  return {
+    text,
+    coverage: {
+      sourceMessages: messages.length,
+      sourceUserMessages: countUsers(messages),
+      messageLimitOmissions: messages.length - window.length,
+      byteBudgetOmissions: window.length - included.length,
+      includedMessages: included.length,
+      includedUserMessages: countUsers(included),
+      windowUserSeqs: userSeqs(window),
+      includedUserSeqs: userSeqs(included),
+      indexLines: indexes.length,
+      relationTargets: targets.length,
+      structuredRecords: projected.length,
+      maxInputBytes,
+      promptBytes: Buffer.byteLength(text),
+    },
+  }
 }
 
 /**
@@ -222,7 +252,7 @@ export async function extractWithLlm(options) {
  if(Array.isArray(options.messages)&&options.messages.some(m=>m?.role==='user'&&m.sourceComplete===false))throw Error('capture-input-source-incomplete')
  return runCaptureModel(options,{system:SYSTEM,tool:CAPTURE_SUBMISSION_TOOL,prepare:(messages,indexLines,maxEntries,maxInputBytes,targets,records)=>{
    const sources=captureSourceAliases(messages)
-   return {text:buildUserPrompt(sources.messages,indexLines,maxEntries,maxInputBytes,targets,records),restore:sources.restore}
+   return {...prepareCapturePrompt(sources.messages,indexLines,maxEntries,maxInputBytes,targets,records),restore:sources.restore}
  },submission:()=>new CaptureSubmission(),finalize:(batch,prepared)=>prepared.restore(batch)})
 }
 export async function runCaptureModel(options,task) {
@@ -256,6 +286,7 @@ export async function runCaptureModel(options,task) {
     if(dispatch&&typeof dispatch.then==='function')throw Error('capture-invalid-envelope')
     controller.signal.throwIfAborted()
     const prepared=task.prepare(messages,indexLines,maxEntries,maxInputBytes,relationTargets,structuredRecords,sessionId)
+    options.onInputPrepared?.(prepared.coverage)
     const stream = call.stream({
       ...call.config,
       messages: [{ role: 'user', content: [{ type: 'text', text: prepared.text }] }],

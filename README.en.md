@@ -4,7 +4,7 @@
 
 SoloPup is a text-memory plugin for DeepSeek Harness (DSH). It attempts to save useful long-term context for DSH to recall and consider later. **Public beta:** saving or recall may fail; check important details.
 
-[Quick start](docs/guides/quickstart.md) · [Install](#quick-install) · [Dreaming study](docs/research/dreaming-in-dsh/README.en.md) · [More fictional examples](docs/README.md) · [FAQ](docs/faq.md) · [中文](README.md)
+[Quick start](docs/guides/quickstart.md) · [Install](#quick-install) · [0.26 evaluation](docs/runs/2026-11-18-memory-delivery.md) · [Dreaming study](docs/research/dreaming-in-dsh/README.en.md) · [More fictional examples](docs/README.md) · [FAQ](docs/faq.md) · [中文](README.md)
 
 ## What could it look like?
 
@@ -19,6 +19,8 @@ This is a **fictional illustration**, not a tested conversation:
 For a project, you might record a travel budget or an agreed character detail for a story. Whether memory helps depends on successful saving and recall; check original sources for important decisions.
 
 ## How does memory help?
+
+In 0.26, SoloPup surfaces a small set of current, source-linked conventions for the active task. On supported DSH hosts, after a successful edit, it can ask the model to review the deliverables once before the turn closes. See the evaluation for scores, observed failures and reproduction steps. Download or fork the source to try it on your own DSH workflows. [Evaluation](docs/runs/2026-11-18-memory-delivery.md) · [Source downloads](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.1) · [Fork](https://github.com/OakcoderX/solopup-memory/fork)
 
 **① You share something worth remembering**<br>
 ↓<br>
@@ -69,7 +71,7 @@ Ordinary DSH can run the entire review. An optional Super Agent Worker can run i
 Requires an installed DeepSeek Harness and Node >=24.9. For the desktop profile:
 
 ```sh
-dsh plugin --profile desktop add solopup-memory@0.25.0-beta.2 --ignore-scripts
+dsh plugin --profile desktop add solopup-memory@0.26.0-beta.1 --ignore-scripts
 ```
 
 If a DSH update leaves a conversation stuck with `memory-context-render-mismatch`, install `0.25.0-beta.2`, restart DSH, and retry in the same conversation.
@@ -104,7 +106,7 @@ The Chinese message asks to keep this project's delivery notes in Chinese. Curre
 
 Use the official plugin-manager command in [Quick install](#quick-install).
 
-`solopup-memory@beta` follows the public beta tag. Git installation is available with `github:OakcoderX/solopup-memory#v0.25.0-beta.2`. The release page supplies a full commit SHA for an immutable Git pin. This package ships executable ESM and has no dependency installation or build scripts. You can also download the release tarball and install it with `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.25.0-beta.2.tgz --offline --ignore-scripts`.
+`solopup-memory@beta` follows the public beta tag. Git installation is available with `github:OakcoderX/solopup-memory#v0.26.0-beta.1`. The release page supplies a full commit SHA for an immutable Git pin. This package ships executable ESM and has no dependency installation or build scripts. You can also download the release tarball and install it with `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.26.0-beta.1.tgz --offline --ignore-scripts`.
 
 Restart the profile and use `memory_status`. Existing legacy stores may require explicit local review. Do not delete control files to bypass that review. If upgrading from `dsh-memory`, create a full private backup, stop the hosts using that data, remove the old package, then install SoloPup Memory. Do not run both packages together. The data location and legacy format identifiers are intentionally retained.
 

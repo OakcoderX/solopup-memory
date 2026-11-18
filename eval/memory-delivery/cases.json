@@ -1,0 +1,44 @@
+{
+  "field-handoff": {
+    "task": "请根据 notes.md 整理一页能直接发给施工班组的设备交接说明。把正文写到 HANDOFF.md。",
+    "files": {
+      "notes.md": "# 设备交接草稿\n- 南工区备用照明灯已入器材柜 B。\n- 皮划艇安全绳还要人工复核。\n- 维修工单由李工周五签收。\n"
+    },
+    "preferences": [
+      {
+        "id": "handoff-old-receipt",
+        "quote": "这个项目的每份施工班组交接说明，最后单独一行写回执：冷杉-17。",
+        "summary": "施工班组交接说明最后单独一行写回执：冷杉-17。"
+      },
+      {
+        "id": "handoff-current-receipt",
+        "quote": "以后施工班组交接说明末尾的回执一律改为回执：紫藤-62，最后仍然单独一行，替换掉旧的冷杉编号。",
+        "summary": "施工班组交接说明最后单独一行写回执：紫藤-62。",
+        "supersedes": "handoff-old-receipt"
+      }
+    ],
+    "artifact": "HANDOFF.md",
+    "scoredTexts": ["回执：紫藤-62", "回执：冷杉-17"]
+  },
+  "meter-rollout": {
+    "task": "Update meter.py so that running it with --json emits a JSON object with service set to meter and ready set to true. Preserve the existing output without arguments. Run a local verification.",
+    "files": {
+      "meter.py": "def main():\n    print('ready')\n\n\nif __name__ == '__main__':\n    main()\n"
+    },
+    "preferences": [
+      {
+        "id": "rollout-old-signoff",
+        "quote": "When operational command output changes in this project, add an entry to ops/rollouts.md. Include a concrete verification command and the line OPS-SIGNOFF: slate.",
+        "summary": "When operational command output changes, add a concrete verification command and the line OPS-SIGNOFF: slate to ops/rollouts.md."
+      },
+      {
+        "id": "rollout-current-signoff",
+        "quote": "For every operational output change here, still add the verification command to ops/rollouts.md, but replace the slate signoff with the line OPS-APPROVAL: amber going forward.",
+        "summary": "When operational command output changes, add a concrete verification command and the line OPS-APPROVAL: amber to ops/rollouts.md.",
+        "supersedes": "rollout-old-signoff"
+      }
+    ],
+    "artifact": "ops/rollouts.md",
+    "scoredTexts": ["OPS-APPROVAL: amber", "OPS-SIGNOFF: slate"]
+  }
+}

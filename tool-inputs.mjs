@@ -1,7 +1,6 @@
 /** Host-owned call-to-admitted-input lineage. Context linkage is not semantic evidence. */
 import {createHash} from 'node:crypto'
 import {captureMessage} from './capture-evidence.mjs'
-import {normalizeText,redactSecrets} from './security.mjs'
 const digest=value=>createHash('sha256').update(JSON.stringify(value)).digest('hex')
 const id=value=>typeof value==='string'&&value.length>0&&value.length<=300&&!/[\u0000-\u001f]/.test(value)
 const position=value=>Number.isSafeInteger(value)&&value>0
@@ -29,8 +28,7 @@ export function createToolInputTracker({workingDirectory}={}){
    const message=event.data?.message??event.data
    if(!id(message?.id))return
    const captured=captureMessage(event,session.id+':'+event.seq)
-   const fullText=Array.isArray(message.content)?redactSecrets(normalizeText(message.content.filter(b=>b?.type==='text'&&typeof b.text==='string').map(b=>b.text).join('\n'))).trim():''
-   if(captured?.role==='user')state.messages.set(message.id,{seq:event.seq,...captured,sourceComplete:fullText.length<=2000,cwdHash:cwdHash(session)})
+   if(captured?.role==='user')state.messages.set(message.id,{seq:event.seq,...captured,cwdHash:cwdHash(session)})
    while(state.messages.size>64)state.messages.delete(state.messages.keys().next().value)
   }else if(event.type==='tool/call'){
    const call=event.data

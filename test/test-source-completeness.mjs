@@ -3,23 +3,33 @@ import assert from 'node:assert/strict'
 import {mkdtempSync,realpathSync,mkdirSync,readFileSync,rmSync} from 'node:fs'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
-import {captureMessage,assessCandidate} from '../capture-evidence.mjs'
+import {captureMessage,assessCandidate,MAX_OWNER_MESSAGE_BYTES} from '../capture-evidence.mjs'
 import {captureInputDescriptor,reconstructCaptureInput,listCaptureInputs} from '../capture-inputs.mjs'
 import {extractWithLlm} from '../capture-llm.mjs'
 import {apply} from '../index.mjs'
 import {candidateSnapshot} from '../candidates.mjs'
 import {captureJobStatus,listCaptureJobs} from '../capture-jobs.mjs'
-const prefix='甲'.repeat(2000),long=prefix+'但上述约定只在初稿反馈时适用，正式稿不采用。'
+const prefix='甲'.repeat(Math.floor(MAX_OWNER_MESSAGE_BYTES/3))+'a'.repeat(MAX_OWNER_MESSAGE_BYTES%3),long=prefix+'但上述约定只在初稿反馈时适用，正式稿不采用。'
 const event=text=>({seq:0,type:'user/message',data:{source:{kind:'user'},content:[{type:'text',text}]}})
 const shortMessage=()=>({...captureMessage(event(prefix),'synthetic:0'),seq:0}),longMessage=()=>({...captureMessage(event(long),'synthetic:0'),seq:0})
 const options={everyTurns:1,maxEntries:3,maxTokens:800,maxInputBytes:24576,timeoutMs:25000},route={provider:'fixture',model:'fixture'}
 const session={id:'synthetic',header:{createdAt:1},surface:{nodes:[0]},isOwnSeq:n=>n===0}
-test('the complete boundary and a clipped prefix are distinguishable even when prefix hashes match',()=>{
- const short=shortMessage(),clipped=longMessage();assert.equal(short.sourceComplete,undefined);assert.equal(clipped.sourceComplete,false);assert.equal(short.hash,clipped.hash)
+test('the byte boundary distinguishes complete owner messages from clipped prefixes',()=>{
+ const short=shortMessage(),clipped=longMessage();assert.equal(short.sourceComplete,undefined);assert.equal(clipped.sourceComplete,false);assert.notEqual(short.hash,clipped.hash)
  const assistant=captureMessage({type:'assistant/message',data:{content:[{type:'text',text:long}]}},'assistant');assert.equal(assistant.sourceComplete,undefined)
 })
+test('an intact long author message preserves the late correction and exception through durable reconstruction',()=>{
+ const correction='第七章采用第二版，保留第一版的结尾。'
+ const content='甲'.repeat(2200)+'\n\n'+correction
+ const owner={...captureMessage(event(content),'synthetic:0'),seq:0}
+ assert.equal(owner.sourceComplete,undefined)
+ const descriptor=captureInputDescriptor(session,[owner],'/synthetic',options,route)
+ const result=reconstructCaptureInput(descriptor,session,[event(content)],'/synthetic',options,route)
+ assert.equal(result[0].text,content)
+ assert.equal(assessCandidate({type:'project',scope:'project',basis:'explicit',summary:correction,meaning:{kind:'decision'},evidence:[{messageId:owner.id,quote:correction}]},result,true).status,'eligible')
+})
 test('a durable automatic source descriptor cannot accept an incomplete owner window',()=>{assert.throws(()=>captureInputDescriptor(session,[longMessage()],'/synthetic',options,route),/source-incomplete/)})
-test('reconstruction rejects a changed hidden tail despite the same clipped-prefix hash',()=>{
+test('reconstruction rejects an over-budget hidden tail',()=>{
  const d=captureInputDescriptor(session,[shortMessage()],'/synthetic',options,route)
  assert.throws(()=>reconstructCaptureInput(d,session,[event(long)],'/synthetic',options,route),/source-incomplete/)
 })

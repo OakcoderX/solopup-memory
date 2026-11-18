@@ -4,7 +4,7 @@
 
 SoloPup 是 DeepSeek Harness（DSH） 的文字记忆插件。它尝试保存值得长期保留的信息，帮助 DSH 在后续工作中找回并参考。**公开测试版**，记忆可能保存或召回失败，重要内容请核对。
 
-[快速上手](docs/guides/quickstart.md) · [安装](#先试起来) · [做梦交互演示](https://oakcoderx.github.io/solopup-memory/dreaming/) · [做梦实测报告](docs/research/dreaming-in-dsh/README.md) · [更多示意案例](docs/README.md) · [常见问题](docs/faq.md) · [English](README.en.md)
+[快速上手](docs/guides/quickstart.md) · [安装](#先试起来) · [0.26 评测](docs/runs/2026-11-18-memory-delivery.md) · [做梦交互演示](https://oakcoderx.github.io/solopup-memory/dreaming/) · [做梦实测报告](docs/research/dreaming-in-dsh/README.md) · [更多示意案例](docs/README.md) · [常见问题](docs/faq.md) · [English](README.en.md)
 
 ## 用起来是什么感觉？
 
@@ -21,6 +21,10 @@ SoloPup 是 DeepSeek Harness（DSH） 的文字记忆插件。它尝试保存值
 ## 长篇项目可以回查到原话
 
 比如你写到第七章，讨论了几份稿，最后确认「第七章用 V2，结尾照旧」。DSH 压缩聊天后，SoloPup 的做梦复核可以找回这条明确更正，包括句尾的例外。要续写正文，可以把采用决定绑定到 V2 的 Markdown 章节。下次打开会核对当时的文件指纹，稿件有变动时会提示你。 [做梦回查方式](docs/dream-review.md) · [绑定与读取 Markdown](docs/guides/markdown-reference.md) · [0.25 对照与复跑](docs/runs/2026-11-14-long-project-beta.md)
+
+## 按当前约定交付
+
+0.26 在工作开始时呈现少量与任务有关的现行约定，并保留来源、条件与例外。支持的 DSH 宿主在任务改动文件并正常收尾时，可以提示一次交付复核。模型仍需要实际检查文件和测试。评分、已知失分和可复跑的方法都放在公开报告里。欢迎下载源码或在 GitHub Fork 后，用自己的项目案例复跑和改进。 [评测与复现](docs/runs/2026-11-18-memory-delivery.md) · [下载源码](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.1) · [Fork](https://github.com/OakcoderX/solopup-memory/fork)
 
 ## 闲置做梦复核
 
@@ -165,7 +169,7 @@ node /absolute/path/to/solopup-memory/scripts/superagent-worktree.mjs --owner /a
 
 使用上方[先试起来](#先试起来)的 DeepSeek Harness 官方插件管理器命令安装。代码为可直接执行的 ESM，无安装时构建脚本，也不需要 npm 账户。
 
-`beta` 标签跟随已公开并完成下载核验的测试版。固定到本版可指定 `solopup-memory@0.25.0-beta.2`。Git 安装可用 `dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.25.0-beta.2 --ignore-scripts`，需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。也可下载 `.tgz` 后运行 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.25.0-beta.2.tgz --offline --ignore-scripts`。 [发行页与校验值](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.25.0-beta.2)
+`beta` 标签跟随已公开并完成下载核验的测试版。固定到 0.26 首个公开测试版可指定 `solopup-memory@0.26.0-beta.1`。Git 安装可用 `dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.26.0-beta.1 --ignore-scripts`，需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。也可下载 `.tgz` 后运行 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.26.0-beta.1.tgz --offline --ignore-scripts`。 [发行页与校验值](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.1)
 
 已安装旧名 `dsh-memory` 时，先完成完整备份、关闭使用该库的宿主，用官方管理器移除旧包，再安装新包；不要同时启用两个记忆插件。新名字继续使用原记忆库和控制格式。
 
@@ -229,6 +233,6 @@ node accept.mjs --profile desktop
 
 详细安全边界见 [SECURITY.md](SECURITY.md)，宿主兼容范围见 [COMPATIBILITY.md](COMPATIBILITY.md)。
 
-用户单条消息的完整来源窗口目前上限为 2000 字符。超长消息不从前半段建立记忆；自动整理显示来源不完整并暂不执行，主动写入也拒绝使用仍在当前核对窗口内的截断来源。可在新的短消息会话中完整重述需长期保留的约定。这个修复不会自动纠正旧版已经保存的解释。
+单条用户消息的完整来源窗口最多 8 KiB，另受整次模型输入预算约束。超过上限时会标出来源不完整，仍在当前核对窗口的截断来源会阻止写入。可另发一条完整短消息，把要长期保留的约定、适用范围和例外一起写清。
 
 市场源请求失败时，按 [DSH 官方代理手册](https://deepseek-harness.github.io/deepseek-harness/guide/network-proxy) 配置 DSH 自身的代理环境；DSH 不自动读取 macOS 系统代理。

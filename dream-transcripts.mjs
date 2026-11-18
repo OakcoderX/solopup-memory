@@ -139,7 +139,7 @@ function trustedCompaction(events, event, refs) {
   return shadowed
 }
 
-function sourceContext(events, indices, header) {
+export function transcriptSourceContext(events, indices, header) {
   const dirs = new Map()
   const replaced = new Set()
   const checkpoints = new Map()
@@ -198,7 +198,7 @@ export function makeDreamReplaySnapshot(session, pointers) {
   const viable = pointers.filter(pointer => validPointer(pointer) && pointer.sessionId === id &&
     pointer.createdAt === header.createdAt && pointer.seq <= cursor)
   const events = Array.from({ length: cursor + 1 }, (_, seq) => session.eventAt(seq))
-  const { dirs, replaced } = sourceContext(events, new Set(viable.map(pointer => pointer.seq)), header)
+  const { dirs, replaced } = transcriptSourceContext(events, new Set(viable.map(pointer => pointer.seq)), header)
   const entries = []
   for (const pointer of viable) {
     const event = events[pointer.seq]
@@ -275,7 +275,7 @@ async function readExactSession(query, pointers, projectId, resolveProjectId, wi
     if (!Array.isArray(events) || events.length !== cursor + 1) fail('source-changed')
 
     const viable = pointers.filter(pointer => pointer.createdAt === header.createdAt && pointer.seq <= cursor)
-    const { dirs, replaced } = sourceContext(events, new Set(viable.map(pointer => pointer.seq)), header)
+    const { dirs, replaced } = transcriptSourceContext(events, new Set(viable.map(pointer => pointer.seq)), header)
     const verified = new Map()
     for (const pointer of pointers) {
       signal.throwIfAborted()
