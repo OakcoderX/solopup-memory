@@ -1,0 +1,1622 @@
+{
+  "second-iteration": [
+    {
+      "case": "field-handoff",
+      "condition": "off",
+      "base": "020823d5b9e049d0f542bb1839984ab7592378f7",
+      "promptSha256": "ba58da391bb84f4851f6a21450a469969f7c66b8b54e47453d4a7c0090c810a5",
+      "package": null,
+      "tree": "4305f155063b0821d72bea2fda84227944a2e798",
+      "patchSha256": "f5e7cbc9183666d0c8ca1f7bda4e32f4829c17bc37843fdb54fec8cf2362ae1a",
+      "patchBytes": 1464,
+      "changed": [
+        "HANDOFF.md"
+      ],
+      "nativeCompleted": true,
+      "dsh": "0.2.2-rc.3",
+      "runtimeSeconds": 8.12,
+      "maxRuntimeSeconds": 90,
+      "timedOut": false,
+      "firstRequestEvidence": [],
+      "firstRequestEffectiveView": false,
+      "firstReviewCueRequest": null,
+      "http200": 4,
+      "usage": {
+        "prompt_tokens": 13226,
+        "completion_tokens": 827,
+        "prompt_cache_hit_tokens": 12160
+      },
+      "outcome": {
+        "taskPassed": true,
+        "preferencePassed": false,
+        "currentPresent": false,
+        "oldPresent": false,
+        "artifactBytes": 1246
+      }
+    },
+    {
+      "case": "field-handoff",
+      "condition": "released",
+      "base": "020823d5b9e049d0f542bb1839984ab7592378f7",
+      "promptSha256": "ba58da391bb84f4851f6a21450a469969f7c66b8b54e47453d4a7c0090c810a5",
+      "package": {
+        "name": "solopup-memory",
+        "version": "0.25.0-beta.2",
+        "sha256": "92b855410afe956fbb657f846c72c1fdc8520aefb926f7acdc2b9ac286e9638c"
+      },
+      "tree": "fe315668835c88517462de5cd1f9116d619e0383",
+      "patchSha256": "8b5bac6fb8060f38c2012b9858be9d54cd0f12914c368ebb30e084754f3ca932",
+      "patchBytes": 668,
+      "changed": [
+        "HANDOFF.md"
+      ],
+      "nativeCompleted": true,
+      "dsh": "0.2.2-rc.3",
+      "runtimeSeconds": 5.41,
+      "maxRuntimeSeconds": 90,
+      "timedOut": false,
+      "firstRequestEvidence": [
+        "handoff-current-receipt",
+        "expected-output-0"
+      ],
+      "firstRequestEffectiveView": false,
+      "firstReviewCueRequest": null,
+      "http200": 3,
+      "usage": {
+        "prompt_tokens": 24404,
+        "completion_tokens": 408,
+        "prompt_cache_hit_tokens": 22784
+      },
+      "outcome": {
+        "taskPassed": true,
+        "preferencePassed": true,
+        "currentPresent": true,
+        "oldPresent": false,
+        "artifactBytes": 462
+      }
+    },
+    {
+      "case": "field-handoff",
+      "condition": "candidate",
+      "base": "020823d5b9e049d0f542bb1839984ab7592378f7",
+      "promptSha256": "ba58da391bb84f4851f6a21450a469969f7c66b8b54e47453d4a7c0090c810a5",
+      "package": {
+        "name": "solopup-memory",
+        "version": "0.26.0-beta.1",
+        "sha256": "85577a683fe8eeeccdcd3346e924f4efd6904cf81f1950e3b9bba75bec2bf782"
+      },
+      "tree": "19b0e56939d28fc37f7f793ed4ab4a01a4a16074",
+      "patchSha256": "49f0e31c7372727336de48e95ad5ed2a80ca6ed77aa3839b8530026ce4f45b65",
+      "patchBytes": 668,
+      "changed": [
+        "HANDOFF.md"
+      ],
+      "nativeCompleted": true,
+      "dsh": "0.2.2-rc.3",
+      "runtimeSeconds": 10.6,
+      "maxRuntimeSeconds": 90,
+      "timedOut": false,
+      "firstRequestEvidence": [
+        "handoff-current-receipt",
+        "expected-output-0"
+      ],
+      "firstRequestEffectiveView": true,
+      "firstReviewCueRequest": 4,
+      "http200": 6,
+      "usage": {
+        "prompt_tokens": 53607,
+        "completion_tokens": 834,
+        "prompt_cache_hit_tokens": 51200
+      },
+      "outcome": {
+        "taskPassed": true,
+        "preferencePassed": true,
+        "currentPresent": true,
+        "oldPresent": false,
+        "artifactBytes": 462
+      }
+    },
+    {
+      "case": "meter-rollout",
+      "condition": "released",
+      "base": "edc724bf5994d839cd2190065fff896e73752cab",
+      "promptSha256": "f1ef43e5b4e08d78625679ccad85e09dcfbb2051ef15911683796890610e9008",
+      "package": {
+        "name": "solopup-memory",
+        "version": "0.25.0-beta.2",
+        "sha256": "92b855410afe956fbb657f846c72c1fdc8520aefb926f7acdc2b9ac286e9638c"
+      },
+      "tree": "1dde085c8e9e462af42508ad5196e1f8faba287f",
+      "patchSha256": "efa8820e2375048633e61e5cc859766865aeabda3931b8e1ac7045ddc5a40aa7",
+      "patchBytes": 356,
+      "changed": [
+        "meter.py"
+      ],
+      "nativeCompleted": true,
+      "dsh": "0.2.2-rc.3",
+      "runtimeSeconds": 7.5,
+      "maxRuntimeSeconds": 90,
+      "timedOut": false,
+      "firstRequestEvidence": [
+        "rollout-current-signoff",
+        "expected-output-0"
+      ],
+      "firstRequestEffectiveView": false,
+      "firstReviewCueRequest": null,
+      "http200": 5,
+      "usage": {
+        "prompt_tokens": 41999,
+        "completion_tokens": 704,
+        "prompt_cache_hit_tokens": 39936
+      },
+      "outcome": {
+        "taskPassed": true,
+        "preferencePassed": false,
+        "currentPresent": false,
+        "oldPresent": false,
+        "artifactBytes": 0
+      }
+    },
+    {
+      "case": "meter-rollout",
+      "condition": "candidate",
+      "base": "edc724bf5994d839cd2190065fff896e73752cab",
+      "promptSha256": "f1ef43e5b4e08d78625679ccad85e09dcfbb2051ef15911683796890610e9008",
+      "package": {
+        "name": "solopup-memory",
+        "version": "0.26.0-beta.1",
+        "sha256": "85577a683fe8eeeccdcd3346e924f4efd6904cf81f1950e3b9bba75bec2bf782"
+      },
+      "tree": "d2c6d12f64ff36798eb1e033044230c73b473039",
+      "patchSha256": "c9f8e4b1bc23774c9f94b5e3233461d9b4792b7d35bf12e98a46997edef8e921",
+      "patchBytes": 403,
+      "changed": [
+        "meter.py"
+      ],
+      "nativeCompleted": true,
+      "dsh": "0.2.2-rc.3",
+      "runtimeSeconds": 12.88,
+      "maxRuntimeSeconds": 90,
+      "timedOut": false,
+      "firstRequestEvidence": [
+        "rollout-current-signoff",
+        "expected-output-0"
+      ],
+      "firstRequestEffectiveView": true,
+      "firstReviewCueRequest": 6,
+      "http200": 7,
+      "usage": {
+        "prompt_tokens": 64534,
+        "completion_tokens": 1284,
+        "prompt_cache_hit_tokens": 61440
+      },
+      "outcome": {
+        "taskPassed": true,
+        "preferencePassed": false,
+        "currentPresent": false,
+        "oldPresent": false,
+        "artifactBytes": 0
+      }
+    },
+    {
+      "case": "meter-rollout",
+      "condition": "off",
+      "base": "edc724bf5994d839cd2190065fff896e73752cab",
+      "promptSha256": "f1ef43e5b4e08d78625679ccad85e09dcfbb2051ef15911683796890610e9008",
+      "package": null,
+      "tree": "d2c6d12f64ff36798eb1e033044230c73b473039",
+      "patchSha256": "c9f8e4b1bc23774c9f94b5e3233461d9b4792b7d35bf12e98a46997edef8e921",
+      "patchBytes": 403,
+      "changed": [
+        "meter.py"
+      ],
+      "nativeCompleted": true,
+      "dsh": "0.2.2-rc.3",
+      "runtimeSeconds": 6.72,
+      "maxRuntimeSeconds": 90,
+      "timedOut": false,
+      "firstRequestEvidence": [],
+      "firstRequestEffectiveView": false,
+      "firstReviewCueRequest": null,
+      "http200": 4,
+      "usage": {
+        "prompt_tokens": 12887,
+        "completion_tokens": 549,
+        "prompt_cache_hit_tokens": 11776
+      },
+      "outcome": {
+        "taskPassed": true,
+        "preferencePassed": false,
+        "currentPresent": false,
+        "oldPresent": false,
+        "artifactBytes": 0
+      }
+    }
+  ],
+  "third-iteration": [
+    {
+      "case": "field-handoff",
+      "condition": "off",
+      "base": "020823d5b9e049d0f542bb1839984ab7592378f7",
+      "promptSha256": "ba58da391bb84f4851f6a21450a469969f7c66b8b54e47453d4a7c0090c810a5",
+      "package": null,
+      "tree": "094ff7a8607f70ea12f4ac2aabe3f9028f5fe26a",
+      "patchSha256": "54ea877e9e0b5aadde3815f6fd441f148cb75c2a6c2d3f5a97a3322bd19ce895",
+      "patchBytes": 1411,
+      "changed": [
+        "HANDOFF.md"
+      ],
+      "nativeCompleted": true,
+      "dsh": "0.2.2-rc.3",
+      "runtimeSeconds": 7.84,
+      "maxRuntimeSeconds": 90,
+      "timedOut": false,
+      "firstRequestEvidence": [],
+      "firstRequestEffectiveView": false,
+      "firstReviewCueRequest": null,
+      "http200": 4,
+      "usage": {
+        "prompt_tokens": 13229,
+        "completion_tokens": 799,
+        "prompt_cache_hit_tokens": 12160
+      },
+      "outcome": {
+        "taskPassed": true,
+        "preferencePassed": false,
+        "currentPresent": false,
+        "oldPresent": false,
+        "artifactBytes": 1187
+      }
+    },
+    {
+      "case": "field-handoff",
+      "condition": "released",
+      "base": "020823d5b9e049d0f542bb1839984ab7592378f7",
+      "promptSha256": "ba58da391bb84f4851f6a21450a469969f7c66b8b54e47453d4a7c0090c810a5",
+      "package": {
+        "name": "solopup-memory",
+        "version": "0.25.0-beta.2",
+        "sha256": "92b855410afe956fbb657f846c72c1fdc8520aefb926f7acdc2b9ac286e9638c"
+      },
+      "tree": "49582ceae37575e85d023206c1f5fe168fc75337",
+      "patchSha256": "efec21a1c9baad4124c145ec4ac1c237fb79c1f9efa276e48f8abf07e8e1ffda",
+      "patchBytes": 675,
+      "changed": [
+        "HANDOFF.md"
+      ],
+      "nativeCompleted": true,
+      "dsh": "0.2.2-rc.3",
+      "runtimeSeconds": 6.29,
+      "maxRuntimeSeconds": 90,
+      "timedOut": false,
+      "firstRequestEvidence": [
+        "handoff-current-receipt",
+        "expected-output-0"
+      ],
+      "firstRequestEffectiveView": false,
+      "firstReviewCueRequest": null,
+      "http200": 3,
+      "usage": {
+        "prompt_tokens": 24381,
+        "completion_tokens": 406,
+        "prompt_cache_hit_tokens": 22912
+      },
+      "outcome": {
+        "taskPassed": true,
+        "preferencePassed": true,
+        "currentPresent": true,
+        "oldPresent": false,
+        "artifactBytes": 467
+      }
+    },
+    {
+      "case": "field-handoff",
+      "condition": "candidate",
+      "base": "020823d5b9e049d0f542bb1839984ab7592378f7",
+      "promptSha256": "ba58da391bb84f4851f6a21450a469969f7c66b8b54e47453d4a7c0090c810a5",
+      "package": {
+        "name": "solopup-memory",
+        "version": "0.26.0-beta.1",
+        "sha256": "0a3d03f2e177cf5c0bf1deb73c4ff57c09a6a8877f7ce7ad12f79123c19616ab"
+      },
+      "tree": "040ce79fa6139d99a5fde71dc32e4b3b311407c4",
+      "patchSha256": "d3bc48a6675f3533f88fe16fd9f83f465502d82249835464c84e52c7e653e1d4",
+      "patchBytes": 848,
+      "changed": [
+        "HANDOFF.md"
+      ],
+      "nativeCompleted": true,
+      "dsh": "0.2.2-rc.3",
+      "runtimeSeconds": 51.59,
+      "maxRuntimeSeconds": 90,
+      "timedOut": false,
+      "firstRequestEvidence": [
+        "handoff-current-receipt",
+        "expected-output-0"
+      ],
+      "firstRequestEffectiveView": true,
+      "firstReviewCueRequest": 5,
+      "http200": 6,
+      "usage": {
+        "prompt_tokens": 53860,
+        "completion_tokens": 987,
+        "prompt_cache_hit_tokens": 51200
+      },
+      "outcome": {
+        "taskPassed": true,
+        "preferencePassed": true,
+        "currentPresent": true,
+        "oldPresent": false,
+        "artifactBytes": 632
+      }
+    },
+    {
+      "case": "meter-rollout",
+      "condition": "released",
+      "base": "edc724bf5994d839cd2190065fff896e73752cab",
+      "promptSha256": "f1ef43e5b4e08d78625679ccad85e09dcfbb2051ef15911683796890610e9008",
+      "package": {
+        "name": "solopup-memory",
+        "version": "0.25.0-beta.2",
+        "sha256": "92b855410afe956fbb657f846c72c1fdc8520aefb926f7acdc2b9ac286e9638c"
+      },
+      "tree": "d2c6d12f64ff36798eb1e033044230c73b473039",
+      "patchSha256": "c9f8e4b1bc23774c9f94b5e3233461d9b4792b7d35bf12e98a46997edef8e921",
+      "patchBytes": 403,
+      "changed": [
+        "meter.py"
+      ],
+      "nativeCompleted": true,
+      "dsh": "0.2.2-rc.3",
+      "runtimeSeconds": 20.23,
+      "maxRuntimeSeconds": 90,
+      "timedOut": false,
+      "firstRequestEvidence": [
+        "rollout-current-signoff",
+        "expected-output-0"
+      ],
+      "firstRequestEffectiveView": false,
+      "firstReviewCueRequest": null,
+      "http200": 5,
+      "usage": {
+        "prompt_tokens": 41996,
+        "completion_tokens": 732,
+        "prompt_cache_hit_tokens": 40064
+      },
+      "outcome": {
+        "taskPassed": true,
+        "preferencePassed": false,
+        "currentPresent": false,
+        "oldPresent": false,
+        "artifactBytes": 0
+      }
+    },
+    {
+      "case": "meter-rollout",
+      "condition": "candidate",
+      "base": "edc724bf5994d839cd2190065fff896e73752cab",
+      "promptSha256": "f1ef43e5b4e08d78625679ccad85e09dcfbb2051ef15911683796890610e9008",
+      "package": {
+        "name": "solopup-memory",
+        "version": "0.26.0-beta.1",
+        "sha256": "0a3d03f2e177cf5c0bf1deb73c4ff57c09a6a8877f7ce7ad12f79123c19616ab"
+      },
+      "tree": "bb20f53acc2c53ebde90123f93eabcf8334c7b30",
+      "patchSha256": "134119550bb4f057b0a9a208fd5d8835698ffa6c60b112844143ed33f1d2c219",
+      "patchBytes": 908,
+      "changed": [
+        "meter.py",
+        "ops/rollouts.md"
+      ],
+      "nativeCompleted": true,
+      "dsh": "0.2.2-rc.3",
+      "runtimeSeconds": 18.55,
+      "maxRuntimeSeconds": 90,
+      "timedOut": false,
+      "firstRequestEvidence": [
+        "rollout-current-signoff",
+        "expected-output-0"
+      ],
+      "firstRequestEffectiveView": true,
+      "firstReviewCueRequest": 6,
+      "http200": 10,
+      "usage": {
+        "prompt_tokens": 96906,
+        "completion_tokens": 1574,
+        "prompt_cache_hit_tokens": 93440
+      },
+      "outcome": {
+        "taskPassed": true,
+        "preferencePassed": true,
+        "currentPresent": true,
+        "oldPresent": false,
+        "artifactBytes": 265
+      }
+    },
+    {
+      "case": "meter-rollout",
+      "condition": "off",
+      "base": "edc724bf5994d839cd2190065fff896e73752cab",
+      "promptSha256": "f1ef43e5b4e08d78625679ccad85e09dcfbb2051ef15911683796890610e9008",
+      "package": null,
+      "tree": "d2c6d12f64ff36798eb1e033044230c73b473039",
+      "patchSha256": "c9f8e4b1bc23774c9f94b5e3233461d9b4792b7d35bf12e98a46997edef8e921",
+      "patchBytes": 403,
+      "changed": [
+        "meter.py"
+      ],
+      "nativeCompleted": true,
+      "dsh": "0.2.2-rc.3",
+      "runtimeSeconds": 6.53,
+      "maxRuntimeSeconds": 90,
+      "timedOut": false,
+      "firstRequestEvidence": [],
+      "firstRequestEffectiveView": false,
+      "firstReviewCueRequest": null,
+      "http200": 4,
+      "usage": {
+        "prompt_tokens": 12880,
+        "completion_tokens": 568,
+        "prompt_cache_hit_tokens": 11776
+      },
+      "outcome": {
+        "taskPassed": true,
+        "preferencePassed": false,
+        "currentPresent": false,
+        "oldPresent": false,
+        "artifactBytes": 0
+      }
+    }
+  ],
+  "final-candidate": [
+    {
+      "case": "field-handoff",
+      "condition": "candidate",
+      "base": "020823d5b9e049d0f542bb1839984ab7592378f7",
+      "promptSha256": "ba58da391bb84f4851f6a21450a469969f7c66b8b54e47453d4a7c0090c810a5",
+      "package": {
+        "name": "solopup-memory",
+        "version": "0.26.0-beta.1",
+        "sha256": "15101cdf7c57f8dac92e52671153d9306967dd6178e73a6b1e4c86865156980b"
+      },
+      "tree": "1189e814ab2e40f55d41afda71ec4a0cb6b2be9d",
+      "patchSha256": "d91f69f26c0a84167391e558cfd1380518c8afefb969f73784bf4049da4cf9cc",
+      "patchBytes": 744,
+      "changed": [
+        "HANDOFF.md"
+      ],
+      "nativeCompleted": true,
+      "dsh": "0.2.2-rc.3",
+      "runtimeSeconds": 12.63,
+      "maxRuntimeSeconds": 90,
+      "timedOut": false,
+      "firstRequestEvidence": [
+        "handoff-current-receipt",
+        "expected-output-0"
+      ],
+      "firstRequestEffectiveView": true,
+      "firstReviewCueRequest": 5,
+      "http200": 7,
+      "usage": {
+        "prompt_tokens": 63886,
+        "completion_tokens": 1189,
+        "prompt_cache_hit_tokens": 61184
+      },
+      "outcome": {
+        "taskPassed": true,
+        "preferencePassed": true,
+        "currentPresent": true,
+        "oldPresent": false,
+        "artifactBytes": 530
+      }
+    },
+    {
+      "case": "meter-rollout",
+      "condition": "candidate",
+      "base": "edc724bf5994d839cd2190065fff896e73752cab",
+      "promptSha256": "f1ef43e5b4e08d78625679ccad85e09dcfbb2051ef15911683796890610e9008",
+      "package": {
+        "name": "solopup-memory",
+        "version": "0.26.0-beta.1",
+        "sha256": "15101cdf7c57f8dac92e52671153d9306967dd6178e73a6b1e4c86865156980b"
+      },
+      "tree": "497f17e9333a098e55c21a98fc314382d6ddd49f",
+      "patchSha256": "fdb13d739c85d6fac331a272d9b24bf9f5f0be0e987b45101c25045c33314ff2",
+      "patchBytes": 1131,
+      "changed": [
+        "meter.py",
+        "ops/rollouts.md"
+      ],
+      "nativeCompleted": true,
+      "dsh": "0.2.2-rc.3",
+      "runtimeSeconds": 25.49,
+      "maxRuntimeSeconds": 90,
+      "timedOut": false,
+      "firstRequestEvidence": [
+        "rollout-current-signoff",
+        "expected-output-0"
+      ],
+      "firstRequestEffectiveView": true,
+      "firstReviewCueRequest": 7,
+      "http200": 13,
+      "usage": {
+        "prompt_tokens": 133346,
+        "completion_tokens": 2203,
+        "prompt_cache_hit_tokens": 128512
+      },
+      "outcome": {
+        "taskPassed": true,
+        "preferencePassed": true,
+        "currentPresent": true,
+        "oldPresent": false,
+        "artifactBytes": 485
+      }
+    }
+  ],
+  "cattrs": {
+    "off": {
+      "official": {
+        "condition": "off",
+        "harbor": "0.24.0",
+        "task": "cattrs-compositional-changelog",
+        "gradingModelsCalled": 0,
+        "candidatePatchSha256": "a7122584731579e4ae76bfdf8e11406d8882f749ab791f74e8779ecfb629c259",
+        "collectorPatchSha256": "13565c339ea157976960bfafba270d20314427103a86d5e0465c3861a486b04a",
+        "verifierEnvironment": "official separate verifier with no network",
+        "accepted": true,
+        "reward": {
+          "reward": 0,
+          "f2p_total": 70,
+          "f2p_passed": 67,
+          "p2p_total": 7,
+          "p2p_passed": 7,
+          "f2p": 0.9571428571428572,
+          "p2p": 1.0,
+          "partial": 0.961038961038961
+        },
+        "preferenceGates": {
+          "documentation": "PASS",
+          "runnable_example": "FAIL",
+          "changelog_entry": "FAIL"
+        },
+        "exception": null
+      },
+      "native": {
+        "dsh": "0.2.2-rc.3",
+        "package": null,
+        "runtimeSeconds": 1200.51,
+        "timedOut": true,
+        "modelCommitted": false,
+        "http200": 319,
+        "firstReviewCueRequest": null,
+        "promptSha256": "59501f0626742b14538fdee1d2fe0a59d589c4504cbce43ae5cbb1a0cebcfbd6",
+        "firstRequestEffectiveView": false,
+        "base": "6bc4708fb9b2ac52d9a18997e923da6a58916102"
+      }
+    },
+    "released": {
+      "official": {
+        "condition": "on",
+        "harbor": "0.24.0",
+        "task": "cattrs-compositional-changelog",
+        "gradingModelsCalled": 0,
+        "candidatePatchSha256": "5b0c7b1eb6cbb480bbdb1965bd154e2b4483b64b131795d4f07916a512283ba4",
+        "collectorPatchSha256": "cf56972ab4069aedc4862a34af9a591d0759f4ad242ec2f3bf6ce08796aa5fbb",
+        "verifierEnvironment": "official separate verifier with no network",
+        "accepted": true,
+        "reward": {
+          "reward": 0,
+          "f2p_total": 70,
+          "f2p_passed": 69,
+          "p2p_total": 7,
+          "p2p_passed": 7,
+          "f2p": 0.9857142857142858,
+          "p2p": 1.0,
+          "partial": 0.987012987012987
+        },
+        "preferenceGates": {
+          "documentation": "PASS",
+          "runnable_example": "PASS",
+          "changelog_entry": "PASS"
+        },
+        "exception": null
+      },
+      "native": {
+        "dsh": "0.2.2-rc.3",
+        "package": {
+          "name": "solopup-memory",
+          "version": "0.25.0-beta.2",
+          "sha256": "92b855410afe956fbb657f846c72c1fdc8520aefb926f7acdc2b9ac286e9638c"
+        },
+        "runtimeSeconds": 784.48,
+        "timedOut": false,
+        "modelCommitted": true,
+        "http200": 316,
+        "firstReviewCueRequest": null,
+        "promptSha256": "59501f0626742b14538fdee1d2fe0a59d589c4504cbce43ae5cbb1a0cebcfbd6",
+        "firstRequestEffectiveView": false,
+        "base": "6bc4708fb9b2ac52d9a18997e923da6a58916102"
+      }
+    },
+    "candidate-iteration2": {
+      "official": {
+        "condition": "on",
+        "harbor": "0.24.0",
+        "task": "cattrs-compositional-changelog",
+        "gradingModelsCalled": 0,
+        "candidatePatchSha256": "aa3e763e661699e7c2c21bdc9ad8e8140ac40b3d52064bcee10a361bf1d9a969",
+        "collectorPatchSha256": "351322d61e128ae1d9aee928bfcbb59a87b1f6b3492ee241547e85dba3aaef45",
+        "verifierEnvironment": "official separate verifier with no network",
+        "accepted": true,
+        "reward": {
+          "reward": 0,
+          "f2p_total": 70,
+          "f2p_passed": 62,
+          "p2p_total": 7,
+          "p2p_passed": 7,
+          "f2p": 0.8857142857142857,
+          "p2p": 1.0,
+          "partial": 0.8961038961038961
+        },
+        "preferenceGates": {
+          "documentation": "PASS",
+          "runnable_example": "PASS",
+          "changelog_entry": "PASS"
+        },
+        "exception": null
+      },
+      "native": {
+        "dsh": "0.2.2-rc.3",
+        "package": {
+          "name": "solopup-memory",
+          "version": "0.26.0-beta.1",
+          "sha256": "85577a683fe8eeeccdcd3346e924f4efd6904cf81f1950e3b9bba75bec2bf782"
+        },
+        "runtimeSeconds": 393.76,
+        "timedOut": false,
+        "modelCommitted": true,
+        "http200": 82,
+        "firstReviewCueRequest": 76,
+        "promptSha256": "59501f0626742b14538fdee1d2fe0a59d589c4504cbce43ae5cbb1a0cebcfbd6",
+        "firstRequestEffectiveView": true,
+        "base": "6bc4708fb9b2ac52d9a18997e923da6a58916102"
+      }
+    },
+    "candidate-iteration3": {
+      "official": {
+        "condition": "on",
+        "harbor": "0.24.0",
+        "task": "cattrs-compositional-changelog",
+        "gradingModelsCalled": 0,
+        "candidatePatchSha256": "ce9c0101d7f0d24052ea69513a78d74f1400acc4b42c4c4c4450315deb28b5f5",
+        "collectorPatchSha256": "e22490cf90e2459ffa0313aa6a5510c7989f3d99c3ba7f8929ecdda777d26bdb",
+        "verifierEnvironment": "official separate verifier with no network",
+        "accepted": true,
+        "reward": {
+          "reward": 0,
+          "f2p_total": 70,
+          "f2p_passed": 63,
+          "p2p_total": 7,
+          "p2p_passed": 7,
+          "f2p": 0.9,
+          "p2p": 1.0,
+          "partial": 0.9090909090909091
+        },
+        "preferenceGates": {
+          "documentation": "PASS",
+          "runnable_example": "PASS",
+          "changelog_entry": "PASS"
+        },
+        "exception": null
+      },
+      "native": {
+        "dsh": "0.2.2-rc.3",
+        "package": {
+          "name": "solopup-memory",
+          "version": "0.26.0-beta.1",
+          "sha256": "0a3d03f2e177cf5c0bf1deb73c4ff57c09a6a8877f7ce7ad12f79123c19616ab"
+        },
+        "runtimeSeconds": 589.94,
+        "timedOut": false,
+        "modelCommitted": true,
+        "http200": 239,
+        "firstReviewCueRequest": 224,
+        "promptSha256": "59501f0626742b14538fdee1d2fe0a59d589c4504cbce43ae5cbb1a0cebcfbd6",
+        "firstRequestEffectiveView": true,
+        "base": "6bc4708fb9b2ac52d9a18997e923da6a58916102"
+      }
+    },
+    "candidate-final": {
+      "official": {
+        "condition": "on",
+        "harbor": "0.24.0",
+        "task": "cattrs-compositional-changelog",
+        "gradingModelsCalled": 0,
+        "candidatePatchSha256": "5a7a54786236863db556d1dbdca2bf26d7f9a14e3249919086042763f017ea26",
+        "collectorPatchSha256": "b81a7efae59033cd0238d027cbb35062bdf1277a032b54710d903f990a31e952",
+        "verifierEnvironment": "official separate verifier with no network",
+        "accepted": true,
+        "reward": {
+          "reward": 1,
+          "f2p_total": 70,
+          "f2p_passed": 70,
+          "p2p_total": 7,
+          "p2p_passed": 7,
+          "f2p": 1.0,
+          "p2p": 1.0,
+          "partial": 1.0
+        },
+        "preferenceGates": {
+          "documentation": "PASS",
+          "runnable_example": "PASS",
+          "changelog_entry": "PASS"
+        },
+        "exception": null
+      },
+      "native": {
+        "dsh": "0.2.2-rc.3",
+        "package": {
+          "name": "solopup-memory",
+          "version": "0.26.0-beta.1",
+          "sha256": "15101cdf7c57f8dac92e52671153d9306967dd6178e73a6b1e4c86865156980b"
+        },
+        "runtimeSeconds": 524.29,
+        "timedOut": false,
+        "modelCommitted": true,
+        "http200": 138,
+        "firstReviewCueRequest": 107,
+        "promptSha256": "59501f0626742b14538fdee1d2fe0a59d589c4504cbce43ae5cbb1a0cebcfbd6",
+        "firstRequestEffectiveView": true,
+        "base": "6bc4708fb9b2ac52d9a18997e923da6a58916102"
+      }
+    }
+  },
+  "fiction": {
+    "initial": [
+      {
+        "condition": "off",
+        "passed": false,
+        "checks": {
+          "deliverable": false,
+          "newRoute": false,
+          "retainedEnding": false,
+          "reviewEditionException": false
+        },
+        "hanCharacters": 367,
+        "deliveredArtifactSha256": "79addc3d18243db0f1d89a071032e2a5888acdfe14f76583a2cb440ea82072da",
+        "runState": "failed",
+        "pluginLoaded": false,
+        "model": "deepseek-flash",
+        "temperature": 0,
+        "thinking": false,
+        "maxRuntimeMs": 90000,
+        "tools": {
+          "read": 1,
+          "bash": 24,
+          "write": 21
+        },
+        "baselineCommit": "6dcce1205193cd8ccf3224f4b68fd5da28ccaed9",
+        "package": null,
+        "requests": [
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          }
+        ],
+        "frozen": {
+          "tree": "4d0015dce76b9d0e046e3d4e5bbc63153b86f5ed",
+          "patchSha256": "fe262735d326a32a030ab67bc1ebb0fef4fb6689ca12e66152cf040ba142762f",
+          "patchBytes": 1561,
+          "changed": [
+            "ending-review.md"
+          ],
+          "nativeCompleted": false,
+          "modelCommitted": false
+        },
+        "timedOut": true,
+        "headlessDshVersion": "0.2.2-rc.3",
+        "providerReturnedModels": [
+          "deepseek-flash"
+        ],
+        "recordedReviewNoticeCount": 0
+      },
+      {
+        "condition": "released",
+        "passed": false,
+        "checks": {
+          "deliverable": true,
+          "newRoute": true,
+          "retainedEnding": true,
+          "reviewEditionException": false
+        },
+        "hanCharacters": 150,
+        "deliveredArtifactSha256": "75c69fc6c3aed509e12ef2d38d755197e7f0a6a9b70f92b25d9390d9c4b531c7",
+        "runState": "completed",
+        "pluginLoaded": true,
+        "model": "deepseek-flash",
+        "temperature": 0,
+        "thinking": false,
+        "maxRuntimeMs": 90000,
+        "tools": {
+          "bash": 5,
+          "memory_search": 1,
+          "memory_document": 3,
+          "write": 1,
+          "edit": 3
+        },
+        "baselineCommit": "6dcce1205193cd8ccf3224f4b68fd5da28ccaed9",
+        "package": {
+          "name": "solopup-memory",
+          "version": "0.25.0-beta.2",
+          "sha256": "92b855410afe956fbb657f846c72c1fdc8520aefb926f7acdc2b9ac286e9638c"
+        },
+        "requests": [
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": false,
+            "reviewCue": false,
+            "promptPresent": true
+          }
+        ],
+        "frozen": {
+          "tree": "912ad4798d3dde98c810d91b8fa5adb6c645662d",
+          "patchSha256": "1f6edf842732e036afdc6c308bd2f14cc66a51f24eaf5735cb604b1d6ca36c30",
+          "patchBytes": 739,
+          "changed": [
+            "ending-review.md"
+          ],
+          "nativeCompleted": true,
+          "modelCommitted": false
+        },
+        "timedOut": false,
+        "headlessDshVersion": "0.2.2-rc.3",
+        "providerReturnedModels": [
+          "deepseek-flash"
+        ],
+        "recordedReviewNoticeCount": 0
+      },
+      {
+        "condition": "candidate",
+        "passed": false,
+        "checks": {
+          "deliverable": true,
+          "newRoute": true,
+          "retainedEnding": false,
+          "reviewEditionException": true
+        },
+        "hanCharacters": 135,
+        "deliveredArtifactSha256": "d13286966db197bc56aed10fde5395b4fbf82746377e4a7803dd361e6658bd50",
+        "runState": "completed",
+        "pluginLoaded": true,
+        "model": "deepseek-flash",
+        "temperature": 0,
+        "thinking": false,
+        "maxRuntimeMs": 90000,
+        "tools": {
+          "bash": 4,
+          "write": 1,
+          "edit": 1
+        },
+        "baselineCommit": "6dcce1205193cd8ccf3224f4b68fd5da28ccaed9",
+        "package": {
+          "name": "solopup-memory",
+          "version": "0.26.0-beta.1",
+          "sha256": "0a3d03f2e177cf5c0bf1deb73c4ff57c09a6a8877f7ce7ad12f79123c19616ab"
+        },
+        "requests": [
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": true,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": true,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": true,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": true,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": true,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": true,
+            "reviewCue": false,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": true,
+            "reviewCue": true,
+            "promptPresent": true
+          },
+          {
+            "upstreamStatus": 200,
+            "exactSourceHits": [
+              "approved-last-line",
+              "edition-sound-exception",
+              "revised-route",
+              "expected-output-0",
+              "expected-output-2",
+              "expected-output-3",
+              "expected-output-4"
+            ],
+            "effectiveView": true,
+            "reviewCue": true,
+            "promptPresent": true
+          }
+        ],
+        "frozen": {
+          "tree": "d4d5686117ac01914f5188bdba5911fcc8b30106",
+          "patchSha256": "e98544639bad44e9e9ab57f0b7c7c00f4a939f6637abbdf013b232a5f28cb8cd",
+          "patchBytes": 697,
+          "changed": [
+            "ending-review.md"
+          ],
+          "nativeCompleted": true,
+          "modelCommitted": false
+        },
+        "timedOut": false,
+        "headlessDshVersion": "0.2.2-rc.3",
+        "providerReturnedModels": [
+          "deepseek-flash"
+        ],
+        "recordedReviewNoticeCount": 1,
+        "reviewAudit": {
+          "initialWriteEndedWithRetainedLine": true,
+          "preReviewEditAppendedTextAfterRetainedLine": true,
+          "finalArtifactEndsWithRetainedLine": false,
+          "reviewReadFinalArtifact": true,
+          "finalClaimedRetainedLineAndNoOmissions": true
+        }
+      }
+    ],
+    "final": [
+      {
+        "condition": "candidate",
+        "package": {
+          "name": "solopup-memory",
+          "version": "0.26.0-beta.1",
+          "sha256": "15101cdf7c57f8dac92e52671153d9306967dd6178e73a6b1e4c86865156980b"
+        },
+        "model": "deepseek-flash",
+        "temperature": 0,
+        "thinking": false,
+        "maxRuntimeMs": 90000,
+        "runState": "completed",
+        "timedOut": false,
+        "pluginLoaded": true,
+        "passed": false,
+        "checks": {
+          "deliverable": true,
+          "newRoute": true,
+          "retainedEnding": false,
+          "reviewEditionException": true
+        },
+        "hanCharacters": 154,
+        "artifactSha256": "78c9cb5f381eadf919131fb4e4e889e52131af10eddb3bea66ebe8d4f774ca7a",
+        "changed": [
+          "ending-review.md"
+        ],
+        "patchSha256": "f5b5b5bcaf95238dab0289b2d20e938ad28ef8d87bb9076dfa2442e10c00cfde",
+        "requests": 10,
+        "upstreamOk": 10,
+        "requestsWithEffectiveView": 10,
+        "requestsWithReviewCue": 2,
+        "initialSourceMarkers": [
+          "approved-last-line",
+          "edition-sound-exception",
+          "revised-route",
+          "expected-output-0",
+          "expected-output-2",
+          "expected-output-3",
+          "expected-output-4"
+        ],
+        "toolCalls": {
+          "bash": 4,
+          "write": 1,
+          "edit": 2,
+          "read": 1
+        },
+        "reviewAudit": {
+          "available": true,
+          "noticeCount": 1,
+          "readArtifactDuringReview": true,
+          "suffixCheckResultObservedDuringReview": true,
+          "reviewReadCommandSelectedPrefix": true,
+          "successfulArtifactEdits": [
+            {
+              "tool": "write",
+              "duringReview": false,
+              "containsRetainedWording": true,
+              "replacementEndsWithRetainedWording": true
+            },
+            {
+              "tool": "edit",
+              "duringReview": false,
+              "containsRetainedWording": true,
+              "replacementEndsWithRetainedWording": true
+            },
+            {
+              "tool": "edit",
+              "duringReview": false,
+              "containsRetainedWording": true,
+              "replacementEndsWithRetainedWording": false
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

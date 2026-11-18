@@ -1,0 +1,15 @@
+{
+  "sourceCommit": "6bc4708fb9b2ac52d9a18997e923da6a58916102",
+  "sourceTree": "2ebd2041c8a5625c3a52328a98375fea398eb848",
+  "sourceFiles": 170,
+  "nativeReachableCommits": 90,
+  "officialAgentImageReachableCommits": 933,
+  "trackedContentIdentical": true,
+  "officialAgentImageWorktreeClean": true,
+  "officialAgentImageExtraFiles": 0,
+  "officialAgentImageIgnoredFiles": 0,
+  "officialAgentImageDigest": "sha256:443a3534dab64283e5a9dedf3b7ac8867ed7d5dabcde39bc39c77ab5a909176a",
+  "officialAgentContainerArch": "x86_64",
+  "officialPromptBytes": 1386,
+  "officialPromptSha256": "59501f0626742b14538fdee1d2fe0a59d589c4504cbce43ae5cbb1a0cebcfbd6"
+}
