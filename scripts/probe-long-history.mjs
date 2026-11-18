@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { probeEnvironment } from './probe-env.mjs'
+import { VERSION } from '../version.mjs'
 
 const DEFAULT_CLI = '/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh'
 const BASELINE = '0.24.0-beta.2'
@@ -310,7 +311,7 @@ async function main() {
     mkdirSync(profile, { recursive: true })
     run('tar', ['-xzf', archive, '-C', root], { env })
     const version = json(join(mount, 'package.json')).version
-    assert.ok(version === BASELINE || /^0\.25\.0-beta\.\d+$/.test(version), `Unexpected version ${version}`)
+    assert.ok(version === BASELINE || version === VERSION, `Unexpected version ${version}. Expected ${VERSION} or the pinned baseline ${BASELINE}.`)
     const archiveSha256 = digest(readFileSync(archive))
     if (version === BASELINE) assert.equal(archiveSha256, BASELINE_HASH)
     writeFileSync(join(profile, 'package.json'), JSON.stringify({

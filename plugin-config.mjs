@@ -20,7 +20,10 @@ function validate(input) {
   const issues = []
   const issue = (field, message) => issues.push({ message, path: field ? ['autoCapture', field] : [] })
   if (!object(input)) return { issues: [{ message: 'Plugin configuration must be an object.' }] }
-  if (Object.keys(input).some(key => key !== 'autoCapture' && key !== 'dream')) issue(undefined, 'Unknown plugin configuration field.')
+  if (Object.keys(input).some(key => !['autoCapture', 'dream', 'deliveryReview'].includes(key))) issue(undefined, 'Unknown plugin configuration field.')
+  if (input.deliveryReview !== undefined && typeof input.deliveryReview !== 'boolean') {
+    issues.push({ message: 'deliveryReview must be a boolean.', path: ['deliveryReview'] })
+  }
   const provided = input.autoCapture === undefined ? {} : input.autoCapture
   if (!object(provided)) return { issues: [...issues, { message: 'autoCapture must be an object.', path: ['autoCapture'] }] }
   if (Object.keys(provided).some(key => !keys.has(key))) issue(undefined, 'Unknown autoCapture configuration field.')
@@ -58,6 +61,7 @@ function validate(input) {
   const supplied = Object.fromEntries(Object.entries(provided).filter(([, value]) => value !== undefined))
   const dreamSupplied = Object.fromEntries(Object.entries(dream).filter(([, value]) => value !== undefined))
   return { value: {
+    deliveryReview: input.deliveryReview ?? true,
     autoCapture: { ...DEFAULT_AUTO_CAPTURE, ...supplied, ...(routed ? { provider: provided.provider.trim(), model: provided.model.trim() } : {}) },
     dream: { ...DEFAULT_DREAM, ...dreamSupplied, projects: projects.map(path => resolve(path)), ...(dreamRoute ? { provider: dream.provider.trim(), model: dream.model.trim() } : {}) },
   } }

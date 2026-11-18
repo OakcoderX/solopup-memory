@@ -3,6 +3,8 @@ import { createHash } from 'node:crypto'
 import { normalizeText, redactSecrets, escapeFraming } from './security.mjs'
 import {meaningForScope,assertMeaningSatisfiable} from './meaning.mjs'
 
+export const MAX_OWNER_MESSAGE_BYTES = 8 * 1024
+
 export function captureMessage(event, id) {
   const message = event?.data?.message ?? event?.data
   const source = message?.source?.kind
@@ -13,9 +15,10 @@ export function captureMessage(event, id) {
   const normalized = redactSecrets(normalizeText(message.content
     .filter((b) => b?.type === 'text' && typeof b.text === 'string')
     .map((b) => b.text).join('\n'))).trim()
-  const text=normalized.slice(0,2000)
+  const tooLong = role === 'user' && Buffer.byteLength(normalized) > MAX_OWNER_MESSAGE_BYTES
+  const text = role === 'assistant' || tooLong ? normalized.slice(0, 2000) : normalized
   if (!text) return undefined
-  return { id, role, text, hash: createHash('sha256').update(text).digest('hex'),...role==='user'&&normalized.length>2000?{sourceComplete:false}:{} }
+  return { id, role, text, hash: createHash('sha256').update(text).digest('hex'), ...(tooLong ? { sourceComplete: false } : {}) }
 }
 
 /** Quotes establish occurrence, not entailment, durability, or authorization. */

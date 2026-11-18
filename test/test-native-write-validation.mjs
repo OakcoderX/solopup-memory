@@ -83,8 +83,8 @@ for(const mode of ['cwd','route','dispose','withdraw','index'])test(mode+' chang
 test('unload during prepare aborts before a native validation stream is dispatched',()=>box({beforePrepare(f){for(const dispose of f.effects)dispose()}},async f=>{
  f.owner();await assert.rejects(()=>f.tool.execute(proposal,f.call()));assert.equal(f.requests.length,0);assert.equal(f.records().length,0)
 }))
-test('long owner messages cannot silently lose a trailing exception at the 2000-character bound',()=>box(async f=>{
- f.owner('甲'.repeat(2001)+'但是仅本项目适用。');await assert.rejects(()=>f.tool.execute(proposal,f.call()),/source-incomplete/);assert.equal(f.requests.length,0);assert.equal(f.records().length,0)
+test('owner messages above the 8 KiB bound cannot silently lose a trailing exception',()=>box(async f=>{
+ f.owner('甲'.repeat(2800)+'但是仅本项目适用。');await assert.rejects(()=>f.tool.execute(proposal,f.call()),/source-incomplete/);assert.equal(f.requests.length,0);assert.equal(f.records().length,0)
 }))
 test('an unapproved replacement keeps its target intact instead of staging a targetless append',()=>box({state:'uncertain'},async f=>{
  const old=writeFixtureMemory({dir:f.root,type:'user',scope:'global',summary:'之前长期反馈先列一处问题',meaning:{kind:'preference'}})
@@ -156,5 +156,5 @@ test('native self-excluding candidate is refused before any model stream or ledg
 }))
 
 test('native validation cannot silently omit a clipped earlier owner exception',()=>box(async f=>{
- f.owner('甲'.repeat(2000)+'但这条约定只适用于初稿，不要忽略末尾例外。');f.owner();await assert.rejects(()=>f.tool.execute(proposal,f.call()),/source-incomplete/);assert.equal(f.requests.length,0);assert.equal(f.records().length,0)
+ f.owner('甲'.repeat(2800)+'但这条约定只适用于初稿，不要忽略末尾例外。');f.owner();await assert.rejects(()=>f.tool.execute(proposal,f.call()),/source-incomplete/);assert.equal(f.requests.length,0);assert.equal(f.records().length,0)
 }))

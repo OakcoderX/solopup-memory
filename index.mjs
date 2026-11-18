@@ -5,6 +5,11 @@ export {initializeManagedMemory,managedMemoryStatus} from './managed-access.mjs'
 import {createObservationTracker,observationRoots,OBSERVATION_REFERENCE_SCHEMA,OBSERVATION_LIST_SCHEMA} from './tool-observations.mjs'
 import {createToolInputTracker} from './tool-inputs.mjs'
 import {memoryProtocol} from './memory-protocol.mjs'
+import { defineContinuityTool, installContinuity } from './continuity.mjs'
+import { effectiveRuleText, renderEffectiveMemory, selectEffectiveMemory } from './effective-memory.mjs'
+import { installDeliveryReview } from './delivery-review.mjs'
+import { trackTaskMemory } from './task-memory-runtime.mjs'
+import { searchWorkspaceHistory, workspaceHistoryAvailable } from './workspace-history.mjs'
 import {privateMemory,publicMemoryRecords,publicMemoryIndex,PRIVATE_MEMORY_NOTICE} from './privacy.mjs'
 import {nativeOwnerEvidence,validateNativeWrite} from './native-write-validation.mjs'
 import {toolProposal} from './source-record.mjs'
@@ -369,8 +374,10 @@ function readableTopic(file) {
  * 组装注入文本：全局库 + 当前项目库。两个库都空就返回空串（不注入，零成本）。
  * @param cwd - 会话当前目录。
  */
-function renderMemoryLocal(cwd,project) {
+function renderMemoryLocal(cwd,project,rules) {
   const parts = []
+  const applicable = renderEffectiveMemory(rules)
+  if (applicable) parts.push(applicable)
   const globalPart = renderScope('global', storeRoot())
   if (globalPart !== undefined) parts.push(globalPart)
   // 宿主没提供 workingDirectory 时（API 漂移），降级为只注入全局库，
@@ -2096,6 +2103,56 @@ function defineSearchTool(ctx) {
   }
 }
 
+async function lookupContinuity(ctx, startup, { session, signal, query, includeHistory, via }) {
+  const state = runtimeSourceControl(startup)
+  if (state.state !== 'managed' || !captureSessionEligible(session)) {
+    return { project: { status: 'unavailable', hits: [] }, history: { status: 'unavailable', sessions: [] } }
+  }
+  let project = { status: 'unavailable', hits: [] }
+  let history = { status: 'not-needed', sessions: [] }
+  try {
+    const cwd = ctx.workingDirectory.get(session)
+    if (typeof cwd !== 'string' || !cwd) throw Error('memory-continuation-workspace-unavailable')
+    const dir = storeDirFor('project', cwd)
+    project = managedRead(dir, () => {
+      const result = searchScopedStoresLocal([{ dir, scope: 'project' }], query, { mode: 'exact', limit: 6 })
+      const records = publicMemoryRecords(effectiveSourceRecords(dir, 'project', undefined, true))
+      const byId = new Map(records.map(record => [record.id, record]))
+      const hits = result.hits.map(hit => {
+        const record = byId.get(hit.interpretation?.recordId)
+        return { file: hit.file, line: hit.line, text: hit.text, kind: hit.interpretation?.kind,
+          applicability: hit.interpretation?.applicability, source: record && {
+            sessionId: record.sessionId, messageIds: record.evidence.map(item => item.messageId),
+          } }
+      })
+      return { status: hits.length ? 'found' : 'no-match', hits, truncated: result.truncated }
+    })
+    const hasDecision = project.hits.some(hit => hit.kind === 'decision' && hit.applicability === 'applicable' && hit.source?.messageIds.length)
+    if (!hasDecision || includeHistory || project.truncated) {
+      const revoked = new Set([...withdrawalPolicy(storeRoot()).revoked, ...withdrawalPolicy(dir).revoked])
+      const allowSource = ({ sessionId, messageId, seq }) => !rootsFor(sessionId, [
+        { messageId }, { messageId: `${sessionId}:${seq}` },
+      ]).some(root => revoked.has(root))
+      history = await searchWorkspaceHistory(ctx, { session, query, signal, allowSource })
+      // A withdrawal may have committed while the read was underway.
+      const currentRevoked = new Set([...withdrawalPolicy(storeRoot()).revoked, ...withdrawalPolicy(dir).revoked])
+      if (ctx.workingDirectory.get(session) !== cwd || [...currentRevoked].some(root => !revoked.has(root))) {
+        project = { status: 'unavailable', hits: [] }
+        history = { status: 'partial', sessions: [] }
+      }
+    }
+  } catch (error) {
+    signal?.throwIfAborted()
+    history = { status: 'unavailable', sessions: [] }
+  }
+  appendAudit(storeRoot(), { op: 'continuity', via, sessionId: session.id, projectStatus: project.status,
+    projectHits: project.hits.length, historyStatus: history.status,
+    sources: history.sessions.map(source => ({ sessionId: source.sessionId, seqs: source.excerpts.map(excerpt => excerpt.seq) })),
+    coverage: history.coverage,
+  })
+  return { project, history }
+}
+
 function definePruneTool(ctx) {
   return {
     name: 'memory_prune',
@@ -2555,7 +2612,7 @@ function setupAutoCapture(ctx, config) {
     flushState(state)
 
     return (async () => {
-      let job,batch
+      let job,batch,inputCoverage
       let accounting={inserted:0,staged:0,duplicates:0,admissionRejected:0,writeFailures:0,codes:[]}
       let input = restored
       let observation
@@ -2640,6 +2697,9 @@ function setupAutoCapture(ctx, config) {
           maxInputBytes: options.maxInputBytes,
           timeoutMs: options.timeoutMs,
           signal: input ? AbortSignal.any([lifetime.signal, queryState.signal]) : lifetime.signal,
+          onInputPrepared: coverage => {
+            inputCoverage = { source: input ? 'bound-window' : 'live-buffer', ...coverage }
+          },
           beforeStream: () => {
             assertCaptureClaim(jobDir, job); assertSource()
             for (const [dir, revision] of revisions) {
@@ -2765,7 +2825,7 @@ function setupAutoCapture(ctx, config) {
         const diagnostic=buildCaptureDiagnostic(batch,accounting)
         const outcome=captureDiagnosticOutcome(diagnostic)
         const counts={proposed:batch.responseItems,inserted,staged,rejected:rejected+batch.parserRejected}
-        appendAudit(storeRoot(), {op:'capture',outcome,...counts,diagnostic,failures:failures.length?failures.slice(0,3):undefined,sessionId:key})
+        appendAudit(storeRoot(), {op:'capture',outcome,jobId:job.id,inputId:input?.id,inputCoverage,...counts,diagnostic,failures:failures.length?failures.slice(0,3):undefined,sessionId:key})
         state.lastOutcome=outcome;state.lastError=captureDiagnosticReason(diagnostic);state.lastDiagnostic=diagnostic
         finishCaptureJob(jobDir,job,{outcome,reason:state.lastError,counts,diagnostic})
 
@@ -2785,6 +2845,10 @@ function setupAutoCapture(ctx, config) {
           op: 'capture',
           outcome: 'error',
           reason: state.lastError,
+          jobId: job?.id,
+          inputId: input?.id,
+          inputCoverage,
+          diagnostic: state.lastDiagnostic,
           sessionId: key,
         })
       } finally {
@@ -2934,12 +2998,13 @@ export function apply(ctx, config = {}) {
     ctx.workingDirectory.get(session)
   const canRegisterTools = !health.degrade.some((line) => line.startsWith('tools'))
   const startup=startManagedRuntime(storeRoot())
-  const renderForRuntime=cwd=>{
+  let taskMemory
+  const renderForRuntime=(cwd,session)=>{
     if(startup.state!=='managed')return runtimeContextNotice({state:startup.state,code:startup.code})
     try{
       // A known managed runtime may never fall back to an unregistered/raw read.
       if(!isManagedStore(storeRoot()))throw Error('managed-memory-control-missing')
-      return renderMemory(cwd)
+      return renderMemory(cwd, taskMemory?.queryFor(session))
     }catch(error){
       // Healthy reads already validate live control inside managed ownership.
       // Re-read status only to explain an error, never cache it between renders.
@@ -2958,6 +3023,27 @@ export function apply(ctx, config = {}) {
   function activate(memoryHistory) {
   if (ctx.fiber?.uid === null) return
   let calls = 0
+  if (startup.state === 'managed' && memoryHistory.available && typeof ctx.on === 'function') {
+    taskMemory = trackTaskMemory(ctx)
+    if (config.deliveryReview) installDeliveryReview(ctx, {
+      rulesFor(session) {
+        const query = taskMemory.queryFor(session)
+        if (!query) return []
+        return readRuntimeMemory(resolveCwd?.(session), query, (_, rules) => rules.flatMap(rule => {
+          const text = effectiveRuleText(rule)
+          return text ? [{ id: rule.id, text }] : []
+        }))
+      },
+      hasAppliedWork: taskMemory.hasAppliedWork,
+    })
+  }
+  const continuityEnabled = canRegisterTools && startup.state === 'managed' && !!resolveCwd &&
+    typeof ctx.on === 'function' && workspaceHistoryAvailable(ctx)
+  const continuityLookup = args => lookupContinuity(ctx, startup, args)
+  if (continuityEnabled) {
+    ctx.tools.register(runtimeTool(defineContinuityTool(continuityLookup), startup))
+    installContinuity(ctx, continuityLookup, CONTEXT_ORDER + 1)
+  }
 
   ctx.systemPrompt.context({
     name: 'memory:protocol', order: CONTEXT_ORDER - 1, required: true,
@@ -2978,7 +3064,7 @@ export function apply(ctx, config = {}) {
           return ''
         }
         cwd = resolveCwd === undefined ? undefined : resolveCwd(context.agent.session)
-        const text = renderForRuntime(cwd)
+        const text = renderForRuntime(cwd, context.agent.session)
         memoryHistory.observe(context.agent.session,cwd)
         writeDiag({
           calls,
@@ -3037,6 +3123,7 @@ export function apply(ctx, config = {}) {
     const autoCapture = startup.state==='managed'?setupAutoCapture(ctx, config):{enabled:false,reason:startup.code}
     dream = startup.state === 'managed' ? setupDreamReview(ctx, root, config.dream) : { enabled: false, reason: startup.code }
     const tools = canRegisterTools ? ['memory_write', 'memory_forget', 'memory_links', 'memory_search', 'memory_prune', 'memory_status'] : []
+    if (continuityEnabled) tools.push('memory_continue')
     if (canRegisterTools && startup.state === 'managed') {
       ctx.tools.register(runtimeTool(defineMarkdownReferenceTool({ resolve(recordId, exec) {
         if (!captureSessionEligible(exec?.agent?.session)) return undefined
@@ -3252,9 +3339,19 @@ export function forgetExpired(dir,...args){return managedWrite(dir,()=>forgetExp
 export function appendTopic(dir,...args){return managedWrite(dir,()=>appendTopicLocal(dir,...args),{requireSource:true})}
 function searchScopedStores(stores,...args){return managedReadMany(stores.map(store=>store.dir),()=>searchScopedStoresLocal(stores,...args))}
 function renderScope(scope,dir){return managedRead(dir,()=>renderScopeLocal(scope,dir))}
-function renderMemory(cwd){
+function readRuntimeMemory(cwd, query, consume){
  const dirs=[storeRoot()],project={}
  // Resolve once per render, before ownership acquisition; never cache project identity across requests.
  if(cwd!==undefined){try{project.dir=storeDirFor('project',cwd);dirs.push(project.dir)}catch(error){if(!error.message?.startsWith('project-store-'))throw error;project.error=error}}
- return managedReadMany(dirs,()=>renderMemoryLocal(cwd,project))
+ return managedReadMany(dirs,()=>{
+   const rules = query ? selectEffectiveMemory({ query, includeProjectDefaults: true, records: publicMemoryRecords([
+     ...effectiveSourceRecords(dirs[0], 'global'),
+     ...(project.dir === undefined ? [] : effectiveSourceRecords(project.dir, 'project')),
+   ]) }) : []
+   return consume(project, rules)
+ })
+}
+
+function renderMemory(cwd, query){
+ return readRuntimeMemory(cwd,query,(project,rules)=>renderMemoryLocal(cwd,project,rules))
 }
