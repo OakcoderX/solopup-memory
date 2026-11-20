@@ -2,11 +2,15 @@
 
 SoloPup Memory 是 DeepSeek Harness 的公开测试版记忆插件，采用 MIT 许可。配置的模型服务可能计费。
 
-## 0.26 公开测试版 / Public beta
+## 0.26.0-beta.2 公开测试版 / Public beta
 
-第二天继续改稿，昨天确认的版本、结尾和例外，还能用到今天的文件里。0.26 会带上与当前任务相关的约定，并在支持的 DSH 中提示复核一次交付。两道小任务按最新约定交付的得分为关闭插件 **0/2**、0.25 **1/2**、0.26 **2/2**。独立续写中 0.26 仍漏验了文件末行。 [安装](guides/quickstart.md) · [得分与复现](runs/2026-11-18-memory-delivery.md)
+第七章用第二版，结尾照旧，改完附修改说明。继续同一工作区时，助手可以拿到少量与当前任务有关、有出处的现行约定。正文采用哪个版本和保留结尾这样的例外会一起呈现。在支持的 DSH 中，即使通过 shell 成功写入文件，也可以收到一次交付复核提示；只读命令不触发，出现提示也不等于交付已通过。 [安装](guides/quickstart.md) · [发行包与源码](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.2)
 
-When you resume a project, 0.26 brings a few applicable decisions into the new task and can prompt a review after file edits on supported hosts. It followed the latest agreement on both local delivery tasks and missed an end-of-file requirement in a separate writing test. Download the source or fork it to share a case from your own workflow. [Release and source](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.1) · [Fork](https://github.com/OakcoderX/solopup-memory/fork)
+When you resume the same workspace, beta.2 can surface relevant source-linked decisions together with their conditions and exceptions. On supported DSH hosts, a successful shell write can prompt one handoff review. Read-only commands don't trigger it, and a reminder doesn't prove that the output meets the requirements. [Quick start](guides/quickstart.md) · [Release and source](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.2)
+
+此前实测，不是本次发行包复验：按关闭插件 / 0.25.0-beta.2 / 0.26.0-beta.1 顺序，两道小任务按最新约定交付 **0/2、1/2、2/2**，主任务均 **2/2**。cattrs 单题本地官方规则严格分 **0/1、0/1、1/1**，两个开启组预装了相同的已核历史约定。独立中文续写 **0/4（超时）、3/4、3/4**；beta.1 漏验了文件最后一行。完整原生 Super Agent 链路仍待验证。 [历史评测与复现 / Historical beta.1 comparison](https://github.com/OakcoderX/solopup-memory/blob/v0.26.0-beta.1/docs/runs/2026-11-18-memory-delivery.md)
+
+欢迎下载源码或 [Fork](https://github.com/OakcoderX/solopup-memory/fork)，附虚构用例、环境和实际交付的复现结果，一起改进 DSH 的记忆层。 Download or fork the source and share a fictional reproduction with the versions, steps and observed output.
 
 ## 第一次使用 / Getting started
 
