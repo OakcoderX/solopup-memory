@@ -13,6 +13,17 @@ test('one complete native submission yields candidates with unchanged source and
  const result=batch(chunks());assert.equal(result.responseItems,1);assert.equal(result.parsedItems,1);assert.deepEqual(result.candidates[0].meaning,candidate.meaning);assert.deepEqual(result.candidates[0].evidence,candidate.evidence);assert.equal(result.wrapped,false)
 })
 test('empty native submission is a model no-op, not an empty-response error',()=>assert.equal(batch(chunks([])).responseItems,0))
+test('adapter-compacted final JSON accepts whitespace only outside strings',()=>{
+ const raw=JSON.stringify({entries:[candidate]},null,2)
+ const events=chunks([candidate],{raw}).map(c=>c.type==='block-end'?{...c,block:{...c.block,arguments:JSON.stringify({entries:[candidate]})}}:c)
+ assert.equal(batch(events).parsedItems,1)
+ const changed=events.map(c=>c.type==='block-end'?{...c,block:{...c.block,arguments:JSON.stringify({entries:[{...candidate,summary:candidate.summary+' '}]})}}:c)
+ assert.throws(()=>batch(changed),/capture-invalid-envelope/)
+})
+test('adapter does not hide changed escapes or duplicate keys',()=>{
+ const first=chunks([],{raw:'{ "entries": [], "entries": [] }'}).map(c=>c.type==='block-end'?{...c,block:{...c.block,arguments:'{"entries":[]}'}}:c)
+ assert.throws(()=>batch(first),/capture-invalid-envelope/)
+})
 test('canonical final block can supply its complete name and arguments without deltas',()=>{
  for(const options of [{noDeltas:true},{omitDeltaName:true}])assert.equal(batch(chunks([candidate],options)).parsedItems,1)
 })

@@ -4,7 +4,7 @@
 
 SoloPup 是 DeepSeek Harness（DSH） 的文字记忆插件。它尝试保存值得长期保留的信息，帮助 DSH 在后续工作中找回并参考。**公开测试版**，记忆可能保存或召回失败，重要内容请核对。
 
-[快速上手](docs/guides/quickstart.md) · [安装](#先试起来) · [0.26 评测](docs/runs/2026-11-18-memory-delivery.md) · [做梦交互演示](https://oakcoderx.github.io/solopup-memory/dreaming/) · [做梦实测报告](docs/research/dreaming-in-dsh/README.md) · [更多示意案例](docs/README.md) · [常见问题](docs/faq.md) · [English](README.en.md)
+[快速上手](docs/guides/quickstart.md) · [安装](#先试起来) · [0.26 评测](docs/runs/2026-11-18-memory-delivery.md) · [12 题逐题成绩](docs/runs/2026-11-20-frontiermemory-text.md) · [做梦交互演示](https://oakcoderx.github.io/solopup-memory/dreaming/) · [做梦实测报告](docs/research/dreaming-in-dsh/README.md) · [更多示意案例](docs/README.md) · [常见问题](docs/faq.md) · [English](README.en.md)
 
 ## 用起来是什么感觉？
 

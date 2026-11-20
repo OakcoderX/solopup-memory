@@ -40,6 +40,10 @@ function textOf(message){
  return normalizeText(text)
 }
 function matches(message,result){return message?.role==='tool'&&message.source?.kind==='tool'&&message.source.callId===result.call.callId&&message.toolCallId===result.call.callId&&message.id===result.messageId&&message.isError===result.isError&&hash(message.content)===result.outputHash}
+function previewQuote(text){
+ const end=/[\uD800-\uDBFF]/u.test(text[99]??'')?99:100
+ return text.slice(0,end).trim()
+}
 export function createObservationTracker(ownerForCall){
  const states=new WeakMap(),sessions=new Map()
  let active=true
@@ -79,11 +83,16 @@ export function createObservationTracker(ownerForCall){
  function forExecution(exec,reference,currentOwner){
   exec?.signal?.throwIfAborted()
   if(!active)fail('disposed')
-  if(!plain(reference)||Object.keys(reference).sort().join('|')!=='callId|quote'||!id(reference.callId)||typeof reference.quote!=='string')fail('invalid-reference')
+  if(!plain(reference)||!id(reference.callId))fail('invalid-reference')
+  const keys=Object.keys(reference).sort().join('|')
+  const usePreview=keys==='callId|usePreview'&&reference.usePreview===true
+  if(!usePreview&&(keys!=='callId|quote'||typeof reference.quote!=='string'))fail('invalid-reference')
   const session=exec?.agent?.session,state=session&&states.get(session),current=state?.calls.get(exec?.rootCallId??exec?.callId),result=state?.results.get(reference.callId),seen=state?.visible.get(reference.callId)
   if(!currentOwner||!current||!result||result.invalid||result.call.ambiguous||!result.call.owner||!result.call.argumentsHash||!toolName(result.call.name)||result.seq>=current.seq||!seen||seen.turn!==current.turn||seen.step!==current.step||typeof session.deriveMessages!=='function')fail('source-unavailable')
   const currentMessages=session.deriveMessages();if(!Array.isArray(currentMessages)||currentMessages.length>4096||currentMessages.filter(message=>matches(message,result)).length!==1)fail('surface-changed')
-  const quote=normalizeText(reference.quote).trim();if(!quote||quote.length>500||!result.text.includes(quote)||findSecrets(quote).length)fail('quote-not-in-result')
+  if(usePreview&&!result.listed)fail('preview-not-listed')
+  const quote=usePreview?previewQuote(result.text):normalizeText(reference.quote).trim()
+  if(!quote||quote.length>500||!result.text.includes(quote)||findSecrets(quote).length)fail('quote-not-in-result')
   const certificate=normalizeObservationCertificate({schema:1,kind:'native-tool-result',sessionId:session.id,toolName:result.call.name,callId:result.call.callId,callSeq:result.call.seq,resultSeq:result.seq,resultMessageId:result.messageId,argumentsHash:result.call.argumentsHash,outputHash:result.outputHash,quote:escapeFraming(quote),outcome:result.isError===true?'error':'succeeded',observedAt:result.observedAt},session.id)
   return{...currentOwner,evidence:result.call.owner.evidence,observation:certificate,observationContextHash:result.call.owner.contextCwdHash}
  }
@@ -98,8 +107,8 @@ export function createObservationTracker(ownerForCall){
    return !result.invalid&&!result.call.ambiguous&&result.call.owner&&result.call.argumentsHash&&toolName(result.call.name)&&result.seq<current.seq&&seen?.turn===current.turn&&seen.step===current.step&&messages.filter(message=>matches(message,result)).length===1
   }).sort((a,b)=>b.seq-a.seq)
   const items=[];let bytes=0
-  for(const result of eligible.slice(0,8)){const item={callId:result.call.callId,toolName:result.call.name,outcome:result.isError===true?'error':'succeeded',quotePreview:escapeFraming(result.text.slice(0,100)),observedAt:result.observedAt};const size=Buffer.byteLength(JSON.stringify(item));if(bytes+size>2400)break;items.push(item);bytes+=size}
-  return{items,truncated:eligible.length>items.length,note:'仅本会话当前可引用的原生输出；复制callId与实际引用，不猜ID。成功不证明世界事实；错误结果只能作诊断。'}
+  for(const result of eligible.slice(0,8)){const item={callId:result.call.callId,toolName:result.call.name,outcome:result.isError===true?'error':'succeeded',quotePreview:escapeFraming(previewQuote(result.text)),observedAt:result.observedAt};const size=Buffer.byteLength(JSON.stringify(item));if(bytes+size>2400)break;items.push(item);bytes+=size;result.listed=true}
+  return{items,truncated:eligible.length>items.length,note:'仅本会话当前可引用的原生输出。若 quotePreview 已包含所需证据，使用 callId 和 usePreview: true；否则逐字摘录原生输出。成功不证明世界事实；错误结果只能作诊断。'}
  }
  function disposeSession(session){states.delete(session);if(sessions.get(session.id)?.deref()===session)sessions.delete(session.id)}
  function dispose(){active=false;sessions.clear()}
@@ -110,6 +119,6 @@ export function observationView(record){
  const proof=normalizeObservationCertificate(record.observation,record.sessionId)
  return{kind:proof.kind,toolName:proof.toolName,callId:proof.callId,resultEventId:proof.sessionId+':'+proof.resultSeq,observedAt:proof.observedAt,outcome:proof.outcome,quote:proof.quote,outputHash:proof.outputHash,quoteChecked:true,currentWorldStateVerified:false,continuouslyRevalidated:false}
 }
-export const OBSERVATION_REFERENCE_SCHEMA={type:'object',additionalProperties:false,required:['callId','quote'],properties:{callId:{type:'string',description:'先调用memory_status(includeObservations=true)取得并逐字复制真实callId；模型不应猜测传输层ID。仅本会话已见外部工具结果，不是消息ID，不能引用memory工具。'},quote:{type:'string',description:'从该工具实际文本输出逐字摘录，最多500字。插件核对原生调用、结果和可见内容，不接受模型自填验证状态。'}}}
+export const OBSERVATION_REFERENCE_SCHEMA={type:'object',additionalProperties:false,required:['callId'],oneOf:[{required:['quote']},{required:['usePreview']}],properties:{callId:{type:'string',description:'先调用memory_status(includeObservations=true)取得并逐字复制真实callId；模型不应猜测传输层ID。仅本会话已见外部工具结果，不是消息ID，不能引用memory工具。'},quote:{type:'string',description:'从该工具实际文本输出逐字摘录，最多500字。插件核对原生调用、结果和可见内容，不接受模型自填验证状态。'},usePreview:{type:'boolean',const:true,description:'仅当 memory_status 的 quotePreview 已包含支持记忆的证据时填写 true，由插件提取原文。此时省略 quote。'}}}
 export const OBSERVATION_LIST_SCHEMA={type:'object',additionalProperties:false,required:['items','truncated','note'],properties:{items:{type:'array',items:{type:'object',additionalProperties:false,required:['callId','toolName','outcome','quotePreview','observedAt'],properties:{callId:{type:'string'},toolName:{type:'string'},outcome:{type:'string',enum:['succeeded','error']},quotePreview:{type:'string'},observedAt:{type:'string'}}}},truncated:{type:'boolean'},note:{type:'string'}}}
 export const OBSERVATION_VIEW_SCHEMA={type:'object',additionalProperties:false,required:['kind','toolName','callId','resultEventId','observedAt','outcome','quote','outputHash','quoteChecked','currentWorldStateVerified','continuouslyRevalidated'],properties:{kind:{type:'string',enum:['native-tool-result']},toolName:{type:'string'},callId:{type:'string'},resultEventId:{type:'string'},observedAt:{type:'string'},outcome:{type:'string',enum:['succeeded','error']},quote:{type:'string'},outputHash:{type:'string'},quoteChecked:{type:'boolean'},currentWorldStateVerified:{type:'boolean'},continuouslyRevalidated:{type:'boolean'}}}

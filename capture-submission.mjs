@@ -11,6 +11,17 @@ export const CAPTURE_SUBMISSION_TOOL={
 const freeze=value=>{if(value&&typeof value==='object'){for(const child of Object.values(value))freeze(child);Object.freeze(value)}return value}
 freeze(CAPTURE_SUBMISSION_TOOL)
 const invalid=()=>{throw Error('capture-invalid-envelope')}
+// DSH's adapter can reserialize a parsed tool payload at block-end, dropping
+// whitespace from streamed JSON. Only ignore JSON whitespace outside strings;
+// values, key order, escapes and duplicate keys remain byte-sensitive.
+function compactJsonWhitespace(text){
+ let quoted=false,escape=false,out=''
+ for(const c of text){
+  if(quoted){out+=c;if(escape)escape=false;else if(c==='\\')escape=true;else if(c==='"')quoted=false}
+  else if(c==='"'){quoted=true;out+=c}else if(c!==' '&&c!=='\t'&&c!=='\r'&&c!=='\n')out+=c
+ }
+ return out
+}
 /** Inspect the documented canonical block protocol, bounding deltas before retention.
  * Invalid small envelopes are rejected after settlement, never retried or mined.
  */
@@ -39,7 +50,8 @@ export class CaptureSubmission {
    if(block?.type==='text'&&typeof block.text==='string'&&block.text.trim()){this.finalTextBytes+=Buffer.byteLength(block.text);if(this.bytes-this.textBytes+Math.max(this.textBytes,this.finalTextBytes)>CAPTURE_RESPONSE_BYTES||this.finalTextBlocks.length>=8)throw Error('capture-response-too-large');this.finalTextBlocks.push(block.text)}
    if(block?.type!=='tool-call')return
    this.sawTool=true;const f=this.frame
-   if(!f||f.complete||chunk.index!==f.index||block.name!==this.name||f.name!==undefined&&block.name!==f.name||typeof block.id!=='string'||!block.id||block.id.length>300||f.id!==undefined&&block.id!==f.id||typeof block.arguments!=='string'||f.sawDelta&&block.arguments!==f.args){this.error=true;return}
+   if(typeof block.arguments==='string'&&Buffer.byteLength(block.arguments)>CAPTURE_RESPONSE_BYTES)throw Error('capture-response-too-large')
+   if(!f||f.complete||chunk.index!==f.index||block.name!==this.name||f.name!==undefined&&block.name!==f.name||typeof block.id!=='string'||!block.id||block.id.length>300||f.id!==undefined&&block.id!==f.id||typeof block.arguments!=='string'||f.sawDelta&&compactJsonWhitespace(block.arguments)!==compactJsonWhitespace(f.args)){this.error=true;return}
    if(!f.sawDelta){this.bytes+=Buffer.byteLength(block.arguments);if(this.bytes>CAPTURE_RESPONSE_BYTES)throw Error('capture-response-too-large');f.args=block.arguments}
    f.complete=true
   }

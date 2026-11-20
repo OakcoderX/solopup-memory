@@ -54,3 +54,25 @@ test('reports work only for a matched successful mutation in the open turn', () 
   result(4)
   assert.equal(tracker.hasAppliedWork(session, 1), true)
 })
+
+test('detects successful project heredoc writes without treating read arguments or temporary files as work', () => {
+  const tracker = harness()
+  const session = { id: 'current' }
+  tracker.emit(session, { type: 'turn/start', data: { turn: 1 } })
+  const bash = (seq, command, isError = false) => {
+    const callId = `bash-${seq}`
+    tracker.emit(session, { type: 'tool/call', seq, data: { turn: 1, callId, name: 'bash', arguments: { command } } })
+    tracker.emit(session, {
+      type: 'tool/result', surfaceOp: 'append', sourceEventSeqs: [seq], data: { turn: 1, message: {
+        role: 'tool', source: { kind: 'tool', callId }, toolCallId: callId, isError,
+      } },
+    })
+  }
+  bash(1, "printf '%s' 'cat > draft.md <<EOF'")
+  bash(2, "cat >/tmp/draft.md <<'EOF'\nscratch\nEOF")
+  bash(3, "cat > ../draft.md <<'EOF'\nelsewhere\nEOF")
+  bash(4, "cat > draft.md <<'EOF'\nfailed\nEOF", true)
+  assert.equal(tracker.hasAppliedWork(session, 1), false)
+  bash(5, "cat <<'EOF' > 小说初稿.md\n" + 'a'.repeat(9000) + "\nEOF")
+  assert.equal(tracker.hasAppliedWork(session, 1), true)
+})

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { queryTokens, rankLines, foldEnglishInflection } from '../retrieval.mjs'
+import { queryTokens, rankLines, rankEvidence, foldEnglishInflection } from '../retrieval.mjs'
 import { searchStore } from '../index.mjs'
 
 test('词元：中文双字、拉丁大小写与标识符', () => {
@@ -72,4 +72,17 @@ test('无中英词元的日文、韩文、阿拉伯文和符号仍可字面定�
     assert.equal(rankLines(query, lines).length, 1)
   }
   assert.equal(rankLines('   ', [{ text: 'unchanged', file: 'MEMORY.md', line: 1 }]).length, 0)
+})
+
+test('长任务优先召回项目专有词，去除重复但保留有大小写区别的证据', () => {
+  const notes = [
+    'Update the documentation and include an example.',
+    'For Moonstage, use export preset CUT_A for the main delivery.',
+    'For Moonstage, use export preset CUT_A for the main delivery.',
+    'For Moonstage, use export preset cut_a for previews.',
+    'Update the documentation and review the general example.',
+  ].map((text, index) => ({ file: 'history.md', line: index + 1, text }))
+  const query = 'Update the Moonstage export example for previews and the main delivery.'
+  assert.deepEqual(rankEvidence(query, notes, 2).map((entry) => entry.line), [2, 4])
+  assert.deepEqual(rankEvidence('unrelated quartz', notes), [])
 })

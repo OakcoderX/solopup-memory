@@ -4,7 +4,7 @@
 
 SoloPup is a text-memory plugin for DeepSeek Harness (DSH). It attempts to save useful long-term context for DSH to recall and consider later. **Public beta:** saving or recall may fail; check important details.
 
-[Quick start](docs/guides/quickstart.md) · [Install](#quick-install) · [0.26 evaluation](docs/runs/2026-11-18-memory-delivery.md) · [Dreaming study](docs/research/dreaming-in-dsh/README.en.md) · [More fictional examples](docs/README.md) · [FAQ](docs/faq.md) · [中文](README.md)
+[Quick start](docs/guides/quickstart.md) · [Install](#quick-install) · [0.26 evaluation](docs/runs/2026-11-18-memory-delivery.md) · [Scores for all 12 tasks](docs/runs/2026-11-20-frontiermemory-text.md) · [Dreaming study](docs/research/dreaming-in-dsh/README.en.md) · [More fictional examples](docs/README.md) · [FAQ](docs/faq.md) · [中文](README.md)
 
 ## What could it look like?
 

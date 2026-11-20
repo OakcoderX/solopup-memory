@@ -1,10 +1,11 @@
 import { applicability, normalizeContext, normalizeMeaning } from './meaning.mjs'
 import { privateMemory } from './privacy.mjs'
 import { queryTokens } from './retrieval.mjs'
-import { frameIntegrity, isSmelly, normalizeText, sanitizeForInjection } from './security.mjs'
+import { findSecrets, frameIntegrity, isSmelly, normalizeText, sanitizeForInjection } from './security.mjs'
 
 const MAX_RULES = 4
 const MAX_CONTEXT_BYTES = 2304
+const MAX_DETAIL_BYTES = 480
 const QUERY_EDGE = 4000
 const SOURCE_ID = /^[a-f0-9]{64}$/
 const COMMON_WORDS = new Set([
@@ -30,6 +31,21 @@ function eligibleRecord(record) {
     Array.isArray(record.evidence) && record.evidence.length > 0 && !privateMemory(record)
 }
 
+// A short project detail can supply terms elided by the summary. Only project
+// an exact excerpt of retained evidence, with no extra authority of its own.
+function matchingDetail(record, taskTokens, summary) {
+  if (record.scope !== 'project' || typeof record.detail !== 'string' ||
+      Buffer.byteLength(record.detail) > MAX_DETAIL_BYTES) return undefined
+  const detail = normalizeText(record.detail).replace(/\s+/gu, ' ').trim()
+  if (!detail || summary.includes(detail) || isSmelly(detail) || findSecrets(detail).length ||
+      !frameIntegrity(detail).ok) return undefined
+  const tokens = relevantTokens(detail)
+  const matches = tokens.filter(token => taskTokens.has(token))
+  if (matches.length < 2 || !record.evidence.some(item => typeof item?.quote === 'string' &&
+      normalizeText(item.quote).replace(/\s+/gu, ' ').includes(detail))) return undefined
+  return { text: safeLine(detail), score: matches.length / tokens.length }
+}
+
 /** Only rules with all structured conditions resolved are eligible for a delivery review. */
 export function effectiveRuleText(rule) {
   return rule.applicability === 'applicable' ? rule.summary : ''
@@ -42,7 +58,8 @@ function renderRule(rule) {
   const qualifiers = [required && `条件 ${required}`, excluded && `例外 ${excluded}`].filter(Boolean)
   const label = rule.applicability === 'applicable' ? '适用' : '条件待核对'
   const scope = rule.scope === 'project' ? '本项目' : '全局'
-  return `- [${label}，${scope}，${rule.id.slice(0, 12)}] ${rule.summary}${qualifiers.length ? `（${qualifiers.join('，')}）` : ''}`
+  const detail = rule.detail ? `（来源摘录：${rule.detail}）` : ''
+  return `- [${label}，${scope}，${rule.id.slice(0, 12)}] ${rule.summary}${qualifiers.length ? `（${qualifiers.join('，')}）` : ''}${detail}`
 }
 
 /**
@@ -68,17 +85,20 @@ export function selectEffectiveMemory({ records, query, context, includeProjectD
 
     const tokens = relevantTokens(`${summary} ${conditionText}`)
     const overlap = tokens.filter(token => taskTokens.has(token))
+    const detail = matchingDetail(record, taskTokens, summary)
     const relevant = overlap.length >= 2 || overlap.some(token => token.length >= 6 || /\d/.test(token)) ||
-      (overlap.length === 1 && taskTokens.size === 1) || (match.state === 'applicable' && meaning.conditions.length > 0)
+      (overlap.length === 1 && taskTokens.size === 1) || (match.state === 'applicable' && meaning.conditions.length > 0) ||
+      detail !== undefined
     const projectDefault = includeProjectDefaults && record.scope === 'project' && meaning.kind === 'preference' &&
       meaning.conditions.length === 0 && meaning.except.length === 0
     if (!relevant && !projectDefault) continue
 
     matches.push({
       rule: { id: record.id, scope: record.scope, kind: meaning.kind, summary,
-        conditions: meaning.conditions, except: meaning.except, applicability: match.state },
+        conditions: meaning.conditions, except: meaning.except, applicability: match.state,
+        ...(detail ? { detail: detail.text } : {}) },
       relevant,
-      score: overlap.length / Math.max(1, tokens.length),
+      score: Math.max(overlap.length / Math.max(1, tokens.length), detail?.score ?? 0),
       createdAt: record.createdAt ?? '',
     })
   }
@@ -91,13 +111,19 @@ export function selectEffectiveMemory({ records, query, context, includeProjectD
   const chosen = []
   const seen = new Set()
   let bytes = Buffer.byteLength(INTRO)
-  for (const { rule } of matches) {
+  for (const match of matches) {
     if (chosen.length === MAX_RULES) break
-    const summaryKey = rule.summary.toLowerCase()
-    if (seen.has(summaryKey)) continue
-    const size = Buffer.byteLength(renderRule(rule)) + 1
+    let { rule } = match
+    const ruleKey = JSON.stringify([rule.summary.toLowerCase(), rule.conditions, rule.except])
+    if (seen.has(ruleKey)) continue
+    let size = Buffer.byteLength(renderRule(rule)) + 1
+    if (bytes + size > MAX_CONTEXT_BYTES && rule.detail) {
+      const { detail, ...summaryOnly } = rule
+      rule = summaryOnly
+      size = Buffer.byteLength(renderRule(rule)) + 1
+    }
     if (bytes + size > MAX_CONTEXT_BYTES) continue
-    seen.add(summaryKey)
+    seen.add(ruleKey)
     chosen.push(rule)
     bytes += size
   }

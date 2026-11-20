@@ -16,16 +16,14 @@ mkdirSync(profile, { recursive: true }); mkdirSync(env.TMPDIR)
 const reportFile = join(root, 'result.json'), driver = join(root, 'driver.mjs')
 writeFileSync(driver, `
 import assert from 'node:assert/strict'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import * as memory from ${JSON.stringify(pathToFileURL(join(source, 'index.mjs')).href)}
 import { memoryContextProjection, reconcileMemoryContext, setupMemoryHistory } from ${JSON.stringify(pathToFileURL(join(source, 'context-history.mjs')).href)}
 export const name = 'solopup-history-probe'
 export const inject = ['agents', 'llm', 'sessions', 'sessionProjections', 'systemPrompt', 'workingDirectory', 'tools']
 
-async function probeRequests(ctx) {
-  const route = { provider: 'solopup-history-fixture', model: 'fixture' }
-  const sessionId = 'solopup-generated-history-probe'
-  const requests = []
+function fixtureAdapter(ctx, route, observe) {
   ctx.llm.registerAdapter([route.provider], {
     providerInfo: id => ({ id, name: id }), providerRetryPolicy: () => undefined,
     imageRequestPricing: () => undefined, listModels: async () => [],
@@ -34,13 +32,71 @@ async function probeRequests(ctx) {
       return { model: await this.resolveModel(provider, model), stream: options => this.stream(options) }
     },
     async *stream(options) {
-      if (options.sessionId === sessionId && options.messages.some(m => m.source?.kind === 'runtime-context')) requests.push(options.messages)
+      observe(options)
       const output = 'fixture response'
       yield { type: 'block-start', index: 0, blockType: 'text' }
       yield { type: 'text-delta', index: 0, text: output }
       yield { type: 'block-end', index: 0, block: { type: 'text', text: output } }
       yield { type: 'finish', reason: 'stop' }
     },
+  })
+}
+
+async function probeProjectDetails(ctx) {
+  const route = { provider: 'solopup-project-details-fixture', model: 'fixture' }
+  const active = ${JSON.stringify(join(root, "active-project"))}
+  const other = ${JSON.stringify(join(root, "other-project"))}
+  mkdirSync(active); mkdirSync(other)
+  const summary = 'Keep the previously agreed handoff format.'
+  const detail = 'Put the runnable lifecycle example in examples/quickstart.mjs.'
+  const hash = text => createHash('sha256').update(text).digest('hex')
+  memory.writeMemory({
+    dir: memory.storeDirFor('project', active), scope: 'project', type: 'feedback',
+    summary, detail, line: memory.indexLine('feedback', summary, undefined, true),
+    meaning: { kind: 'preference' },
+    provenance: { basis: 'tool-context', sessionId: 'synthetic-source', callHash: hash('source-call'),
+      evidence: [{ messageId: 'synthetic-owner', hash: hash(detail), quote: detail }] },
+  })
+  const requests = new Map()
+  fixtureAdapter(ctx, route, ({ sessionId, messages }) => {
+    if (!sessionId?.startsWith('solopup-project-details-') ||
+        !messages.some(message => message.source?.kind === 'user' &&
+          'solopup-project-details-' + message.id === sessionId)) return
+    const snapshot = messages.findLast(message => message.source?.sections?.some(section => section.name === 'memory:index'))
+    const sent = requests.get(sessionId) ?? []
+    sent.push(snapshot?.source.sections.find(section => section.name === 'memory:index').text ?? '')
+    requests.set(sessionId, sent)
+  })
+  const query = 'Update the lifecycle and keep the runnable example aligned with the API.'
+  const cases = [
+    { id: 'relevant', cwd: active, text: query, visible: true },
+    { id: 'unrelated', cwd: active, text: 'Explain the landscape palette.', visible: false },
+    { id: 'different-project', cwd: other, text: query, visible: false },
+  ]
+  for (const { id, cwd, text, visible } of cases) {
+    const sessionId = 'solopup-project-details-' + id
+    const handle = await ctx.agents.create({ sessionId, meta: { cwd }, agentOptions: route })
+    try {
+      const { agent } = handle
+      agent.followup({ id, role: 'user', source: { kind: 'user' }, content: [{ type: 'text', text }] })
+      await agent.whenIdle()
+      const outcome = agent.session.snapshotEvents().findLast(event => event.type === 'turn/end')?.data.reason
+      assert.ok(requests.has(sessionId), id + ' must reach the in-process adapter')
+      assert.notEqual(outcome?.kind, 'error', id + ' must reach the in-process adapter: ' + JSON.stringify(outcome))
+      for (const request of requests.get(sessionId)) {
+        assert.equal(request.includes('来源摘录：' + detail), visible, id)
+      }
+    } finally { await handle.dispose() }
+  }
+  return { cases: cases.length, exactSourceMatched: true, paidRequests: 0 }
+}
+
+async function probeRequests(ctx) {
+  const route = { provider: 'solopup-history-fixture', model: 'fixture' }
+  const sessionId = 'solopup-generated-history-probe'
+  const requests = []
+  fixtureAdapter(ctx, route, options => {
+    if (options.sessionId === sessionId && options.messages.some(m => m.source?.kind === 'runtime-context')) requests.push(options.messages)
   })
 
   let current = '<memory-store>original synthetic memory</memory-store>'
@@ -127,9 +183,10 @@ export async function apply(ctx) {
     await replay.dispose()
     if (replay.retained) assert.equal(replay.stateOf(replayed).nodes.length, 1, 'retained readers remain usable after owner disposal')
     await assert.rejects(async () => await ctx.sessionProjections.register({ ...definition, stateVersion: -1 }), /non-negative/)
+    const projectDetails = await probeProjectDetails(ctx)
     await owner.dispose()
     const hostGeneratedRequests = await probeRequests(ctx)
-    writeFileSync(${JSON.stringify(reportFile)}, JSON.stringify({ passed: true, realDshHost: true, realModel: false, cleanHome: true, syntheticInput: true, tools: stamp.tools.length, projectionApi: handle.retained ? 'retained-handle' : 'legacy-registry', historyAvailable: stamp.memoryHistory.available, liveState: true, rewritePreservesOrdinaryAndOtherProvider: true, coldReplay: true, registrationRejected: true, ownerDisposed: true, hostGeneratedRequests }) + '\\n')
+    writeFileSync(${JSON.stringify(reportFile)}, JSON.stringify({ passed: true, realDshHost: true, realModel: false, cleanHome: true, syntheticInput: true, tools: stamp.tools.length, projectionApi: handle.retained ? 'retained-handle' : 'legacy-registry', historyAvailable: stamp.memoryHistory.available, liveState: true, rewritePreservesOrdinaryAndOtherProvider: true, coldReplay: true, registrationRejected: true, ownerDisposed: true, hostGeneratedRequests, projectDetails }) + '\\n')
   } catch (error) {
     writeFileSync(${JSON.stringify(reportFile)}, JSON.stringify({ passed: false, error: error.stack }) + '\\n')
   }

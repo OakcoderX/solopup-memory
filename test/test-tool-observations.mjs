@@ -30,6 +30,21 @@ test('native event, result ancestry, actual model-visible quote and current surf
  assert.throws(()=>f.exec({callId:'measure-1',quote:'controlled_measurement=70'}),/quote-not-in-result/)
  assert.throws(()=>f.exec({callId:'measure-1',quote:'40',verified:true}),/invalid-reference/)
 })
+test('a listed preview resolves to the original tool text without copying escaped JSON',()=>{
+ const f=fixture();f.call()
+ const output=String.raw`  {"revision":"draft-2","exact":"line\nwith \"quotes\""}  `
+ f.result({message:{content:[{type:'text',text:output}]}})
+ f.ready()
+ const reference={callId:'measure-1',usePreview:true}
+ assert.throws(()=>f.exec(reference),/preview-not-listed/)
+ const status=f.obs.availableForExecution({agent:f.agent,callId:'save'})
+ assert.equal(status.items[0].quotePreview,output.trim())
+ assert.equal(f.exec(reference).observation.quote,output.trim())
+ assert.throws(()=>f.exec({...reference,quote:'draft-2'}),/invalid-reference/)
+ assert.throws(()=>f.exec({...reference,usePreview:false}),/invalid-reference/)
+ f.messages.pop()
+ assert.throws(()=>f.exec(reference),/surface-changed/)
+})
 test('pending calls, missing ancestry, result-before-call, forged source and unseen outputs fail closed',()=>{
  for(const variant of ['pending','ancestry','ordering','source','unseen']){
   const f=fixture();f.call();if(variant!=='pending')f.result(variant==='ancestry'?{event:{sourceEventSeqs:[1]}}:variant==='ordering'?{event:{seq:1}}:variant==='source'?{message:{source:{kind:'assistant'}}}:{})

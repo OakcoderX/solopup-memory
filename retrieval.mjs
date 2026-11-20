@@ -41,3 +41,35 @@ export function rankLines(query, lines) {
   }).sort((a, b) => b.score - a.score || a.index - b.index)
     .map(({ file, line, text }) => ({ file, line, text }))
 }
+
+/** Rank bounded evidence for a full task description using rare matching terms. */
+export function rankEvidence(query, lines, limit = 12) {
+  const terms = queryTokens(query)
+  const commonWords = 'a an and are as at be by do for from has have in is it of on or that the their this to use was were will with you your'
+  for (const word of commonWords.split(' ')) terms.delete(word)
+  if (limit <= 0) return []
+  if (terms.size === 0) return rankLines(query, lines).slice(0, limit)
+  const unique = new Map()
+  for (const line of lines) {
+    const key = normalizeText(line.text).trim()
+    if (key && !unique.has(key)) unique.set(key, line)
+  }
+  const frequency = new Map()
+  const documents = [...unique.values()].map((line) => {
+    const vocabulary = queryTokens(line.text)
+    const common = [...vocabulary].filter((term) => terms.has(term))
+    for (const term of common) frequency.set(term, (frequency.get(term) ?? 0) + 1)
+    return { line, common, length: vocabulary.size }
+  })
+  const weight = new Map([...frequency].map(([term, count]) => [
+    term, Math.log(1 + (documents.length - count + 0.5) / (count + 0.5)),
+  ]))
+  return documents.map((doc) => ({
+    line: doc.line,
+    score: doc.common.reduce((sum, term) => sum + weight.get(term), 0) /
+      Math.sqrt(1 + doc.length / 30),
+  })).filter((row) => row.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((row) => row.line)
+}

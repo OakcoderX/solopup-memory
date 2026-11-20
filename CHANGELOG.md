@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.26.0-beta.2 — text memory and delivery checks
+
+- Preserve saved conditions and exceptions when similar decisions are selected for the current task. Recover exact delivery details and source references from relevant project history.
+- Recognize successful file writes through shell tools so the supported host can request the existing delivery check. Read-only commands do not trigger the check.
+- Accept equivalent JSON with surrounding whitespace in native capture while retaining exact validation of the payload.
+- [FrontierMemory 12-task local text-memory results](https://github.com/OakcoderX/solopup-memory/blob/main/docs/runs/2026-11-20-frontiermemory-text.md). The frozen experimental build passed 3/12 with memory and 1/12 without. Release acceptance is tracked separately.
+
 ## 0.26.0-beta.1 — apply current project decisions
 
 - Surface a short, source-linked view of applicable project decisions and preferences during a task. Preserve conditions, exceptions and source withdrawal through the live context refresh.

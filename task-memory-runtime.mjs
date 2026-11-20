@@ -6,6 +6,9 @@ const MAX_TEXT_BYTES = 64 * 1024
 const MAX_QUERY_CHARS = 4000
 const FILE_MUTATION = /^(?:edit|write|apply_patch|file_edit|file_write)$/u
 const COMMIT = /(?:^|[;&|]\s*)\s*git\s+commit(?:\s|$)/u
+const HEREDOC_REDIRECT_FIRST = /^\s*cat\s+>>?\s*(['"]?)([\p{L}\p{N}_./-]+)\1\s+<<-?\s*['"]?\w+['"]?\s*$/u
+const HEREDOC_INPUT_FIRST = /^\s*cat\s+<<-?\s*['"]?\w+['"]?\s+>>?\s*(['"]?)([\p{L}\p{N}_./-]+)\1\s*$/u
+const TRANSIENT_PATH = /^\/(?:dev|proc|sys|tmp|var\/tmp|private\/tmp)(?:\/|$)/u
 
 function userTask(message) {
   if (message?.role !== 'user' || message.source?.kind !== 'user' || message.source.principal !== undefined) return ''
@@ -24,7 +27,12 @@ function changesFiles(call) {
   if (call?.name !== 'bash') return false
   try {
     const args = typeof call.arguments === 'string' ? JSON.parse(call.arguments) : call.arguments
-    return typeof args?.command === 'string' && args.command.length <= 8192 && COMMIT.test(args.command)
+    if (typeof args?.command !== 'string') return false
+    const [firstLine] = args.command.slice(0, 512).split(/\r?\n/u, 1)
+    const output = (HEREDOC_REDIRECT_FIRST.exec(firstLine) ?? HEREDOC_INPUT_FIRST.exec(firstLine))?.[2]
+    return (args.command.length <= 8192 && COMMIT.test(args.command)) ||
+      Boolean(firstLine.length < 512 && output && output !== '.' &&
+        !output.split('/').includes('..') && !TRANSIENT_PATH.test(output))
   } catch { return false }
 }
 
