@@ -31,7 +31,13 @@
 
 在同一台 Mac 上重建固定提交的上游 Super Agent，得到与历史原型完全相同的归档指纹。普通做梦与独立 Worker 收到相同的两批冻结请求；另一次独立检查观察到 Worker 被实际调起、调用以及取消和重启后的任务状态。两项均通过。其余四项分别检查上游 Engine 接单、macOS 进程隔离、历史原话回读和普通做梦，也都通过。源码共发现 1,134 项测试，其中 1,128 项通过，其余六项按环境条件单独运行。这里用的是真实宿主和固定模型响应。本轮实际安装的是 rc.3。[六项宿主回执及旧版失败原因](../../eval/memory-delivery/manuscript/optional-host.json)
 
-从最终归档重新安装后，完整回归和长历史压缩回放均通过。另用两次安装重启检查了数据保留、进程异常退出后的恢复，以及两个独立宿主同时运行。发布归档的 SHA-256 为 `138cf332a20eb5beac62aaa370bd9f5e049963bf101bcd81b5b18cbf1861f923`。
+从最终归档重新安装后，完整回归和长历史压缩回放均通过。另用两次安装重启检查了数据保留、进程异常退出后的恢复，以及两个独立宿主同时运行。本机验收归档的 SHA-256 为 `138cf332a20eb5beac62aaa370bd9f5e049963bf101bcd81b5b18cbf1861f923`。
+
+## 公开发行后的下载核验
+
+从 npm 和 GitHub 分别下载的 `.tgz` 逐字节一致，公开包 SHA-256 为 `9d82241a362bf92276b44d476201433463d8040312bbe3c1883084932e7b66eb`。本机验收包和公开包的 gzip 压缩结果不同，解压后的整个 tar 逐字节一致，共 223 个条目。npm 的完整性值、GitHub 校验清单、发行提交和商店入口均已核对。[下载比对回执](../../eval/memory-delivery/manuscript/public-archive.json) · [公开安装包与校验值](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.3)
+
+直接把 npm 下载件装入同一桌面 DSH 的全新配置，又实测了四组情形。六项文字均符合预期；从空库写入作者原话后，在两个新会话里查到同一条约定，先读出终稿不符，修改后再读出吻合；六项可选宿主检查全部通过，其中包括两项独立 Worker 检查；普通无 Git 文件夹的六项也全部通过。[公网安装包桌面复验回执](../../eval/memory-delivery/manuscript/public-desktop.json)
 
 ## 复跑
 
@@ -46,3 +52,5 @@ node eval/memory-delivery/manuscript/compare.mjs ARCHIVE VERSION SHA256 OUTPUT_J
 ## English
 
 Both packages retrieved the saved project agreement. With an explicit draft selection, beta.2 still left the reading-copy convention unresolved. Beta.3 marked it applicable. The newer package also inspected the named output file and distinguished a correct last line, an appended editorial note, and a correct line in the wrong file. The six observations above measure rule selection and file inspection in the real DSH host with scripted model responses and preloaded decisions. They do not measure autonomous manuscript delivery or a public benchmark score.
+
+We downloaded the public package independently from npm and GitHub. Both downloads were byte-for-byte identical. Their uncompressed tar also matched the locally built archive. We installed the npm download in a fresh profile of the same desktop DSH and repeated the six text checks, the empty-store write and readback, all six optional host checks, and the plain-folder comparison. All yielded the expected results with the scripted provider. [Desktop verification](../../eval/memory-delivery/manuscript/public-desktop.json)

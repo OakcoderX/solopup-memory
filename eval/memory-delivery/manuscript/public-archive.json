@@ -1,0 +1,17 @@
+{
+  "version": "0.26.0-beta.3",
+  "commit": "6664b3a37c33ea7272dd550592538f5c11c43c38",
+  "publicSha256": "9d82241a362bf92276b44d476201433463d8040312bbe3c1883084932e7b66eb",
+  "localSha256": "138cf332a20eb5beac62aaa370bd9f5e049963bf101bcd81b5b18cbf1861f923",
+  "localMembers": 223,
+  "publicMembers": 223,
+  "differencesInMembers": [],
+  "npmBeta": "0.26.0-beta.3",
+  "publicBytesMatchGitHub": true,
+  "npmIntegrityMatchesManifest": true,
+  "marketEntry": true,
+  "run": "https://github.com/OakcoderX/solopup-memory/actions/runs/44929492521",
+  "uncompressedTarBytesMatch": true,
+  "uncompressedTarBytes": 2437632,
+  "uncompressedTarSha256": "261f5905dd02c9f3dfedff512be6df86eeafcc94fb83d199e4829fa7f9b465af"
+}
