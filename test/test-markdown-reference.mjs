@@ -5,7 +5,7 @@ import { link, mkdir, mkdtemp, realpath, rm, symlink, writeFile } from 'node:fs/
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { defineMarkdownReferenceTool, prepareMarkdownReference } from '../markdown-reference.mjs'
+import { defineDeliveryCheckTool, defineMarkdownReferenceTool, prepareMarkdownReference } from '../markdown-reference.mjs'
 import { normalizeMeaning } from '../meaning.mjs'
 import { apply, linkProjectWorktree, storeDirFor, withdrawManagedSource } from '../index.mjs'
 import { candidateSnapshot } from '../candidates.mjs'
@@ -15,6 +15,87 @@ const recordId = 'a'.repeat(64)
 const heading = '第七章 渡口'
 const args = { recordId, context: { stage: '修订', scene: '渡口' } }
 const hash = text => createHash('sha256').update(text).digest('hex')
+
+const deliveryQuote = '交付约定：终稿.md 的最后一行必须是「灯灭了。」'
+const ownerEvidence = quote => ({ quote, messageId: 'author:1', hash: hash(quote) })
+const deliveryRecord = {
+  id: recordId, scope: 'project', status: 'recorded', sessionId: 'author',
+  summary: '摘要误记成了副本.md', detail: '副本.md', evidence: [ownerEvidence(deliveryQuote)],
+  meaning: normalizeMeaning({ kind: 'preference' }),
+}
+
+test('delivery checks the exact terminal line and fingerprints only the author-bound artifact', async t => {
+  const root = await mkdtemp(join(tmpdir(), 'solopup-delivery-'))
+  t.after(() => rm(root, { recursive: true, force: true }))
+  const path = '终稿.md'
+  await writeFile(join(root, '副本.md'), '灯灭了。\n')
+  const tool = defineDeliveryCheckTool({ resolve: () => ({ root, record: deliveryRecord }), contextFor: () => ({}) })
+  assert.deepEqual(await tool.execute({ recordId }, {}), { status: 'missing' })
+  for (const [content, status] of [
+    ['首段不可返回。\n灯灭了。\n审读备注\n', 'mismatch'],
+    ['首段不可返回。\r\n审读备注\r\n灯灭了。\r\n', 'matched'],
+    ['灯灭了。', 'matched'], ['灯灭了。\n\n', 'mismatch'], ['灯灭了。 \n', 'mismatch'], ['', 'mismatch'],
+  ]) {
+    await writeFile(join(root, path), content)
+    const result = await tool.execute({ recordId }, {})
+    assert.deepEqual(result, { status, recordId, path, sha256: hash(content) })
+    assert.doesNotMatch(tool.output.render({}, result)[0].text, /灯灭了|首段不可返回|审读备注/u)
+  }
+  assert.deepEqual(await tool.execute({ recordId, path: '副本.md' }, {}), { status: 'record-unavailable' })
+})
+
+test('delivery accepts the complete English author instruction and rechecks the live conditions', async t => {
+  const root = await mkdtemp(join(tmpdir(), 'solopup-delivery-en-'))
+  t.after(() => rm(root, { recursive: true, force: true }))
+  await writeFile(join(root, 'final.md'), 'Lights out.\r\n')
+  const quote = 'Delivery rule: the last line of final.md must be "Lights out."'
+  const record = { ...deliveryRecord, status: 'adopted', evidence: [ownerEvidence(quote)],
+    meaning: normalizeMeaning({ kind: 'decision', conditions: [{ dimension: 'edition', value: 'review' }] }) }
+  const exec = { session: {} }
+  let edition
+  const tool = defineDeliveryCheckTool({
+    resolve: () => ({ root, record }),
+    contextFor: execution => { assert.equal(execution, exec); return edition ? { edition } : {} },
+  })
+  assert.deepEqual(await tool.execute({ recordId }, exec), { status: 'context-needed' })
+  edition = 'publication'
+  assert.deepEqual(await tool.execute({ recordId }, exec), { status: 'not-applicable' })
+  edition = 'review'
+  assert.equal((await tool.execute({ recordId }, exec)).status, 'matched')
+  let checks = 0
+  const changed = defineDeliveryCheckTool({
+    resolve: () => ({ root, record }),
+    contextFor: () => ({ edition: ++checks === 1 ? 'review' : 'publication' }),
+  })
+  assert.deepEqual(await changed.execute({ recordId }, exec), { status: 'not-applicable' })
+})
+
+test('delivery withholds file receipts after withdrawal, for ambiguous evidence and for out-of-project paths', async t => {
+  const root = await mkdtemp(join(tmpdir(), 'solopup-delivery-withdrawal-'))
+  t.after(() => rm(root, { recursive: true, force: true }))
+  await writeFile(join(root, '终稿.md'), '灯灭了。')
+  const repeated = { ...deliveryRecord, evidence: [ownerEvidence(deliveryQuote),
+    { ...ownerEvidence(deliveryQuote), messageId: 'author:2' }] }
+  const reaffirmed = defineDeliveryCheckTool({ contextFor: () => ({}), resolve: () => ({ root, record: repeated }) })
+  assert.equal((await reaffirmed.execute({ recordId }, {})).status, 'matched')
+  let resolves = 0
+  const withdrawn = defineDeliveryCheckTool({
+    contextFor: () => ({}), resolve: () => ++resolves === 1 ? { root, record: deliveryRecord } : undefined,
+  })
+  assert.deepEqual(await withdrawn.execute({ recordId }, {}), { status: 'record-unavailable' })
+  for (const [changes, status] of [
+    [{ status: 'superseded' }, 'record-unavailable'], [{ scope: 'global' }, 'record-unavailable'],
+    [{ meaning: normalizeMeaning({ kind: 'reference' }) }, 'record-unavailable'],
+    [{ evidence: [ownerEvidence('例子：' + deliveryQuote)] }, 'rule-unavailable'],
+    [{ evidence: [{ ...ownerEvidence(deliveryQuote), hash: hash(deliveryQuote + ' 仅举例') }] }, 'rule-unavailable'],
+    [{ evidence: [ownerEvidence(deliveryQuote), ownerEvidence(deliveryQuote.replace('灯灭了。', '灯亮了。'))] }, 'rule-unavailable'],
+    [{ evidence: [ownerEvidence(deliveryQuote.replace('终稿.md', '../旧稿.md'))] }, 'unsafe-path'],
+  ]) {
+    const record = { ...deliveryRecord, ...changes }
+    const tool = defineDeliveryCheckTool({ resolve: () => ({ root, record }), contextFor: () => ({}) })
+    assert.deepEqual(await tool.execute({ recordId }, {}), { status })
+  }
+})
 
 async function fixture(t) {
   const root = await mkdtemp(join(tmpdir(), 'solopup-markdown-ref-'))
@@ -199,4 +280,28 @@ test('registered tool reads a reviewed current record only in the current projec
   const plan = withdrawManagedSource(dir, record.sessionId, record.evidence[0].messageId)
   withdrawManagedSource(dir, record.sessionId, record.evidence[0].messageId, { apply: true, controlReview: plan.controlReview })
   assert.deepEqual(await document.execute({ recordId: record.id }, { agent }), { status: 'record-unavailable' })
+
+  const instruction = { ...owner, id: 'delivery-rule', content: [{ type: 'text', text: deliveryQuote }] }
+  const writeCall = 'delivery-rule-call'
+  await emit('agent/pre-step', { agent, turn: 2, step: 1, messages: [instruction] }, () => {})
+  await emit('session/event', session, { type: 'user/message', seq: 3, data: instruction })
+  await emit('session/event', session, { type: 'tool/call', seq: 4, data: { callId: writeCall, name: 'memory_write', turn: 2, step: 1 } })
+  const saved = await registered.get('memory_write').execute({
+    type: 'project', scope: 'project', summary: deliveryQuote, meaning: { kind: 'decision' },
+  }, { agent, callId: writeCall })
+  assert.equal(saved.status, 'recorded')
+  const delivery = candidateSnapshot(dir, 'project').records.find(item => item.summary === deliveryQuote)
+  await writeFile(join(root, '终稿.md'), '灯灭了。\n')
+  await writeFile(join(other, '终稿.md'), '灯灭了。\n')
+  const check = () => registered.get('memory_check_delivery').execute({ recordId: delivery.id }, { agent })
+  assert.equal((await check()).status, 'matched')
+  workspaces.set(session.id, other)
+  assert.deepEqual(await check(), { status: 'record-unavailable' })
+  workspaces.set(session.id, root)
+  session.header = { origin: 'subagent' }
+  assert.deepEqual(await check(), { status: 'record-unavailable' })
+  delete session.header
+  const withdrawal = withdrawManagedSource(dir, delivery.sessionId, delivery.evidence[0].messageId)
+  withdrawManagedSource(dir, delivery.sessionId, delivery.evidence[0].messageId, { apply: true, controlReview: withdrawal.controlReview })
+  assert.deepEqual(await check(), { status: 'record-unavailable' })
 })

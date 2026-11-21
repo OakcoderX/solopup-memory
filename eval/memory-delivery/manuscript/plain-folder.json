@@ -1,0 +1,110 @@
+{
+  "inputSha": "8583470725ef4250fb3dc867fb7f66e0b47b652d2f45f4769470e053a7b9055d",
+  "version": "0.26.0-beta.3",
+  "archiveSha": "138cf332a20eb5beac62aaa370bd9f5e049963bf101bcd81b5b18cbf1861f923",
+  "dsh": "0.2.2-rc.3",
+  "model": "local deterministic provider",
+  "billing": false,
+  "scope": "Native CLI sends ordinary user turns; project decisions preloaded equally. State inspection and file reads only.",
+  "cases": [
+    {
+      "id": "edition-selected",
+      "outcome": "correct",
+      "requests": 1,
+      "toolOffered": true,
+      "observedEdition": "applicable"
+    },
+    {
+      "id": "edition-discussed",
+      "outcome": "correct",
+      "requests": 1,
+      "toolOffered": true,
+      "observedEdition": "pending"
+    },
+    {
+      "id": "edition-other",
+      "outcome": "correct",
+      "requests": 1,
+      "toolOffered": true,
+      "observedEdition": "omitted"
+    },
+    {
+      "id": "file-extra-line",
+      "outcome": "correct",
+      "requests": 3,
+      "toolOffered": true,
+      "observedEdition": "omitted",
+      "searchReturnedId": true,
+      "toolResult": {
+        "status": "mismatch",
+        "recordId": "02145ef9fb746f3544d7a5bbddbf94c86d7269694eba6acacf1b57e95a849d63",
+        "path": "终稿.md",
+        "sha256": "89a2b04795b6eb650db2f23ce41ed45a337db1cb558ff62e973e81b3cae28424"
+      },
+      "expectedFileSha": "89a2b04795b6eb650db2f23ce41ed45a337db1cb558ff62e973e81b3cae28424"
+    },
+    {
+      "id": "file-rechecked",
+      "outcome": "correct",
+      "requests": 3,
+      "toolOffered": true,
+      "observedEdition": "omitted",
+      "searchReturnedId": true,
+      "toolResult": {
+        "status": "matched",
+        "recordId": "02145ef9fb746f3544d7a5bbddbf94c86d7269694eba6acacf1b57e95a849d63",
+        "path": "终稿.md",
+        "sha256": "d4f179926175746ff507595a5ae50e53211ffaa41d7cc52326165200a2291413"
+      },
+      "expectedFileSha": "d4f179926175746ff507595a5ae50e53211ffaa41d7cc52326165200a2291413",
+      "prior": {
+        "requests": 3,
+        "toolOffered": true,
+        "observedEdition": "omitted",
+        "searchReturnedId": true,
+        "toolResult": {
+          "status": "mismatch",
+          "recordId": "02145ef9fb746f3544d7a5bbddbf94c86d7269694eba6acacf1b57e95a849d63",
+          "path": "终稿.md",
+          "sha256": "89a2b04795b6eb650db2f23ce41ed45a337db1cb558ff62e973e81b3cae28424"
+        },
+        "expectedFileSha": "89a2b04795b6eb650db2f23ce41ed45a337db1cb558ff62e973e81b3cae28424"
+      }
+    },
+    {
+      "id": "file-wrong-target",
+      "outcome": "correct",
+      "requests": 3,
+      "toolOffered": true,
+      "observedEdition": "omitted",
+      "searchReturnedId": true,
+      "toolResult": {
+        "status": "mismatch",
+        "recordId": "02145ef9fb746f3544d7a5bbddbf94c86d7269694eba6acacf1b57e95a849d63",
+        "path": "终稿.md",
+        "sha256": "89a2b04795b6eb650db2f23ce41ed45a337db1cb558ff62e973e81b3cae28424"
+      },
+      "expectedFileSha": "89a2b04795b6eb650db2f23ce41ed45a337db1cb558ff62e973e81b3cae28424"
+    }
+  ],
+  "gitDirectory": false,
+  "noGitObserved": [
+    "before-install",
+    "after-install",
+    "edition-selected:before",
+    "edition-selected:after",
+    "edition-discussed:before",
+    "edition-discussed:after",
+    "edition-other:before",
+    "edition-other:after",
+    "file-extra-line:before",
+    "file-extra-line:after",
+    "file-rechecked:before",
+    "file-rechecked:after",
+    "file-rechecked:before",
+    "file-rechecked:after",
+    "file-wrong-target:before",
+    "file-wrong-target:after"
+  ],
+  "variant": "No Git directory in workspace or any ancestor; exclusive scope check outside frozen paired experiment."
+}

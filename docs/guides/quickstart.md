@@ -3,10 +3,10 @@
 先确认正在使用 DeepSeek Harness（DSH），Node >=24.9，DSH >=0.2.1-rc.0 且 <0.3.0。当前本地验证环境为 macOS。
 
 ```sh
-dsh plugin --profile desktop add solopup-memory@0.26.0-beta.2 --ignore-scripts
+dsh plugin --profile desktop add solopup-memory@0.26.0-beta.3 --ignore-scripts
 ```
 
-[0.26.0-beta.2 发布包及源码 / Release package and source](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.2)
+[0.26.0-beta.3 发布包及源码 / Release package and source](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.3)
 
 重启对应 profile，运行 `memory_status`，核对版本。新会话说「记住：本项目使用两空格缩进」，等记忆写入后，再开新会话询问此约定。
 

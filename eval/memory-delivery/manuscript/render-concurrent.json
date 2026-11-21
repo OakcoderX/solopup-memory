@@ -1,0 +1,206 @@
+{
+  "date": "2026-11-22T01:00:13.846198+08:00",
+  "scope": "Local synthetic index rendering with eval/run-eval.mjs --check on one Mac; the final source suite was running concurrently in another process. All six samples retained. This set is not the exclusive performance gate.",
+  "platform": "arm64",
+  "node": "v25.8.1",
+  "beta2ArchiveSha256": "bc37f01da42ebae0e16df32a3ddf4520ed167a85ec06e98578b41cd22d8a9e72",
+  "runnerSha256": "ac00417ab6feae3756d67d6d612117a7030e44e2132fa4afcc62f5a2b6813de5",
+  "candidateRuntimeSha256": {
+    "index.mjs": "858e9531c7181b453887b4bc7eb42cd2c8f85d1411475dc9b1104947ff121103",
+    "security.mjs": "75de16506672651bd4235ae709af5a108600b5c250bcaeebfc8005d3c1128107",
+    "withdrawal.mjs": "b1c806abdf820889f9f1f631e9f84b9b4d9613cf0c3071ba8c10a2096f93c655"
+  },
+  "samplesPerSizePerRun": 50,
+  "rows": [
+    {
+      "run": 1,
+      "arm": "beta2",
+      "exitCode": 1,
+      "checksFailed": [
+        "[FAIL] C 渲染中位数 < 5 ms"
+      ],
+      "sizes": {
+        "10": {
+          "visible": true,
+          "bytes": 1500,
+          "medianMs": 5.512
+        },
+        "50": {
+          "visible": true,
+          "bytes": 2979,
+          "medianMs": 6.556
+        },
+        "150": {
+          "visible": true,
+          "bytes": 6728,
+          "medianMs": 6.637
+        },
+        "300": {
+          "visible": true,
+          "bytes": 12408,
+          "medianMs": 6.944
+        }
+      }
+    },
+    {
+      "run": 2,
+      "arm": "candidate",
+      "exitCode": 0,
+      "checksFailed": [],
+      "sizes": {
+        "10": {
+          "visible": true,
+          "bytes": 1500,
+          "medianMs": 4.962
+        },
+        "50": {
+          "visible": true,
+          "bytes": 2979,
+          "medianMs": 4.914
+        },
+        "150": {
+          "visible": true,
+          "bytes": 6728,
+          "medianMs": 4.937
+        },
+        "300": {
+          "visible": true,
+          "bytes": 12408,
+          "medianMs": 4.999
+        }
+      }
+    },
+    {
+      "run": 3,
+      "arm": "candidate",
+      "exitCode": 1,
+      "checksFailed": [
+        "[FAIL] C 渲染中位数 < 5 ms"
+      ],
+      "sizes": {
+        "10": {
+          "visible": true,
+          "bytes": 1500,
+          "medianMs": 2.77
+        },
+        "50": {
+          "visible": true,
+          "bytes": 2979,
+          "medianMs": 2.904
+        },
+        "150": {
+          "visible": true,
+          "bytes": 6728,
+          "medianMs": 3.225
+        },
+        "300": {
+          "visible": true,
+          "bytes": 12408,
+          "medianMs": 6.536
+        }
+      }
+    },
+    {
+      "run": 4,
+      "arm": "beta2",
+      "exitCode": 1,
+      "checksFailed": [
+        "[FAIL] C 渲染中位数 < 5 ms"
+      ],
+      "sizes": {
+        "10": {
+          "visible": true,
+          "bytes": 1500,
+          "medianMs": 4.624
+        },
+        "50": {
+          "visible": true,
+          "bytes": 2979,
+          "medianMs": 4.383
+        },
+        "150": {
+          "visible": true,
+          "bytes": 6728,
+          "medianMs": 4.949
+        },
+        "300": {
+          "visible": true,
+          "bytes": 12408,
+          "medianMs": 5.659
+        }
+      }
+    },
+    {
+      "run": 5,
+      "arm": "beta2",
+      "exitCode": 1,
+      "checksFailed": [
+        "[FAIL] C 渲染中位数 < 5 ms"
+      ],
+      "sizes": {
+        "10": {
+          "visible": true,
+          "bytes": 1500,
+          "medianMs": 5.095
+        },
+        "50": {
+          "visible": true,
+          "bytes": 2979,
+          "medianMs": 4.981
+        },
+        "150": {
+          "visible": true,
+          "bytes": 6728,
+          "medianMs": 5.843
+        },
+        "300": {
+          "visible": true,
+          "bytes": 12408,
+          "medianMs": 7.051
+        }
+      }
+    },
+    {
+      "run": 6,
+      "arm": "candidate",
+      "exitCode": 0,
+      "checksFailed": [],
+      "sizes": {
+        "10": {
+          "visible": true,
+          "bytes": 1500,
+          "medianMs": 2.416
+        },
+        "50": {
+          "visible": true,
+          "bytes": 2979,
+          "medianMs": 2.505
+        },
+        "150": {
+          "visible": true,
+          "bytes": 6728,
+          "medianMs": 2.816
+        },
+        "300": {
+          "visible": true,
+          "bytes": 12408,
+          "medianMs": 3.162
+        }
+      }
+    }
+  ],
+  "medianOfThree": {
+    "beta2": {
+      "10": 5.095,
+      "50": 4.981,
+      "150": 5.843,
+      "300": 6.944
+    },
+    "candidate": {
+      "10": 2.77,
+      "50": 2.904,
+      "150": 3.225,
+      "300": 4.999
+    }
+  }
+}

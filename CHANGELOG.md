@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.26.0-beta.3 — manuscript selection and delivery receipts
+
+- Authors can select the manuscript edition for a normal DSH turn. Current project rules can use that selection to resolve an edition condition or exception.
+- A read-only tool checks an author's saved exact-last-line agreement against the named project Markdown file. Each check reads the file and identifies the checked revision by its SHA-256 digest.
+- The optional macOS dream Worker can also run on DSH 0.2.2-rc.3 with the pinned Super Agent prototype. It checks the host and its isolation boundary before dispatch.
+- A single rendering operation shares its managed read transaction and source snapshot. Each subsequent render checks the current project and withdrawal state again.
+- In six predeclared native DSH checks with a local scripted provider, the previous beta returned two expected results, one incorrect result and three unavailable results. The new tools returned all six expected results. These checks cover rule selection and one file property. [Protocol and scope](https://github.com/OakcoderX/solopup-memory/blob/main/docs/runs/2026-11-22-manuscript-delivery.md).
+
 ## 0.26.0-beta.2 — text memory and delivery checks
 
 - Preserve saved conditions and exceptions when similar decisions are selected for the current task. Recover exact delivery details and source references from relevant project history.

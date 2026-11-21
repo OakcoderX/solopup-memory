@@ -1,0 +1,64 @@
+{
+  "archiveSha": "138cf332a20eb5beac62aaa370bd9f5e049963bf101bcd81b5b18cbf1861f923",
+  "version": "0.26.0-beta.3",
+  "dsh": "0.2.2-rc.3",
+  "model": "localhost scripted ordinary and native validation responses",
+  "preloadedRecords": 0,
+  "requests": [
+    {
+      "stage": "write",
+      "purpose": "memory_write"
+    },
+    {
+      "stage": "write",
+      "purpose": "native-source-validation",
+      "ownerFullTextMatched": true
+    },
+    {
+      "stage": "write",
+      "purpose": "final"
+    },
+    {
+      "stage": "wrong",
+      "purpose": "memory_search"
+    },
+    {
+      "stage": "wrong",
+      "purpose": "memory_check_delivery"
+    },
+    {
+      "stage": "wrong",
+      "purpose": "final"
+    },
+    {
+      "stage": "right",
+      "purpose": "memory_search"
+    },
+    {
+      "stage": "right",
+      "purpose": "memory_check_delivery"
+    },
+    {
+      "stage": "right",
+      "purpose": "final"
+    }
+  ],
+  "observations": [
+    {
+      "stage": "wrong",
+      "status": "mismatch",
+      "path": "终稿.md",
+      "fileSha": "89a2b04795b6eb650db2f23ce41ed45a337db1cb558ff62e973e81b3cae28424",
+      "searchReturnedSavedId": true
+    },
+    {
+      "stage": "right",
+      "status": "matched",
+      "path": "终稿.md",
+      "fileSha": "d4f179926175746ff507595a5ae50e53211ffaa41d7cc52326165200a2291413",
+      "searchReturnedSavedId": true
+    }
+  ],
+  "passed": true,
+  "writeOutcome": "recorded"
+}

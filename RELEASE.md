@@ -1,8 +1,12 @@
+# 0.26.0-beta.3 — manuscript selection and exact ending checks
+
+Select a manuscript edition in a normal DSH turn. For an active project agreement specifying an exact final line, ask DSH to read the author's chosen output file and return a revision-specific result. [中文与英文操作示例](docs/guides/manuscript-delivery.md) · [Package and checksums](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.3)
+
 # 0.26.0-beta.1 — apply current project conventions
 
 Public beta. The active task gets a short view of applicable, source-linked project conventions. A supported DSH host can ask for one review after a successful edit and before normal turn closure. Same-workspace conversation recall keeps historical excerpts available for explicit continuation requests.
 
-Published on November 18, 2026. The npm `beta` tag resolves to this version. The public npm and GitHub archives match with SHA-256 `294455c5139171ead6e8bcaf2daa80a8c02aaad2747e77f4643c79ea72a8fc36`. [npm](https://www.npmjs.com/package/solopup-memory/v/0.26.0-beta.1) · [Verified release workflow](https://github.com/OakcoderX/solopup-memory/actions/runs/44258472652). [Evaluation and limitations](docs/runs/2026-11-18-memory-delivery.md) · [Release and checksums](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.1) · [Fork](https://github.com/OakcoderX/solopup-memory/fork)
+Published on November 18, 2026. The public npm and GitHub archives match with SHA-256 `294455c5139171ead6e8bcaf2daa80a8c02aaad2747e77f4643c79ea72a8fc36`. [npm](https://www.npmjs.com/package/solopup-memory/v/0.26.0-beta.1) · [Verified release workflow](https://github.com/OakcoderX/solopup-memory/actions/runs/44258472652). [Evaluation and limitations](docs/runs/2026-11-18-memory-delivery.md) · [Release and checksums](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.1) · [Fork](https://github.com/OakcoderX/solopup-memory/fork)
 
 # 0.25.0-beta.2 — conversation recovery on DSH 0.2.2-rc.3
 

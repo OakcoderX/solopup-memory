@@ -282,10 +282,10 @@ export function assertRegularFile(file, maxBytes = MAX_SOURCE_BYTES) {
     throw error
   }
   if (stat.isSymbolicLink()) {
-    throw new Error(`拒绝符号链接：${file}（可能指向记忆库之外）`)
+    throw Object.assign(new Error(`拒绝符号链接：${file}（可能指向记忆库之外）`), { code: 'MEMORY_UNSAFE_FILE' })
   }
   if (!stat.isFile()) {
-    throw new Error(`拒绝非普通文件：${file}`)
+    throw Object.assign(new Error(`拒绝非普通文件：${file}`), { code: 'MEMORY_UNSAFE_FILE' })
   }
   if (stat.size > maxBytes) {
     throw new Error(`文件过大：${file}（${stat.size} 字节，上限 ${maxBytes}）`)

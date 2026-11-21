@@ -127,6 +127,7 @@ export function filterWithdrawn(text, policy, isIndex = false) {
       start = filtered.indexOf(marker)
     }
   }
+  if (policy.lineHashes.length === 0) return filtered
   return filtered.split('\n').filter((line) => !policy.lineHashes.includes(normalizedLineHash(line))).join('\n')
 }
 

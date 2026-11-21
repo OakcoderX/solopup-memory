@@ -15,7 +15,7 @@ function reviewMessage() {
   // owned by the live memory projection rather than being copied here.
   const text = [
     'SoloPup 交付复核。一次性插件提示。',
-    '按原任务和现行用户约定核对最终产物。精确的内容、位置和测试结果用实际检查验证后再报告。',
+    '按现行用户约定核对最终产物。有已保存的精确末行交付约定时用 memory_check_delivery 核验，其余要求按实际文件和测试核对。',
     '已确认约定无需重述。可在已授权范围内补齐普通项目文件，包括新建必要文件。',
     '用户当前的明确要求优先。超出权限或尚未验证的部分如实说明。',
   ].join('\n')

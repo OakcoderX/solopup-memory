@@ -58,6 +58,9 @@ function renderRule(rule) {
   const qualifiers = [required && `条件 ${required}`, excluded && `例外 ${excluded}`].filter(Boolean)
   const label = rule.applicability === 'applicable' ? '适用' : '条件待核对'
   const scope = rule.scope === 'project' ? '本项目' : '全局'
+  if (rule.applicability === 'unknown' && [...rule.conditions, ...rule.except].some(term => term.dimension === 'edition')) {
+    return `- [${label}，${scope}，${rule.id.slice(0, 12)}] ${qualifiers.join('，')}。可用 memory_search 查询适用条件和来源。`
+  }
   const detail = rule.detail ? `（来源摘录：${rule.detail}）` : ''
   return `- [${label}，${scope}，${rule.id.slice(0, 12)}] ${rule.summary}${qualifiers.length ? `（${qualifiers.join('，')}）` : ''}${detail}`
 }

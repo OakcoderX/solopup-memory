@@ -1,0 +1,209 @@
+{
+  "date": "2026-11-22T01:17:57.908907+08:00",
+  "scope": "Local synthetic index rendering, eval/run-eval.mjs --check from unpacked archives on one Mac. No full suite or package probe scheduled concurrently. Includes every run. Not model latency or task success.",
+  "platform": "arm64",
+  "node": "v24.21.0",
+  "archives": {
+    "published": {
+      "version": "0.26.0-beta.2",
+      "archiveSha256": "bc37f01da42ebae0e16df32a3ddf4520ed167a85ec06e98578b41cd22d8a9e72",
+      "runnerSha256": "ac00417ab6feae3756d67d6d612117a7030e44e2132fa4afcc62f5a2b6813de5"
+    },
+    "candidate": {
+      "version": "0.26.0-beta.3",
+      "archiveSha256": "138cf332a20eb5beac62aaa370bd9f5e049963bf101bcd81b5b18cbf1861f923",
+      "runnerSha256": "ac00417ab6feae3756d67d6d612117a7030e44e2132fa4afcc62f5a2b6813de5"
+    }
+  },
+  "samplesPerSizePerRun": 50,
+  "rows": [
+    {
+      "run": 1,
+      "arm": "published",
+      "exitCode": 1,
+      "checksFailed": [
+        "[FAIL] C 渲染中位数 < 5 ms"
+      ],
+      "sizes": {
+        "10": {
+          "visible": true,
+          "bytes": 1500,
+          "medianMs": 4.66
+        },
+        "50": {
+          "visible": true,
+          "bytes": 2979,
+          "medianMs": 4.458
+        },
+        "150": {
+          "visible": true,
+          "bytes": 6728,
+          "medianMs": 5.365
+        },
+        "300": {
+          "visible": true,
+          "bytes": 12408,
+          "medianMs": 6.1
+        }
+      }
+    },
+    {
+      "run": 2,
+      "arm": "candidate",
+      "exitCode": 0,
+      "checksFailed": [],
+      "sizes": {
+        "10": {
+          "visible": true,
+          "bytes": 1500,
+          "medianMs": 2.264
+        },
+        "50": {
+          "visible": true,
+          "bytes": 2979,
+          "medianMs": 2.314
+        },
+        "150": {
+          "visible": true,
+          "bytes": 6728,
+          "medianMs": 2.659
+        },
+        "300": {
+          "visible": true,
+          "bytes": 12408,
+          "medianMs": 3.223
+        }
+      }
+    },
+    {
+      "run": 3,
+      "arm": "candidate",
+      "exitCode": 0,
+      "checksFailed": [],
+      "sizes": {
+        "10": {
+          "visible": true,
+          "bytes": 1500,
+          "medianMs": 2.287
+        },
+        "50": {
+          "visible": true,
+          "bytes": 2979,
+          "medianMs": 2.351
+        },
+        "150": {
+          "visible": true,
+          "bytes": 6728,
+          "medianMs": 2.695
+        },
+        "300": {
+          "visible": true,
+          "bytes": 12408,
+          "medianMs": 3.055
+        }
+      }
+    },
+    {
+      "run": 4,
+      "arm": "published",
+      "exitCode": 1,
+      "checksFailed": [
+        "[FAIL] C 渲染中位数 < 5 ms"
+      ],
+      "sizes": {
+        "10": {
+          "visible": true,
+          "bytes": 1500,
+          "medianMs": 4.438
+        },
+        "50": {
+          "visible": true,
+          "bytes": 2979,
+          "medianMs": 4.617
+        },
+        "150": {
+          "visible": true,
+          "bytes": 6728,
+          "medianMs": 4.998
+        },
+        "300": {
+          "visible": true,
+          "bytes": 12408,
+          "medianMs": 5.664
+        }
+      }
+    },
+    {
+      "run": 5,
+      "arm": "published",
+      "exitCode": 1,
+      "checksFailed": [
+        "[FAIL] C 渲染中位数 < 5 ms"
+      ],
+      "sizes": {
+        "10": {
+          "visible": true,
+          "bytes": 1500,
+          "medianMs": 4.441
+        },
+        "50": {
+          "visible": true,
+          "bytes": 2979,
+          "medianMs": 4.215
+        },
+        "150": {
+          "visible": true,
+          "bytes": 6728,
+          "medianMs": 4.698
+        },
+        "300": {
+          "visible": true,
+          "bytes": 12408,
+          "medianMs": 5.732
+        }
+      }
+    },
+    {
+      "run": 6,
+      "arm": "candidate",
+      "exitCode": 0,
+      "checksFailed": [],
+      "sizes": {
+        "10": {
+          "visible": true,
+          "bytes": 1500,
+          "medianMs": 2.401
+        },
+        "50": {
+          "visible": true,
+          "bytes": 2979,
+          "medianMs": 2.448
+        },
+        "150": {
+          "visible": true,
+          "bytes": 6728,
+          "medianMs": 2.632
+        },
+        "300": {
+          "visible": true,
+          "bytes": 12408,
+          "medianMs": 3.088
+        }
+      }
+    }
+  ],
+  "medianOfThree": {
+    "published": {
+      "10": 4.441,
+      "50": 4.458,
+      "150": 4.998,
+      "300": 5.732
+    },
+    "candidate": {
+      "10": 2.287,
+      "50": 2.351,
+      "150": 2.659,
+      "300": 3.088
+    }
+  }
+}

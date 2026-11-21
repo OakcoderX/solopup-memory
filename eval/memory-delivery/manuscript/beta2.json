@@ -1,0 +1,62 @@
+{
+  "inputSha": "8583470725ef4250fb3dc867fb7f66e0b47b652d2f45f4769470e053a7b9055d",
+  "version": "0.26.0-beta.2",
+  "archiveSha": "bc37f01da42ebae0e16df32a3ddf4520ed167a85ec06e98578b41cd22d8a9e72",
+  "dsh": "0.2.2-rc.3",
+  "model": "local deterministic provider",
+  "billing": false,
+  "scope": "Native CLI sends ordinary user turns; project decisions preloaded equally. State inspection and file reads only.",
+  "cases": [
+    {
+      "id": "edition-selected",
+      "outcome": "wrong",
+      "requests": 1,
+      "toolOffered": false,
+      "observedEdition": "pending"
+    },
+    {
+      "id": "edition-discussed",
+      "outcome": "correct",
+      "requests": 1,
+      "toolOffered": false,
+      "observedEdition": "pending"
+    },
+    {
+      "id": "edition-other",
+      "outcome": "correct",
+      "requests": 1,
+      "toolOffered": false,
+      "observedEdition": "omitted"
+    },
+    {
+      "id": "file-extra-line",
+      "outcome": "unavailable",
+      "requests": 2,
+      "toolOffered": false,
+      "observedEdition": "omitted",
+      "searchReturnedId": true
+    },
+    {
+      "id": "file-rechecked",
+      "outcome": "unavailable",
+      "requests": 2,
+      "toolOffered": false,
+      "observedEdition": "omitted",
+      "searchReturnedId": true,
+      "prior": {
+        "requests": 2,
+        "toolOffered": false,
+        "observedEdition": "omitted",
+        "searchReturnedId": true
+      }
+    },
+    {
+      "id": "file-wrong-target",
+      "outcome": "unavailable",
+      "requests": 2,
+      "toolOffered": false,
+      "observedEdition": "omitted",
+      "searchReturnedId": true
+    }
+  ]
+}

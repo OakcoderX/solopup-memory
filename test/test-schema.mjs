@@ -78,7 +78,7 @@ function walk(node, path, problems) {
 test('所有工具的 parameters 与 output.schema 都过宿主的 schema 规则', () => {
   const { list, cleanup } = tools()
   try {
-    assert.equal(list.length, 7)
+    assert.equal(list.length, 8)
     for (const tool of list) {
       const problems = []
       walk(tool.parameters, `${tool.name}.parameters`, problems)

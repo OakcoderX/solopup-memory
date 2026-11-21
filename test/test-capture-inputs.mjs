@@ -46,6 +46,7 @@ test('重建保持原始角色与稳定证据ID；重新创建的同名会话不
 for(const [label,mutate,reason] of [
  ['正文变化',(s,e)=>{e[0].data.content[0].text='替换后的来源正文并未通过原来的哈希核对'},'source-changed'],
  ['来源变成外部',(s,e)=>{e[0].data.source.kind='runtime-context'},'source-changed'],
+ ['来源变为带身份的远程调用',(s,e)=>{e[0].data.source.principal={id:'remote-user'}},'source-changed'],
  ['活动历史撤回',s=>{s.surface.nodes=[]},'source-changed'],
  ['来自继承历史',s=>{s.isOwnSeq=()=>false},'source-changed'],
  ['子代理',s=>{s.header.parentSession='parent'},'session-ineligible'],

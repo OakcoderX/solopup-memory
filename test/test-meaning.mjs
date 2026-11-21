@@ -57,6 +57,7 @@ async function box(run,options={}){
  mkdirSync(home);mkdirSync(cwd);process.env.DSH_HOME=home
  const captured={tools:[],handlers:[]},ctx={systemPrompt:{context(entry){captured.context=entry}},workingDirectory:{get(){return cwd}},tools:{register(tool){captured.tools.push(tool)}},on(name,handler){captured.handlers.push([name,handler])}}
  if(options.llm)ctx.llm=options.llm
+ if(options.sessionProjections)ctx.sessionProjections=options.sessionProjections
  try{apply(ctx,{autoCapture:options.autoCapture??{enabled:false}});await run({root:join(home,'memory'),home,cwd,ctx,captured})}
  finally{if(previous===undefined)delete process.env.DSH_HOME;else process.env.DSH_HOME=previous;rmSync(base,{recursive:true,force:true})}
 }
@@ -121,6 +122,33 @@ test('dynamic index frames type and conditions as data rather than naked general
  const text=captured.context.text({agent:{session:{id:'framing'}}})
  assert.match(text,/audience=children/);assert.match(text,/信念（暂定，不等于事实）/);assert.match(text,/不构成操作授权/)
 }))
+test('registered runtime consistently filters the effective rules and full index against the current edition', () =>
+ box(async ({ root, captured }) => {
+   const edition = value => ({ dimension: 'edition', value })
+   seed(root, '第七章读者回执采用 lagoondraft', { kind: 'preference', conditions: [edition('审读版')] })
+   seed(root, '第七章试写附注采用 ambertrial', { kind: 'preference', conditions: [edition('试写版')] })
+   seed(root, '第七章默认附音轨 chimeaudio', { kind: 'preference', except: [edition('审读版')] })
+   const agent = { session: { id: 'author' } }
+   const emit = async (event, ...args) => {
+     for (const [name, fn] of captured.handlers) if (name === event) await fn(...args)
+   }
+   async function render(turn, text) {
+     await emit('session/event', agent.session, { type: 'turn/start', data: { turn } })
+     const owner = { id: 'owner-' + turn, role: 'user', source: { kind: 'user' }, content: [{ type: 'text', text }] }
+     await emit('agent/pre-step', { agent, turn, step: 1, messages: [owner] }, () => {})
+     return captured.context.text({ agent })
+   }
+   const selected = await render(1, '本轮稿本：审读版\n继续第七章。')
+   assert.match(selected, /\[适用，[^\n]+lagoondraft/u)
+   assert.doesNotMatch(selected, /ambertrial|chimeaudio/u)
+   const tentative = await render(2, '请比较第七章的审读版和试写版。')
+   assert.match(tentative, /条件待核对/u)
+   assert.doesNotMatch(tentative, /lagoondraft|ambertrial|chimeaudio/u)
+   const switched = await render(3, 'Current edition: 试写版\n重读第七章。')
+   assert.match(switched, /ambertrial/u)
+   assert.match(switched, /chimeaudio/u)
+   assert.doesNotMatch(switched, /lagoondraft/u)
+ }, { sessionProjections: { register: () => ({ stateOf: () => ({ nodes: [], overflow: false }) }) } }))
 test('SDK write and search tools carry structured meaning through validation, canonical output and renderer',async()=>{
  const base=realpathSync(mkdtempSync(join(tmpdir(),'dsh-meaning-tool-'))),home=join(base,'home'),cwd=join(base,'project'),prev=process.env.DSH_HOME;mkdirSync(home);mkdirSync(cwd);process.env.DSH_HOME=home
  try{

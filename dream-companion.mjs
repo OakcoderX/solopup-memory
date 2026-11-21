@@ -15,7 +15,7 @@ import { encodeFrame, readFrames } from './scripts/dream-companion-wire.mjs'
 const SANDBOX = '/usr/bin/sandbox-exec'
 const PROFILE = 'dream-companion'
 const ISOLATION_ID = 'macos-seatbelt-deny-default-v1'
-const DSH_VERSION = '0.2.2-rc.1'
+const SUPPORTED_DSH = new Set(['0.2.2-rc.1', '0.2.2-rc.3'])
 const PROOF_LIFETIME_MS = 15_000
 const HASH = /^[a-f0-9]{64}$/
 const TICKET = /^[a-f0-9]{32}$/
@@ -31,6 +31,51 @@ const unsent = code => Object.assign(Error(code), { notDispatched: true })
 function absoluteFile(path) {
   if (typeof path !== 'string' || !isAbsolute(path) || /[\x00-\x1f]/.test(path)) throw Error('dream-companion-invalid-path')
   return realpathSync(path)
+}
+
+// Input to durable worker identity. CLI path alone survives an in-place host upgrade.
+export function inspectCompanionHost(cli) {
+  // Electron normally presents app.asar as a virtual directory. Hash the archive
+  // bytes with its built-in disk API, without changing global ASAR behavior.
+  const disk = process.getBuiltinModule(process.versions.electron ? 'original-fs' : 'fs')
+  const suffix = '/Contents/Resources/runtime/cli/bin/dsh'
+  if (!cli.endsWith('.app' + suffix)) throw Error('dream-companion-unsupported-cli')
+  const app = cli.slice(0, -suffix.length)
+  const info = join(app, 'Contents/Info.plist')
+  const paths = [info, cli, join(app, 'Contents/MacOS/DeepSeek Harness'), join(app, 'Contents/Resources/app.asar')]
+  const stamp = stat => [stat.dev, stat.ino, stat.size, stat.mtimeNs, stat.ctimeNs].join(',')
+  const stamps = [], digests = []
+  const buffer = Buffer.allocUnsafe(256 * 1024)
+  let version
+  for (const path of paths) {
+    if (disk.realpathSync(path) !== path) throw Error('dream-companion-ambiguous-host')
+    const fd = disk.openSync(path, disk.constants.O_RDONLY | disk.constants.O_NOFOLLOW | disk.constants.O_NONBLOCK)
+    try {
+      const stat = disk.fstatSync(fd, { bigint: true })
+      if (!stat.isFile() || stat.size === 0n) throw Error('dream-companion-invalid-host')
+      const hash = createHash('sha256')
+      if (path === info) {
+        if (stat.size > 1024n * 1024n) throw Error('dream-companion-invalid-host')
+        const bytes = disk.readFileSync(fd)
+        const versions = [...bytes.toString('utf8').matchAll(/<key>CFBundleShortVersionString<\/key>\s*<string>([^<]*)<\/string>/gu)]
+        version = versions.length === 1 ? versions[0][1] : undefined
+        if (!SUPPORTED_DSH.has(version)) throw Error('dream-companion-unsupported-host-version')
+        hash.update(bytes)
+      } else {
+        let count
+        while ((count = disk.readSync(fd, buffer, 0, buffer.length, null)) > 0) hash.update(buffer.subarray(0, count))
+      }
+      stamps.push(stamp(stat))
+      digests.push(hash.digest('hex'))
+    } finally { disk.closeSync(fd) }
+  }
+  const unchanged = () => {
+    try {
+      return paths.every((path, index) => disk.realpathSync(path) === path && stamp(disk.lstatSync(path, { bigint: true })) === stamps[index])
+    } catch { return false }
+  }
+  if (!unchanged()) throw Error('dream-companion-host-changed')
+  return { app, version, fingerprint: sha(JSON.stringify(digests)), unchanged }
 }
 
 function privateStateDir(path) {
@@ -61,8 +106,7 @@ function openState(path) {
 function configured(config) {
   if (process.platform !== 'darwin' || !existsSync(SANDBOX)) throw Error('dream-companion-platform-unavailable')
   const cli = absoluteFile(config.dshCli)
-  const index = cli.indexOf('.app/Contents/')
-  if (index < 0 || !cli.endsWith('/Contents/Resources/runtime/cli/bin/dsh')) throw Error('dream-companion-unsupported-cli')
+  const host = inspectCompanionHost(cli)
   const bundle = absoluteFile(config.prototypeBundle)
   const expected = config.prototypeBundleSha256
   if (!HASH.test(expected ?? '') || sha(readFileSync(bundle)) !== expected) throw Error('dream-companion-prototype-digest-mismatch')
@@ -74,8 +118,8 @@ function configured(config) {
     if (lstatSync(config.stateDir).isSymbolicLink()) throw Error('dream-companion-insecure-state-dir')
     state = absoluteFile(config.stateDir)
   } else state = privateStateDir(config.stateDir)
-  return { cli, app: cli.slice(0, index + 4), bundle, expected, prototypeRoot, dependencies, state,
-    runtimeId: sha(JSON.stringify([cli, bundle, expected, state, DSH_VERSION, ISOLATION_ID])).slice(0, 40) }
+  return { cli, app: host.app, host, bundle, expected, prototypeRoot, dependencies, state,
+    runtimeId: sha(JSON.stringify([cli, bundle, expected, state, host.version, host.fingerprint, ISOLATION_ID])).slice(0, 40) }
 }
 
 function makeBoundary(base) {
@@ -141,7 +185,7 @@ async function probeSeatbelt(environment, signal) {
       catch (error) { if (error.code !== 1 || !/Operation not permitted|Permission denied/.test(error.stderr ?? '')) return false }
     }
     const version = await executeFile(SANDBOX, ['-p', profile, environment.cli, '--version'], opts)
-    return version.stdout.trim() === DSH_VERSION
+    return version.stdout.trim() === environment.host.version && environment.host.unchanged()
   } catch {
     return false
   } finally { rmSync(base, { recursive: true, force: true }) }
@@ -308,6 +352,7 @@ export function createDreamCompanion({ getLlm, ...config }) {
           proof.binding.route.provider !== envelope.route.provider || proof.binding.route.model !== envelope.route.model ||
           proof.binding.maxTokens !== envelope.maxTokens || proof.binding.maxTotalTokens !== envelope.maxTotalTokens ||
           proof.binding.modelInputDigest !== sha(JSON.stringify(envelope.messages))) throw Error('dream-companion-no-dispatch-proof')
+      if (!environment.host.unchanged()) throw unsent('dream-companion-host-changed')
       const id = runId(envelope.binding)
       const insert = db.prepare("INSERT OR IGNORE INTO runs(id,binding,status) VALUES (?,?,'running')")
         .run(id, JSON.stringify(pickBinding(envelope.binding)))
@@ -317,7 +362,10 @@ export function createDreamCompanion({ getLlm, ...config }) {
         async (linked, receipt) => {
           progress(id, 'running', receipt)
           onReceipt(receipt)
-          return brokerModel(getLlm, envelope, linked, beforeModel, () => db.prepare('UPDATE runs SET model_started=1 WHERE id=?').run(id))
+          return brokerModel(getLlm, envelope, linked, beforeModel, () => {
+            if (!environment.host.unchanged()) throw unsent('dream-companion-host-changed')
+            db.prepare('UPDATE runs SET model_started=1 WHERE id=?').run(id)
+          })
         })
       live.set(id, instance)
       try {

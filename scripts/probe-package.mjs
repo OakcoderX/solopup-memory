@@ -79,7 +79,7 @@ try {
     await sleep(100)
   }
   if (!stamp) throw new Error(`package-probe-host-load-failed:${hostError ?? host.exitCode ?? 'timeout'}`)
-  const expected = ['memory_write', 'memory_forget', 'memory_links', 'memory_search', 'memory_prune', 'memory_status', 'memory_document']
+  const expected = ['memory_write', 'memory_forget', 'memory_links', 'memory_search', 'memory_prune', 'memory_status', 'memory_document', 'memory_check_delivery']
   if (stamp.version !== pkg.version || expected.some((tool) => !stamp.tools.includes(tool)) || stamp.degraded.length || stamp.sourceControl?.state !== 'managed' || stamp.memoryHistory?.available !== true) throw new Error('package-probe-host-registration-failed')
   report.hostLoad = { version: stamp.version, node: stamp.node, tools: stamp.tools, cleanHome: true, profileCopied: false, sourceControl: stamp.sourceControl, memoryHistory: stamp.memoryHistory,
     environmentAllowlist: Object.keys(cleanEnv).sort(), parentEnvironmentInherited: false }

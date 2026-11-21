@@ -223,6 +223,93 @@ function applicableReference(value, recordId, context) {
   return { root: value.root, ...bound }
 }
 
+// The path and literal come from one complete owner message. A model-supplied
+// summary, tool argument, or excerpt of a discussion cannot select a file.
+function deliveryRule(value, recordId, context) {
+  const record = value?.record
+  if (!record || record.id !== recordId || record.scope !== 'project' || typeof record.sessionId !== 'string' || !record.sessionId ||
+      !['recorded', 'adopted'].includes(record.status) || !['decision', 'preference'].includes(record.meaning?.kind)) {
+    throw new MarkdownReferenceError('record-unavailable')
+  }
+  const state = applicability(record.meaning, context).state
+  if (state === 'unknown') throw new MarkdownReferenceError('context-needed')
+  if (state !== 'applicable') throw new MarkdownReferenceError('not-applicable')
+  let rule
+  for (const evidence of record.evidence ?? []) {
+    const quote = evidence?.quote
+    if (typeof quote !== 'string' || quote.length > 500 || !NO_CONTROL.test(quote) ||
+        typeof evidence.messageId !== 'string' || !evidence.messageId ||
+        createHash('sha256').update(quote).digest('hex') !== evidence.hash) continue
+    const match = /^交付约定：(.+?) 的最后一行必须是「([^「」]+)」$/u.exec(quote) ??
+      /^Delivery rule: the last line of (.+?) must be "([^"]+)"$/u.exec(quote)
+    if (!match) continue
+    const path = relativeMarkdownPath(match[1])
+    const expected = requireSafeText(match[2], 240)
+    if (rule && (rule.path !== path || rule.expected !== expected)) throw new MarkdownReferenceError('rule-unavailable')
+    rule ??= { root: value.root, path, expected, sessionId: record.sessionId, sources: [] }
+    rule.sources.push([evidence.messageId, evidence.hash])
+  }
+  if (!rule) throw new MarkdownReferenceError('rule-unavailable')
+  return rule
+}
+
+function fileReadStatus(error) {
+  if (error instanceof MarkdownReferenceError) return error.status
+  if (error?.code === 'ENOENT') return 'missing'
+  if (error?.code === 'ELOOP' || error?.code === 'ENOTDIR') return 'unsafe-path'
+  return 'unavailable'
+}
+
+export function defineDeliveryCheckTool({ resolve, contextFor }) {
+  return {
+    name: 'memory_check_delivery',
+    description: '按当前项目已生效的作者交付约定，独立核对指定 Markdown 文件的真正末行。只传记忆记录 ID，返回检查时的指纹和结果。',
+    parameters: {
+      type: 'object', additionalProperties: false, required: ['recordId'],
+      properties: { recordId: { type: 'string', description: '当前交付约定的 64 位记忆记录 ID' } },
+    },
+    output: {
+      schema: {
+        type: 'object', additionalProperties: false, required: ['status'],
+        properties: {
+          status: { type: 'string', enum: ['matched', 'mismatch', 'record-unavailable', 'rule-unavailable',
+            'context-needed', 'not-applicable', 'reference-unavailable', 'unsafe-path', 'too-large',
+            'changed', 'invalid-text', 'missing', 'unavailable'] },
+          recordId: { type: 'string' }, path: { type: 'string' }, sha256: { type: 'string' },
+        },
+      },
+      render: (_args, result) => [{ type: 'text', text: JSON.stringify(result) }],
+    },
+    async execute(args, exec) {
+      if (!args || Object.keys(args).length !== 1 || typeof args.recordId !== 'string' || !HASH.test(args.recordId)) {
+        return { status: 'record-unavailable' }
+      }
+      const { recordId } = args
+      const signal = exec?.signal
+      const currentRule = async () => deliveryRule(await resolve(recordId, exec), recordId, normalizeContext(await contextFor(exec)))
+      try {
+        signal?.throwIfAborted()
+        const rule = await currentRule()
+        let file
+        try {
+          file = await readProjectFile(rule.root, rule.path, signal)
+        } finally {
+          // Even a missing-file result belongs to the current, still-authorized project.
+          if (JSON.stringify(await currentRule()) !== JSON.stringify(rule)) throw new MarkdownReferenceError('record-unavailable')
+        }
+        signal?.throwIfAborted()
+        // One terminal line break closes a line; a second one starts an empty last line.
+        const content = file.content.replace(/(?:\r\n|[\r\n])$/u, '')
+        const lastLine = content.slice(1 + Math.max(content.lastIndexOf('\n'), content.lastIndexOf('\r')))
+        return { status: lastLine === rule.expected ? 'matched' : 'mismatch', recordId, path: rule.path, sha256: file.sha256 }
+      } catch (error) {
+        signal?.throwIfAborted()
+        return { status: fileReadStatus(error) }
+      }
+    },
+  }
+}
+
 const statuses = ['verified', 'record-unavailable', 'reference-unavailable', 'context-needed', 'not-applicable',
   'unsafe-path', 'too-large', 'changed', 'invalid-text', 'section-unavailable', 'missing', 'unavailable', 'cursor-invalid']
 
@@ -272,10 +359,7 @@ export function defineMarkdownReferenceTool({ resolve }) {
         return { status: 'verified', ...reference, line: section.line, ...excerpt(section.content, original, args.cursor), sourceSessionId, sourceMessageId }
       } catch (error) {
         signal?.throwIfAborted()
-        if (error instanceof MarkdownReferenceError) return { status: error.status }
-        if (error?.code === 'ENOENT') return { status: 'missing' }
-        if (error?.code === 'ELOOP' || error?.code === 'ENOTDIR') return { status: 'unsafe-path' }
-        return { status: 'unavailable' }
+        return { status: fileReadStatus(error) }
       }
     },
   }

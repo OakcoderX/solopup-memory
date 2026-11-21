@@ -45,6 +45,7 @@ test('steers one plugin notice per turn without creating direct-user evidence', 
     kind: 'solopup-delivery-review', form: 'notice', summary: 'SoloPup 交付复核',
   })
   assert.match(message.content[0].text, /现行用户约定/)
+  assert.match(message.content[0].text, /memory_check_delivery/)
   assert.match(message.content[0].text, /当前的明确要求优先/)
   assert.equal(captureMessage({ type: 'user/message', data: message }, 'not-owner-evidence'), undefined)
 })

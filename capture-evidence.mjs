@@ -9,7 +9,7 @@ export function captureMessage(event, id) {
   const message = event?.data?.message ?? event?.data
   const source = message?.source?.kind
   // Unknown provenance is not owner testimony. Real v4 events carry data.source.
-  if (event?.type === 'user/message' && source !== 'user') return undefined
+  if (event?.type === 'user/message' && (source !== 'user' || message.source.principal !== undefined)) return undefined
   const role = event?.type === 'user/message' ? 'user' : event?.type === 'assistant/message' ? 'assistant' : undefined
   if (role === undefined || !Array.isArray(message?.content)) return undefined
   const normalized = redactSecrets(normalizeText(message.content

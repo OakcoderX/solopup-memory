@@ -1,0 +1,66 @@
+{
+  "archiveSha256": "138cf332a20eb5beac62aaa370bd9f5e049963bf101bcd81b5b18cbf1861f923",
+  "dsh": "0.2.2-rc.3",
+  "driverNode": "v25.8.1",
+  "prototypeCommit": "8c32a9dc5d72c033816c6a8110b37f40cf94fba4",
+  "historicBundleSha256": "4c10fd1771b3e810de4318133ab60a918c0314308e5672af7500e003addc94b1",
+  "bundleSha256": "4c10fd1771b3e810de4318133ab60a918c0314308e5672af7500e003addc94b1",
+  "models": "scripted",
+  "rows": [
+    {
+      "case": "engine",
+      "test": "optional upstream Engine intake smoke",
+      "status": "passed",
+      "exit": 0,
+      "seconds": 0.29
+    },
+    {
+      "case": "seatbelt",
+      "test": "optional macOS isolation smoke",
+      "status": "passed",
+      "exit": 0,
+      "seconds": 0.24
+    },
+    {
+      "case": "transcript",
+      "test": "installed DSH reads live",
+      "status": "passed",
+      "exit": 0,
+      "seconds": 1.12
+    },
+    {
+      "case": "ordinary",
+      "test": "both frozen ordinary batches",
+      "status": "passed",
+      "exit": 0,
+      "seconds": 2.74
+    },
+    {
+      "case": "dual",
+      "test": "both frozen batches reach the installed",
+      "status": "passed",
+      "exit": 0,
+      "seconds": 10.47
+    },
+    {
+      "case": "companion",
+      "test": "optional actual companion",
+      "status": "passed",
+      "exit": 0,
+      "seconds": 7.17
+    }
+  ],
+  "previousWorkerChecks": {
+    "previousArchiveSha256": "bc37f01da42ebae0e16df32a3ddf4520ed167a85ec06e98578b41cd22d8a9e72",
+    "previousCompanionModuleSha256": "af44479081abdc2aa45a1fba9ed87678540a22b578a18d060fffa237c44c7980",
+    "candidateCompanionModuleSha256": "af44479081abdc2aa45a1fba9ed87678540a22b578a18d060fffa237c44c7980",
+    "dsh": "0.2.2-rc.3",
+    "exit": 1,
+    "failedNames": [
+      "not ok 1 - optional actual companion: one Seatbelt DSH Worker, one parent model call, durable local status",
+      "not ok 2 - both frozen batches reach the installed independent worker and match the ordinary DSH requests"
+    ],
+    "failure": "dream-superagent-isolation-unverified",
+    "versionAdmission": "0.2.2-rc.1 only"
+  }
+}

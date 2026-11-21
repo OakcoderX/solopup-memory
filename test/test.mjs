@@ -108,7 +108,7 @@ const tool = (captured, toolName) => captured.tools.find((item) => item.name ===
 
 // ── 注册形态 ────────────────────────────────────────────────────────────────
 
-test('注册形态：名字、依赖、上下文条目、七个工具', () => {
+test('注册形态：名字、依赖、上下文条目及工具', () => {
   const box = sandbox()
   try {
     const captured = mount()
@@ -122,6 +122,7 @@ test('注册形态：名字、依赖、上下文条目、七个工具', () => {
     // 关键回归：宿主的 refreshContext 是同步取值，不能给异步函数
     assert.equal(captured.context.text.constructor.name, 'Function')
     assert.deepEqual(captured.tools.map((item) => item.name).sort(), [
+      'memory_check_delivery',
       'memory_document',
       'memory_forget',
       'memory_links',
@@ -147,6 +148,29 @@ test('两个库都空时不注入（零成本）', () => {
   const box = sandbox()
   try {
     assert.equal(render(mount(),box.cwd),'')
+  } finally {
+    box.cleanup()
+  }
+})
+
+test('one mounted provider registers fresh projects, re-reads their contents and withholds an unreviewed nonempty project', () => {
+  const box = sandbox()
+  try {
+    const host = mount()
+    assert.equal(render(host, box.cwd), '')
+    const firstStore = join(box.store, 'projects', projectKeyOf(box.cwd))
+    writeIndex(firstStore, '- [project] 第一份稿件 — project.md\n')
+    assert.match(render(host, box.cwd), /第一份稿件/u)
+    const second = join(box.root, 'other')
+    mkdirSync(second)
+    assert.equal(render(host, second), '')
+    writeIndex(firstStore, '- [project] 修改过的稿件内容 — project.md\n')
+    assert.match(render(host, box.cwd), /修改过的稿件内容/u)
+    const unreviewed = join(box.root, 'unreviewed')
+    mkdirSync(unreviewed)
+    writeIndex(join(box.store, 'projects', projectKeyOf(unreviewed)), '- [project] 未经审核的内容 — project.md\n')
+    assert.doesNotMatch(render(host, unreviewed), /未经审核的内容/u)
+    assert.match(render(host, box.cwd), /修改过的稿件内容/u)
   } finally {
     box.cleanup()
   }

@@ -33,7 +33,7 @@ DSH 对话压缩后，SoloPup 可以沿宿主的检查点回查原话。摘要�
 
 ## 使用实验性的 Super Agent 模式
 
-已验证的环境是 macOS、DSH 0.2.2-rc.1 和 Super Agent 原型提交 `8c32a9dc5d72c033816c6a8110b37f40cf94fba4`。Super Agent Worker 负责执行同一种复核，SoloPup 保存队列、证据规则和报告。主进程持有模型连接，Worker 的运行环境仅获得本次任务的输入和必要的运行文件。
+macOS 的独立 Worker 限定为 DSH 0.2.2-rc.1 或 0.2.2-rc.3，并使用固定的 Super Agent 原型提交 `8c32a9dc5d72c033816c6a8110b37f40cf94fba4`。Super Agent Worker 负责执行同一种复核，SoloPup 保存队列、证据规则和报告。主进程持有模型连接，Worker 的运行环境仅获得本次任务的输入和必要的运行文件。
 
 将 [Super Agent 原型](https://github.com/deepseek-ai/dsh-superagent-prototype) 签出到上述提交，在该目录运行 `pnpm install --frozen-lockfile --ignore-scripts`。回到 SoloPup 安装目录，运行 `node scripts/dream-companion-build.mjs /absolute/path/to/dsh-superagent-prototype`。记录命令返回的 bundle 路径和 SHA-256。把下列配置追加到同一个 DSH profile，替换其中的绝对路径和 SHA-256。
 

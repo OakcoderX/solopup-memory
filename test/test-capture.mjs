@@ -404,6 +404,7 @@ test('证据：保留角色、来源定位及内容哈希，合成用户消息�
 test('来源分级：真实 v4 data.source 保留，未知来源与运行时召回不准入', () => {
   const content = [{ type: 'text', text: '以后始终按已确认的项目决定执行' }]
   assert.equal(captureMessage({ type: 'user/message', data: { source: { kind: 'user' }, content } }, 'real').role, 'user')
+  assert.equal(captureMessage({ type: 'user/message', data: { source: { kind: 'user', rpcId: 'rpc', principal: { id: 'remote-user' } }, content } }, 'remote'), undefined)
   for (const kind of [undefined, 'runtime-context', 'tool', 'system']) {
     assert.equal(captureMessage({ type: 'user/message', data: { source: kind ? { kind } : undefined, content } }, 'no'), undefined)
   }
@@ -756,7 +757,7 @@ test('作业接线：损坏账本暂停自动捕获，前台工具与主注入�
     const { ctx, handlers, captured } = mount(box, { llm })
     const { applyWithValidationFixture: apply } = await import('../fixture-host.mjs'); prepareMountedFixture(); apply(ctx)
     assert.equal(handlers.filter(([name]) => name === 'session/event').length, 1); assert.equal(llm.calls, 0)
-    assert.equal(captured.tools.length, 7); assert.equal(typeof captured.context.text, 'function')
+    assert.equal(captured.tools.length, 8); assert.equal(typeof captured.context.text, 'function')
     assert.ok(captured.tools.some(tool => tool.name === 'memory_document'))
     const marker = JSON.parse(readFileSync(join(box.store, '.loaded.json')))
     assert.equal(marker.autoCapture.enabled, false)

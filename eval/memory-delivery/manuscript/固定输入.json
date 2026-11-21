@@ -1,0 +1,33 @@
+{
+  "protocol": 1,
+  "baseline": {
+    "name": "solopup-memory",
+    "version": "0.26.0-beta.2",
+    "sha256": "bc37f01da42ebae0e16df32a3ddf4520ed167a85ec06e98578b41cd22d8a9e72"
+  },
+  "scope": "Observe conditional rule projection and read-only artifact verification after equal project records are present. No inference about writing or novel quality.",
+  "editionRule": {
+    "summary": "审读版保留篷布拍窗声。",
+    "condition": { "dimension": "edition", "value": "审读版" }
+  },
+  "deliveryRule": "交付约定：终稿.md 的最后一行必须是「灯灭了。」",
+  "target": "终稿.md",
+  "distractor": "备稿/终稿.md",
+  "correct": "走廊传来几步脚音。\n灯灭了。\n",
+  "incorrect": "走廊传来几步脚音。\n灯灭了。\n审读备注待补。\n",
+  "cases": [
+    { "id": "edition-selected", "query": "本轮稿本：审读版", "expect": "applicable" },
+    { "id": "edition-discussed", "query": "我在比较审读版和主稿的篷布拍窗声，还没有决定这轮改哪一版。", "expect": "pending" },
+    { "id": "edition-other", "query": "本轮稿本：主稿", "expect": "inapplicable" },
+    { "id": "file-extra-line", "state": "incorrect", "expect": "mismatch" },
+    { "id": "file-rechecked", "state": "correct", "prior": "incorrect", "expect": "match" },
+    { "id": "file-wrong-target", "state": "incorrect", "distractorState": "correct", "expect": "mismatch" }
+  ],
+  "scoring": {
+    "unit": "one plugin-observable result per case",
+    "states": ["correct", "wrong", "unavailable", "not-run"],
+    "success": "Correct result with observable rule ID/status or a fresh read of the bound file. An absent or pending rule never proves the positive case.",
+    "comparison": "Use exactly the same code for both unpacked published artifacts, the same DSH host, identical fixture bytes and independently isolated project and host directories. Report correct, wrong, unavailable, not-run separately.",
+    "releaseEvidence": "Require candidate strictly more correct than baseline, no loss of an already passing case, and full repository regression plus installed-artifact host tests. Programmatic outcomes measure the stated feature only."
+  }
+}

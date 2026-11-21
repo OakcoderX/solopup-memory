@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
 import { PassThrough } from 'node:stream'
 import { test } from 'node:test'
-import { createDreamCompanion } from '../dream-companion.mjs'
+import { createDreamCompanion, inspectCompanionHost } from '../dream-companion.mjs'
 import { createSuperAgentDreamExecutor } from '../dream-superagent.mjs'
 import { encodeFrame, readFrames } from '../scripts/dream-companion-wire.mjs'
 
@@ -23,6 +24,35 @@ test('companion pipe rejects oversized and truncated frames', async () => {
 })
 
 const bundle = process.env.SOLOPUP_DREAM_BUNDLE
+
+test('companion distinguishes verified host releases and notices a replaced installation before use', t => {
+  const temp = realpathSync(mkdtempSync(join(tmpdir(), 'solopup-companion-identity-')))
+  t.after(() => rmSync(temp, { recursive: true, force: true }))
+  const app = join(temp, 'DeepSeek Harness.app')
+  const cli = join(app, 'Contents/Resources/runtime/cli/bin/dsh')
+  const binary = join(app, 'Contents/MacOS/DeepSeek Harness')
+  const archive = join(app, 'Contents/Resources/app.asar')
+  for (const path of [cli, binary, archive]) {
+    mkdirSync(dirname(path), { recursive: true })
+    writeFileSync(path, 'fixture bytes')
+  }
+  const setVersion = value => writeFileSync(join(app, 'Contents/Info.plist'),
+    `<plist><dict><key>CFBundleShortVersionString</key><string>${value}</string></dict></plist>`)
+  setVersion('0.2.2-rc.1')
+  const rc1 = inspectCompanionHost(cli)
+  assert.equal(rc1.version, '0.2.2-rc.1')
+  assert.equal(rc1.unchanged(), true)
+  setVersion('0.2.2-rc.3')
+  const rc3 = inspectCompanionHost(cli)
+  assert.equal(rc1.unchanged(), false)
+  assert.notEqual(rc3.fingerprint, rc1.fingerprint)
+  writeFileSync(archive, 'changed CLI payload')
+  assert.equal(rc3.unchanged(), false)
+  assert.notEqual(inspectCompanionHost(cli).fingerprint, rc3.fingerprint)
+  setVersion('0.2.2-rc.30')
+  assert.throws(() => inspectCompanionHost(cli), /unsupported-host-version/)
+})
+
 test('optional actual companion: one Seatbelt DSH Worker, one parent model call, durable local status',
   { skip: process.platform !== 'darwin' || !bundle }, async () => {
     const root = mkdtempSync(join(tmpdir(), 'solopup-dream-companion-test-'))
@@ -73,6 +103,23 @@ test('optional actual companion: one Seatbelt DSH Worker, one parent model call,
       executor = createSuperAgentDreamExecutor({ getBridge: () => companion.bridge, getIsolation: () => companion.isolation })
       assert.deepEqual(await executor.status(result.receipt), { state: 'completed', receipt: result.receipt })
       await assert.rejects(executor.execute(input, options), /dispatch-uncertain/)
+      assert.equal(calls.length, 1)
+
+      // Pre-upgrade rows lack a host byte fingerprint. Keep their original
+      // receipts for inspection and their attempt identity for deduplication.
+      const oldRuntime = createHash('sha256').update(JSON.stringify([realpathSync(config.dshCli),
+        realpathSync(bundle), config.prototypeBundleSha256, realpathSync(config.stateDir), '0.2.2-rc.1',
+        result.receipt.isolationId])).digest('hex').slice(0, 40)
+      const old = { ...result.receipt, runId: 'companion-before-upgrade', runtimeId: oldRuntime }
+      const oldId = createHash('sha256').update(JSON.stringify([old.runId, old.attempt])).digest('hex')
+      const archive = new DatabaseSync(join(config.stateDir, 'runs.sqlite'))
+      try {
+        archive.prepare("INSERT INTO runs(id,binding,status,receipt,model_started) VALUES(?,?,'completed',?,1)")
+          .run(oldId, JSON.stringify(old), JSON.stringify(old))
+      } finally { archive.close() }
+      assert.deepEqual(await executor.status(old), { state: 'uncertain' })
+      assert.equal(companion.bridge.status(old).state, 'completed')
+      await assert.rejects(executor.execute(input, { ...options, runId: old.runId }), /dispatch-uncertain/)
       assert.equal(calls.length, 1)
 
       const alteredBridge = { ...companion.bridge, dispatch(envelope, options) {

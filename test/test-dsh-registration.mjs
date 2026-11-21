@@ -76,8 +76,9 @@ for (const success of [true, false]) test(`apply awaits registration before tool
       assert.equal(prompts.length, 2)
       const status = JSON.parse(readFileSync(marker))
       assert.equal(status.memoryHistory.available, true)
-      assert.equal(tools.length, status.sourceControl?.state === 'managed' ? 7 : 6)
+      assert.equal(tools.length, status.sourceControl?.state === 'managed' ? 8 : 6)
       assert.equal(tools.some(tool => tool.name === 'memory_document'), status.sourceControl?.state === 'managed')
+      assert.equal(tools.some(tool => tool.name === 'memory_check_delivery'), status.sourceControl?.state === 'managed')
     } else {
       deferred.reject(Error('synthetic-owner-disposed'))
       await assert.rejects(pending, /synthetic-owner-disposed/)
