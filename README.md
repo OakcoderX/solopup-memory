@@ -6,6 +6,17 @@ SoloPup 是 DeepSeek Harness（DSH） 的文字记忆插件。它尝试保存值
 
 [快速上手](docs/guides/quickstart.md) · [安装](#先试起来) · [0.26 评测](docs/runs/2026-11-18-memory-delivery.md) · [12 题逐题成绩](docs/runs/2026-11-20-frontiermemory-text.md) · [做梦交互演示](https://oakcoderx.github.io/solopup-memory/dreaming/) · [做梦实测报告](docs/research/dreaming-in-dsh/README.md) · [更多示意案例](docs/README.md) · [常见问题](docs/faq.md) · [English](README.en.md)
 
+
+## DSH 养鱼：换个会话，大肥鱼还记得你刚改的称呼吗？
+
+如果你在 **DeepSeek Harness（DSH）的原生文字会话**里养大肥鱼、聊看片单或一起写点东西，可以用 SoloPup Memory 试着保存几条长期偏好。它不是桌宠，也不接管 QQ、B 站机器人或其他插件的记忆库。如果你用的桌宠已经有独立记忆，先用同一方法测试现有方案，不必叠装。
+
+**三步自测：** 在不含私人资料的试用工作区，先说「记住：只在这个养鱼测试工作区叫我小柚」，看到正式写入成功后，再说「把这个工作区的称呼改成小栗，替换旧称呼，不是再加一个」。确认替换成功，然后在**同一工作区开不继承历史的新会话**，只问「这个工作区你该怎么称呼我？可以给我看你依据的原话吗？」不要在新会话里透露答案。
+
+答「小栗」且能指出更正的来源，是这次召回的预期结果。再换到一个没有这条约定的工作区问一次，那里不应沿用这个项目称呼。如果仍答旧称呼，或工具显示待审、拒绝、未应用，就不要记作成功。这是可复跑的虚构案例，不是已公布的养鱼实测；公开 beta 仍可能漏记或漏召回。
+
+[开始安装和核对版本](docs/guides/quickstart.md) · [如何验证跨会话记忆](docs/guides/fresh-chat.md)
+
 ## 用起来是什么感觉？
 
 **改哪一稿，交回的文件末行对不对？** 在普通会话首行写 `本轮稿本：审读版`。已保存且带稿本条件的项目约定就能按本轮选择判断适用性。对已按约定格式保存的精确末句，DSH 可以重新读取作者指定的 Markdown 文件并返回核验结果。[选稿与核验示例](docs/guides/manuscript-delivery.md)
