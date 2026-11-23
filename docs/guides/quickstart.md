@@ -10,6 +10,8 @@ dsh plugin --profile desktop add solopup-memory@0.26.0-beta.3 --ignore-scripts
 
 重启对应 profile，运行 `memory_status`，核对版本。新会话说「记住：本项目使用两空格缩进」，等记忆写入后，再开新会话询问此约定。
 
+在 DSH 里养大肥鱼？用[换会话与改口自测](dsh-fish-memory.md)检查新称呼、原话来源和项目边界。
+
 从旧版本升级时，先退出正在使用的 DSH profile，运行 `dsh plugin --profile desktop remove solopup-memory`，再运行上面的安装命令。此前的 0.25 → 0.26 → 0.25 隔离回退测试验证了同一份已有记忆在该过程中保留，并在每次启动时重新读到。Web 用户把 `desktop` 换成实际 profile。
 
 Restart the same profile, check the loaded version with `memory_status`, then test an explicit remember request and recall it in a fresh conversation.
