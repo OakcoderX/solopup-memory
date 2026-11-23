@@ -46,8 +46,22 @@ test('steers one plugin notice per turn without creating direct-user evidence', 
   })
   assert.match(message.content[0].text, /现行用户约定/)
   assert.match(message.content[0].text, /memory_check_delivery/)
+  assert.match(message.content[0].text, /临时或调试文件/)
+  assert.match(message.content[0].text, /边界用例/)
   assert.match(message.content[0].text, /当前的明确要求优先/)
   assert.equal(captureMessage({ type: 'user/message', data: message }, 'not-owner-evidence'), undefined)
+})
+
+test('steers once when project reference context exists even without structured rules', () => {
+  const f = fixture({
+    rulesFor: () => [],
+    hasReferenceContext: () => true,
+    hasAppliedWork: () => true,
+  })
+  f.stop()
+  f.stop()
+  assert.equal(f.steered.length, 1)
+  assert.match(f.steered[0].content[0].text, /临时或调试文件/)
 })
 
 test('omits review without applied work, with no rules, on cancel, or after disposal', () => {

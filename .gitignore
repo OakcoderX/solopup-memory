@@ -9,3 +9,4 @@ source-gates/
 .env*
 !.env.example
 eval/last-run.json
+.auth_cache

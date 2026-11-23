@@ -5,11 +5,11 @@ export {initializeManagedMemory,managedMemoryStatus} from './managed-access.mjs'
 import {createObservationTracker,observationRoots,OBSERVATION_REFERENCE_SCHEMA,OBSERVATION_LIST_SCHEMA} from './tool-observations.mjs'
 import {createToolInputTracker} from './tool-inputs.mjs'
 import {memoryProtocol} from './memory-protocol.mjs'
-import { defineContinuityTool, installContinuity } from './continuity.mjs'
+import { archivedSearchEvidence, defineContinuityTool, installContinuity } from './continuity.mjs'
 import { effectiveRuleText, renderEffectiveMemory, selectEffectiveMemory } from './effective-memory.mjs'
 import { installDeliveryReview } from './delivery-review.mjs'
 import { trackTaskMemory } from './task-memory-runtime.mjs'
-import { searchWorkspaceHistory, workspaceHistoryAvailable } from './workspace-history.mjs'
+import { readWorkspaceHistorySources, searchWorkspaceHistory, workspaceHistoryAvailable } from './workspace-history.mjs'
 import {privateMemory,publicMemoryRecords,publicMemoryIndex,PRIVATE_MEMORY_NOTICE} from './privacy.mjs'
 import {nativeOwnerEvidence,validateNativeWrite} from './native-write-validation.mjs'
 import {toolProposal} from './source-record.mjs'
@@ -1423,8 +1423,10 @@ function searchScopedStoresLocal(stores, query, options = {}) {
       const interpretation=record?.meaning?meaningView(record,context,task,file.assessmentRecords):undefined
       if(interpretation?.applicability==='not-applicable')continue
       const annotation=interpretation===undefined?{}:{interpretation}
+      const evidence=file.name==='MEMORY.md'&&record?.evidence?.length&&!privateMemory(record)?record.evidence.slice(0,2).filter(item=>typeof item?.messageId==='string'&&typeof item?.quote==='string'&&item.quote.trim()&&!privateMemory(item.quote)).map(item=>({messageId:sanitizeForInjection(item.messageId),quote:sanitizeForInjection(clipUtf8(item.quote,360))})):undefined
+      const evidenceExtra=evidence?.length?{evidence}:{}
       if (mode === 'ranked') {
-        if (raw.trim().startsWith('- [') || file.name !== 'MEMORY.md') candidates.push({ file: file.key, line: lineNumber, text: raw.trim(),...annotation })
+        if (raw.trim().startsWith('- [') || file.name !== 'MEMORY.md') candidates.push({ file: file.key, line: lineNumber, text: raw.trim(),...annotation,...evidenceExtra })
         continue
       }
       if (!normalizeText(raw).includes(needle)&&record?.id!==needle) continue
@@ -1432,7 +1434,7 @@ function searchScopedStoresLocal(stores, query, options = {}) {
         clipped = true
         break
       }
-      hits.push({ file: file.key, line: lineNumber, text: sanitizeForInjection(raw.trim()),...annotation })
+      hits.push({ file: file.key, line: lineNumber, text: sanitizeForInjection(raw.trim()),...annotation,...evidenceExtra })
     }
     if (clipped) break
   }
@@ -1440,7 +1442,8 @@ function searchScopedStoresLocal(stores, query, options = {}) {
     const byIdentity=candidates.filter(row=>row.interpretation?.recordId===needle)
     const ranked = byIdentity.length?byIdentity:rankLines(needle, candidates)
     const annotations=new Map(candidates.filter(row=>row.interpretation).map(row=>[`${row.file}:${row.line}`,row.interpretation]))
-    hits.push(...ranked.slice(0, limit).map((hit) => ({ ...hit, text: sanitizeForInjection(hit.text),...(annotations.has(`${hit.file}:${hit.line}`)?{interpretation:annotations.get(`${hit.file}:${hit.line}`)}:{}) })))
+    const evidences=new Map(candidates.filter(row=>row.evidence).map(row=>[`${row.file}:${row.line}`,row.evidence]))
+    hits.push(...ranked.slice(0, limit).map((hit) => ({ ...hit, text: sanitizeForInjection(hit.text),...(annotations.has(`${hit.file}:${hit.line}`)?{interpretation:annotations.get(`${hit.file}:${hit.line}`)}:{}),...(evidences.has(`${hit.file}:${hit.line}`)?{evidence:evidences.get(`${hit.file}:${hit.line}`)}:{}) })))
     clipped = ranked.length > limit
   }
 
@@ -1448,13 +1451,17 @@ function searchScopedStoresLocal(stores, query, options = {}) {
   const bounded = []
   let bytes = 0
   for (const hit of hits) {
-    bytes += Buffer.byteLength(hit.text, 'utf8')+(hit.interpretation===undefined?0:Buffer.byteLength(JSON.stringify(hit.interpretation))+Buffer.byteLength(interpretationLabel(hit.interpretation)))
-    if (bytes > 4096) {
+    const baseSize = Buffer.byteLength(hit.text, 'utf8')+(hit.interpretation===undefined?0:Buffer.byteLength(JSON.stringify(hit.interpretation))+Buffer.byteLength(interpretationLabel(hit.interpretation)))
+    const evidenceSize = hit.evidence===undefined?0:Buffer.byteLength(JSON.stringify(hit.evidence))
+    if (bytes + baseSize > 4096) {
       clipped = true
       break
     }
+    const keepEvidence = hit.evidence !== undefined && bytes + baseSize + evidenceSize <= 4096
+    bytes += baseSize + (keepEvidence ? evidenceSize : 0)
     const origin = origins.get(hit.file)
-    bounded.push({ ...hit, file: origin.name, ...(origin.scope === undefined ? {} : { scope: origin.scope }) })
+    const { evidence: _dropped, ...withoutEvidence } = hit
+    bounded.push({ ...(keepEvidence ? hit : withoutEvidence), file: origin.name, ...(origin.scope === undefined ? {} : { scope: origin.scope }) })
   }
   return { query: needle, hits: bounded, truncated: clipped || bounded.length < hits.length }
 }
@@ -2038,12 +2045,12 @@ function resolveStoreDir(ctx, exec, who, scope) {
   return storeDirFor('project', sessionCwd(ctx, exec, who))
 }
 
-function defineSearchTool(ctx) {
+function defineSearchTool(ctx, continuityLookup) {
   const coverageNotice=value=>value.historyCoverage?`\n历史按本地记录时间/库内序号解释，不是外部世界生效时间；撤回来源已过滤。${value.historyCoverage.map(c=>`${c.scope}: ${c.exists?'起点 '+c.startedAt:'未建立历史'}，序号${c.latestSequence}，丢弃${c.droppedEntries}条，未跟踪现行${c.untrackedCurrentRows}条，${c.complete?'该保留范围覆盖完整':'覆盖不完整，不能把未命中当作从未发生'}`).join('；')}`:''
   return {
     name: 'memory_search',
     description:
-      '在记忆索引与主题文件里检索。默认 ranked 支持中英多词问题与有限英文词形归并；exact 用于精确子串定位；' +
+      '在记忆索引与主题文件里检索。普通查询未命中且有回查权限时，也可返回当前工作区旧聊天中的原文，单独标作历史引用。默认 ranked 支持中英多词问题与有限英文词形归并；exact 用于精确子串定位；' +
       '默认隐藏已识别的个人敏感内容。用户询问相关资料时才设includePrivate=true；返回内容会进入当前会话日志和模型请求，不能声称只在本地读取。' +
       '默认同时查当前项目和全局偏好，不查其他项目；可指定单库。view=history显式查询带来源的旧值、取代与移出记录，返回历史身份及覆盖范围，不能当当前指令。',
     parameters: {
@@ -2072,38 +2079,41 @@ function defineSearchTool(ctx) {
           query: { type: 'string' },
           truncated: { type: 'boolean' },
           historyCoverage:COVERAGE_SCHEMA,
+          archivedEvidence: { type: 'string' },
           hits: {
             type: 'array',
             items: {
               type: 'object',
               additionalProperties: false,
               required: ['file', 'line', 'text'],
-              properties: { file: { type: 'string' }, line: { type: 'integer' }, text: { type: 'string' }, scope: { type: 'string', enum: ['project', 'global'] }, interpretation:INTERPRETATION_SCHEMA,history:HISTORY_SCHEMA },
+              properties: { file: { type: 'string' }, line: { type: 'integer' }, text: { type: 'string' }, scope: { type: 'string', enum: ['project', 'global'] }, interpretation:INTERPRETATION_SCHEMA,history:HISTORY_SCHEMA,evidence:{type:'array',items:{type:'object',additionalProperties:false,required:['messageId','quote'],properties:{messageId:{type:'string'},quote:{type:'string'}}}} },
             },
           },
         },
       },
       render: (_args, value) =>
         value.hits.length === 0
-          ? [{ type: 'text', text: (value.truncated?'命中因输出预算省略，请缩小检索词；不能据此认定记忆为空。':`没有匹配「${value.query}」且适用于所给情境的条目；未指定的条件可能仍需确认。`)+coverageNotice(value) }]
+          ? [{ type: 'text', text: (value.truncated?'命中因输出预算省略，请缩小检索词；不能据此认定记忆为空。':`没有匹配「${value.query}」且适用于所给情境的条目；未指定的条件可能仍需确认。`)+coverageNotice(value)+(value.archivedEvidence?'\n'+value.archivedEvidence:'') }]
           : [
               {
                 type: 'text',
                 text:
-                  value.hits.map((hit) => `${hit.scope === undefined ? '' : `[${hit.scope}] `}${hit.file}:${hit.line}  ${hit.text}${hit.history?'\n  记录序号'+hit.history.sequence+'；记录时间'+hit.history.recordedAt+'；状态'+hit.history.state+'；来源'+hit.history.sourceSessionId+' '+hit.history.sourceMessageIds.join(','):''}${hit.interpretation?'\n  '+interpretationLabel(hit.interpretation):''}`).join('\n') +
+                  value.hits.map((hit) => `${hit.scope === undefined ? '' : `[${hit.scope}] `}${hit.file}:${hit.line}  ${hit.text}${hit.evidence?.length?hit.evidence.map(item=>`\n  原话（${item.messageId}）：${item.quote}`).join(''):''}${hit.history?'\n  记录序号'+hit.history.sequence+'；记录时间'+hit.history.recordedAt+'；状态'+hit.history.state+'；来源'+hit.history.sourceSessionId+' '+hit.history.sourceMessageIds.join(','):''}${hit.interpretation?'\n  '+interpretationLabel(hit.interpretation):''}`).join('\n') +
                   (value.truncated ? '\n（还有更多命中，缩小检索词）' : '')+coverageNotice(value),
               },
             ],
     },
     async execute(args, exec) {
-      if (args.scope === undefined || args.scope === 'both') {
-        return searchScopedStores([
+      const options = { includePrivate:args.includePrivate, limit:args.limit, mode:args.mode, context:args.context,
+        task:args.task, view:args.view, atSequence:args.atSequence, asOf:args.asOf }
+      const result = args.scope === undefined || args.scope === 'both'
+        ? searchScopedStores([
           { dir: resolveStoreDir(ctx, exec, 'memory_search', 'project'), scope: 'project' },
           { dir: resolveStoreDir(ctx, exec, 'memory_search', 'global'), scope: 'global' },
-        ], args.query, { includePrivate:args.includePrivate,limit: args.limit, mode: args.mode, context:args.context,task:args.task,view:args.view,atSequence:args.atSequence,asOf:args.asOf })
-      }
-      const dir = resolveStoreDir(ctx, exec, 'memory_search', args.scope)
-      return searchStore(dir, args.query, { includePrivate:args.includePrivate,limit: args.limit, mode: args.mode, context:args.context,task:args.task,view:args.view,atSequence:args.atSequence,asOf:args.asOf })
+        ], args.query, options)
+        : searchStore(resolveStoreDir(ctx, exec, 'memory_search', args.scope), args.query, options)
+      const archivedEvidence = await archivedSearchEvidence(ctx, continuityLookup, args, exec, result)
+      return archivedEvidence ? { ...result, archivedEvidence } : result
     },
   }
 }
@@ -2120,14 +2130,19 @@ async function lookupContinuity(ctx, startup, { session, signal, query, includeH
     if (typeof cwd !== 'string' || !cwd) throw Error('memory-continuation-workspace-unavailable')
     const dir = storeDirFor('project', cwd)
     project = managedRead(dir, () => {
-      const result = searchScopedStoresLocal([{ dir, scope: 'project' }], query, { mode: 'exact', limit: 6 })
+      const exactResult = searchScopedStoresLocal([{ dir, scope: 'project' }], query, { mode: 'exact', limit: 6 })
+      const result = exactResult.hits.length
+        ? exactResult
+        : searchScopedStoresLocal([{ dir, scope: 'project' }], query, { mode: 'ranked', limit: 6 })
       const records = publicMemoryRecords(effectiveSourceRecords(dir, 'project', undefined, true))
       const byId = new Map(records.map(record => [record.id, record]))
       const hits = result.hits.map(hit => {
         const record = byId.get(hit.interpretation?.recordId)
+        const quotes = record?.evidence?.map(item => sanitizeForInjection(clipUtf8(item.quote, 360))).filter(Boolean)
         return { file: hit.file, line: hit.line, text: hit.text, kind: hit.interpretation?.kind,
           applicability: hit.interpretation?.applicability, source: record && {
             sessionId: record.sessionId, messageIds: record.evidence.map(item => item.messageId),
+            ...(quotes?.length ? { quotes } : {}),
           } }
       })
       return { status: hits.length ? 'found' : 'no-match', hits, truncated: result.truncated }
@@ -2138,7 +2153,15 @@ async function lookupContinuity(ctx, startup, { session, signal, query, includeH
       const allowSource = ({ sessionId, messageId, seq }) => !rootsFor(sessionId, [
         { messageId }, { messageId: `${sessionId}:${seq}` },
       ]).some(root => revoked.has(root))
-      history = await searchWorkspaceHistory(ctx, { session, query, signal, allowSource })
+      const pointers = project.hits
+        .filter(hit => hit.source?.sessionId && hit.source.messageIds?.length)
+        .map(hit => hit.source)
+      const direct = pointers.length
+        ? await readWorkspaceHistorySources(ctx, { session, pointers, signal, allowSource })
+        : undefined
+      history = direct?.status === 'found'
+        ? direct
+        : await searchWorkspaceHistory(ctx, { session, query, signal, allowSource })
       // A withdrawal may have committed while the read was underway.
       const currentRevoked = new Set([...withdrawalPolicy(storeRoot()).revoked, ...withdrawalPolicy(dir).revoked])
       if (ctx.workingDirectory.get(session) !== cwd || [...currentRevoked].some(root => !revoked.has(root))) {
@@ -3042,6 +3065,15 @@ export function apply(ctx, config = {}) {
           return text ? [{ id: rule.id, text }] : []
         }))
       },
+      hasReferenceContext(session) {
+        const query = taskMemory.queryFor(session)
+        if (!query) return false
+        return readRuntimeMemory(resolveCwd?.(session), query, taskMemory.contextFor(session), (project, _, readScope) => {
+          if (!project.dir) return false
+          const indexText = filterWithdrawn(readTextSafe(join(project.dir, 'MEMORY.md')) ?? '', readScope(project.dir, 'project').policy, true)
+          return indexText.split(/\r?\n/).some(line => line.trim().startsWith('- '))
+        })
+      },
       hasAppliedWork: taskMemory.hasAppliedWork,
     })
   }
@@ -3110,7 +3142,7 @@ export function apply(ctx, config = {}) {
   const sourceInputs = { llmSnapshot:()=>nativeLlm.refresh(),forExecution(exec) { if (!inputsActive) throw new Error('memory-tool-inputs-disposed'); return inputTracker.forExecution(exec) },forValidation(exec){if(!inputsActive)throw Error('memory-tool-inputs-disposed');return inputTracker.forValidation(exec)},signalFor(exec){let controller=sessionLifetimes.get(exec.agent.session);if(!controller){controller=new AbortController();sessionLifetimes.set(exec.agent.session,controller)}return AbortSignal.any([inputLifetime.signal,controller.signal,...exec.signal?[exec.signal]:[]])},observationForExecution(exec,reference,owner){if(!inputsActive)throw Error('memory-tool-inputs-disposed');return observations.forExecution(exec,reference,owner)},availableForExecution(exec){if(!inputsActive)throw Error('memory-tool-inputs-disposed');inputTracker.forExecution(exec);return observations.availableForExecution(exec)} }
   let dream
   if (canRegisterTools) {
-    for(const tool of [defineWriteTool(ctx,sourceInputs,config),defineForgetTool(ctx),defineLinksTool(ctx),defineSearchTool(ctx),definePruneTool(ctx),defineStatusTool(ctx,sourceInputs, () => {
+    for(const tool of [defineWriteTool(ctx,sourceInputs,config),defineForgetTool(ctx),defineLinksTool(ctx),defineSearchTool(ctx,continuityEnabled ? continuityLookup : undefined),definePruneTool(ctx),defineStatusTool(ctx,sourceInputs, () => {
       if (!config.dream.enabled || !dream) return undefined
       return dream.diagnostics?.() ?? { enabled: false, phase: dream.reason ?? 'dream-unavailable' }
     })])ctx.tools.register(runtimeTool(tool,startup))

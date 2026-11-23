@@ -15,9 +15,9 @@ function reviewMessage() {
   // owned by the live memory projection rather than being copied here.
   const text = [
     'SoloPup 交付复核。一次性插件提示。',
-    '按现行用户约定核对最终产物。有已保存的精确末行交付约定时用 memory_check_delivery 核验，其余要求按实际文件和测试核对。',
-    '已确认约定无需重述。可在已授权范围内补齐普通项目文件，包括新建必要文件。',
-    '用户当前的明确要求优先。超出权限或尚未验证的部分如实说明。',
+    '按现行用户约定核对产物位置与内容（可用 memory_check_delivery）。',
+    '自检：必交文件落盘且改动已读回；被替换旧做法已清除、不并列；核查工作区并清理临时或调试文件；确认空输入等边界用例已验证。',
+    '可在授权内补齐普通项目文件。用户当前的明确要求优先，超出权限如实说明。',
   ].join('\n')
   return {
     id: randomUUID(),
@@ -27,7 +27,7 @@ function reviewMessage() {
   }
 }
 
-export function installDeliveryReview(ctx, { rulesFor, hasAppliedWork }) {
+export function installDeliveryReview(ctx, { rulesFor, hasAppliedWork, hasReferenceContext = () => false }) {
   const reviewedTurns = new WeakMap()
   let active = true
   ctx.effect?.(() => () => { active = false })
@@ -39,7 +39,9 @@ export function installDeliveryReview(ctx, { rulesFor, hasAppliedWork }) {
 
     try {
       if (hasAppliedWork(session, turn) !== true) return
-      if (!hasReviewRules(rulesFor(session)) || !active || signal?.aborted) return
+      const hasRules = hasReviewRules(rulesFor(session))
+      const hasContext = !hasRules && !signal?.aborted && hasReferenceContext(session) === true
+      if ((!hasRules && !hasContext) || !active || signal?.aborted) return
 
       // Steering may synchronously publish events. Reserve first so another
       // stopping callback for the same turn cannot open a second review step.

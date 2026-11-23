@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { searchWorkspaceHistory, workspaceHistoryAvailable } from '../workspace-history.mjs'
+import { readWorkspaceHistorySources, searchWorkspaceHistory, workspaceHistoryAvailable } from '../workspace-history.mjs'
 
 const workspace = '/fixture/current'
 const other = '/fixture/other'
@@ -124,4 +124,178 @@ test('bounded preflight and missing query never open oversized or unspecified se
   assert.equal(result.status, 'partial')
   assert.equal(result.coverage.skippedSources, 1)
   assert.deepEqual(reads, [])
+})
+
+test('all query terms can anchor a single nearby passage late in the same message', async () => {
+  const prefix = 'Earlier irrelevant material. '.repeat(65)
+  const text = prefix + 'Mira: the cobalt label belongs on the lantern.'
+  const { search } = fixture({ archive: { header: header('archive'), events: [message(0, text)] } })
+  const result = await search({ query: 'lantern Mira cobalt' })
+  assert.equal(result.status, 'found')
+  const [excerpt] = result.sessions[0].excerpts
+  assert.equal(excerpt.messageId, 'message-0')
+  assert.equal(excerpt.matched, true)
+  assert.equal(excerpt.truncated, true)
+  assert.ok(excerpt.text.includes('Mira: the cobalt label belongs on the lantern.'))
+})
+
+test('nearby fallback respects line, message, source, word, span and permission boundaries', async () => {
+  const { search } = fixture({
+    first: { header: header('first'), events: [
+      message(0, 'Mira: I chose cobalt.'), message(1, 'The lantern is ready.'),
+      message(2, 'Mira: we chose cobalt.\nAna: the lantern is ready.'),
+      message(3, 'Mira: cobalt ' + 'long '.repeat(30) + 'lantern.'),
+      message(4, 'Miranda: I chose a cobalt lantern.'),
+      message(5, 'Mira: the cobalt lantern has been withdrawn.'),
+    ] },
+    other: { header: header('other'), events: [message(0, 'The lantern looks blue.')] },
+  })
+  const result = await search({ query: 'Mira cobalt lantern',
+    allowSource: ({ seq }) => seq !== 5 })
+  assert.equal(result.status, 'no-match')
+})
+
+test('older exact evidence wins over a full page of more recent nearby matches', async () => {
+  const entries = ['first', 'second', 'third', 'fourth'].map(id => [id,
+    { header: header(id), events: [message(0, 'Cobalt glass on the lantern.')] }])
+  const { search } = fixture({ ...Object.fromEntries(entries),
+    exact: { header: header('exact'), events: [message(0, 'Use the cobalt lantern.')] } })
+  const result = await search({ query: 'cobalt lantern' })
+  assert.deepEqual(result.sessions.map(s => s.sessionId), ['exact'])
+})
+
+test('Chinese spaced query terms stay bound to one passage; tighter matches rank first', async () => {
+  const { search } = fixture({
+    broad: { header: header('broad'), events: [message(0, '正文里有一盏蓝灯，作者强调末句应由编辑核实。')] },
+    close: { header: header('close'), events: [message(0, '主稿末句保留蓝灯。')] },
+  })
+  const result = await search({ query: '蓝灯 末句' })
+  assert.deepEqual(result.sessions.map(s => s.sessionId), ['close','broad'])
+})
+
+test('separate editions retain their own dated source headings and the shared receipt time', async () => {
+  const receiptTime = Date.parse('2025-03-01T08:09:10Z')
+  const headings = { rehearsal: '排练笔记 · 2024年3月8日', screening: '展映笔记 · 2024年9月12日' }
+  const entries = Object.entries(headings).map(([id, heading]) => {
+    const text = heading + '\n' + '逐场检查灯光与台词。'.repeat(160) + '片尾铃声保留。'
+    return [id, { header: header(id), events: [message(0, text, 'user', { kind: 'user' }, { time: receiptTime })] }]
+  })
+  const result = await fixture(Object.fromEntries(entries)).search({ query: '片尾铃声' })
+  assert.equal(result.sessions.length, 2)
+  for (const { sessionId, excerpts } of result.sessions) {
+    const [item] = excerpts
+    assert.equal(item.occurredAt, new Date(receiptTime).toISOString())
+    assert.equal(item.sourceOpening.split('\n')[0], headings[sessionId])
+    assert.equal(item.messageId, 'message-0')
+    assert.ok(item.text.includes('片尾铃声保留。'))
+    assert.ok(!item.text.includes('笔记'))
+  }
+})
+
+test('weekly and undated material keep their written precision, with no duplicate opening on early hits', async () => {
+  for (const heading of ['巡演第二周（周次记录）', '导演修改便笺']) {
+    const text = heading + '\n' + '等待统筹反馈。'.repeat(180) + '舞台入口换在东侧。'
+    const { search } = fixture({ tour: { header: header('tour'), events: [message(0, text)] } })
+    const [late] = (await search({ query: '舞台入口' })).sessions[0].excerpts
+    assert.ok(text.startsWith(late.sourceOpening))
+    assert.ok(late.sourceOpening.startsWith(heading))
+    assert.ok(!/\d{4}/u.test(late.sourceOpening + late.text))
+    assert.equal(late.truncated, true)
+    const [early] = (await search({ query: heading })).sessions[0].excerpts
+    assert.ok(early.text.startsWith(heading))
+    assert.equal(early.sourceOpening, undefined)
+  }
+})
+
+test('archive quotes preserve the full match and share the original message and session limits', async () => {
+  const needle = '本次约定'.repeat(45)
+  const events = Array.from({ length: 8 }, (_, i) => message(i,
+    '修改回执 ' + i + '\n' + '编排留档。'.repeat(240) + needle + '待确认。'.repeat(180)))
+  const result = await fixture({ revisions: { header: header('revisions'), events } }).search({ query: needle })
+  const excerpts = result.sessions[0].excerpts
+  assert.ok(excerpts.length >= 4)
+  let total = 0
+  for (const item of excerpts) {
+    assert.ok(item.sourceOpening.startsWith('修改回执 ' + item.seq + '\n'))
+    assert.ok(item.sourceOpening.length <= 160)
+    assert.ok(item.text.includes(needle))
+    const count = item.text.length + item.sourceOpening.length
+    assert.ok(count <= 700)
+    total += count
+  }
+  assert.equal(total, 2600)
+})
+
+test('a distant speaker label and inflected event are linked through their own sentence', async () => {
+  const filler = 'We went over the workshop minutes in some detail. '.repeat(23)
+  const text = 'Minutes of the workshop, 2021-04-15\nRae: ' + filler + 'We are testing a revised pump tomorrow.'
+  const { search } = fixture({ minutes:{header:header('minutes'),events:[message(0,text)]} })
+  const result = await search({query:'Rae tested revised pump'})
+  const excerpt = result.sessions[0].excerpts[0]
+  assert.equal(excerpt.quotedSpeaker,'Rae:')
+  assert.match(excerpt.text,/testing a revised pump tomorrow/u)
+  assert.match(excerpt.sourceOpening,/2021-04-15/u)
+  assert.ok(excerpt.quotedSpeaker.length + excerpt.sourceOpening.length + excerpt.text.length <= 700)
+})
+
+test('a Chinese wording change still requires an exact event clue and independent evidence in the same sentence', async () => {
+  const text = '徐弦：只提议先改侧门的位置，铜色把手留作下次讨论。'
+  const { search } = fixture({ minutes:{header:header('minutes'),events:[message(0,text)]} })
+  const result = await search({query:'更改位置 铜色把手'})
+  assert.equal(result.sessions[0].excerpts[0].quotedSpeaker,'徐弦：')
+  assert.equal((await search({query:'点亮大灯 铜色把手'})).status,'no-match')
+  const split = '徐弦：只提议先改侧门的位置。铜色把手留作下次讨论。'
+  const next = fixture({ minutes:{header:header('minutes'),events:[message(0,split)]} })
+  assert.equal((await next.search({query:'更改位置 铜色把手'})).status,'no-match')
+})
+
+test('a surname with an extra qualifying role, a different speaker, and a dated heading do not authorize attribution', async () => {
+  const filler='继续确认会议纪要，现场暂未做决定。'.repeat(16)
+  const text='赵丁：'+filler+'旧灯罩下周再装。\n剪辑师赵丁：缓办。\n苏芸：另有用途。\n日期：'+filler+'北岸要拆板。'
+  const { search } = fixture({minutes:{header:header('minutes'),events:[message(0,text)]}})
+  for(const query of ['剪辑师赵丁 旧灯罩','苏芸 旧灯罩','日期 北岸']) {
+    assert.equal((await search({query})).status,'no-match',query)
+  }
+})
+
+test('speaker retrieval requires intact alphanumeric IDs and preserves exact matches in other sessions', async () => {
+  const filler='An unrelated exchange is noted in the meeting. '.repeat(6)
+  const quoted='Lee: '+filler+'I tested platform 3829 yesterday.'
+  const other='test platform 3829 was discussed.'
+  const { search }=fixture({a:{header:header('a'),events:[message(0,quoted)]},b:{header:header('b'),events:[message(0,other)]}})
+  assert.equal((await search({query:'Lee tests platform 3820'})).status,'no-match')
+  assert.deepEqual((await search({query:'test platform 3829'})).sessions.map(s=>s.sessionId),['b'])
+})
+
+test('pointer dereference returns only the bound source message, isolates same-name roles and enforces withdrawal/workspace bounds', async () => {
+  const targetText = '《夜渡》后期通话纪要，2024年10月17日。\n周原：在制片签字之前，请先给我留个试听文件，暂时别替换交付母版。展映版先试留船尾最后一声铃。'
+  const distractorText = '《夜渡》物料分工，2024年11月1日。\n剪辑助理周原：我在校出口型字幕。'
+  const foreignText = '其他项目的记录。'
+  const data = {
+    distractor: { header: header('distractor'), events: [event(0, 'session/title', { title: '《夜渡》物料分工' }), message(1, distractorText)] },
+    target: { header: header('target'), events: [event(0, 'session/title', { title: '《夜渡》后期通话纪要' }), message(1, targetText)] },
+    foreign: { header: header('foreign', other), events: [message(0, foreignText)] },
+  }
+  const { ctx, reads } = fixture(data)
+  const res = await readWorkspaceHistorySources(ctx, {
+    session: caller,
+    pointers: [
+      { sessionId: 'target', messageIds: ['target:1'], quotes: ['展映版先试留船尾最后一声铃。'] },
+      { sessionId: 'foreign', messageIds: ['foreign:0'], quotes: [foreignText] },
+    ],
+  })
+  assert.equal(res.status, 'found')
+  assert.equal(res.resolution, 'source-pointer')
+  assert.deepEqual(res.sessions.map(s => s.sessionId), ['target'])
+  assert.deepEqual(reads, ['target'])
+  assert.equal(res.sessions[0].excerpts.length, 1)
+  assert.equal(res.sessions[0].excerpts[0].text, targetText)
+  assert.doesNotMatch(JSON.stringify(res), /剪辑助理|其他项目/u)
+  const revoked = await readWorkspaceHistorySources(ctx, {
+    session: caller,
+    pointers: [{ sessionId: 'target', messageIds: ['target:1'], quotes: ['展映版先试留船尾最后一声铃。'] }],
+    allowSource: ({ sessionId, seq }) => !(sessionId === 'target' && seq === 1),
+  })
+  assert.equal(revoked.status, 'no-match')
+  assert.deepEqual(revoked.sessions, [])
 })

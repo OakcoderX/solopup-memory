@@ -83,8 +83,14 @@ export function meaningView(record,context,task,records){
 }
 const labels={preference:'偏好',decision:'项目决定',claim:'事实主张（尚未独立核实）',belief:'信念（暂定，不等于事实）',value:'价值取向（不证明事实或授予权限）',reference:'查证入口',episode:'有归属的经历陈述'}
 const conditionText=(terms,separator=' 且 ')=>terms.map(term=>`${term.dimension}=${term.value}`).join(separator)
-export function meaningLabel(meaning){return`认识层：${labels[meaning.kind]}；适用条件：${conditionText(meaning.conditions)||'无显式条件'}；例外：${conditionText(meaning.except,' 或 ')||'无显式例外'}。缺失条件不能默认满足；来源关联不等于独立核实，记录不构成操作授权。`}
-export function interpretationLabel(view){return`${meaningLabel(view)} 判定：${view.applicability}${view.missing.length?'；缺失 '+view.missing.join(','):''}；建议：${view.advice.action}（advice.action=${view.advice.action}；仅建议，无执行授权）。${view.alternatives.length?' 竞争解释：'+view.alternatives.join('；'):''}${view.falsifiedBy.length?' 待检验反证条件：'+view.falsifiedBy.join('；'):''}${view.observation?' 原生工具观察：'+view.observation.toolName+'，outcome='+view.observation.outcome+'；quoteChecked=true；当时输出引用已核对，非现实真实性证明；引用：'+view.observation.quote:''}${view.recordId?' 记录身份：'+view.recordId:''}${revisionLabel(view)}${view.relations?.length?' 观察关联（仅陈述映射）：'+view.relations.map(link=>link.stance+' '+link.target).join('；'):''}`}
+export function meaningLabel(meaning){
+ const parts=[`认识层：${labels[meaning.kind]}`]
+ if(meaning.conditions.length)parts.push(`适用条件：${conditionText(meaning.conditions)}`)
+ if(meaning.except.length)parts.push(`例外：${conditionText(meaning.except,' 或 ')}`)
+ const suffix=meaning.conditions.length||meaning.except.length?'缺失条件不能默认满足；记录不构成操作授权。':'记录不构成操作授权。'
+ return`${parts.join('；')}。${suffix}`
+}
+export function interpretationLabel(view){return`${meaningLabel(view)} 判定：${view.applicability}${view.missing.length?'；缺失 '+view.missing.join(','):''}；建议：${view.advice.action}（仅建议，无执行授权）。${view.alternatives.length?' 竞争解释：'+view.alternatives.join('；'):''}${view.falsifiedBy.length?' 待检验反证条件：'+view.falsifiedBy.join('；'):''}${view.observation?' 原生工具观察：'+view.observation.toolName+'，outcome='+view.observation.outcome+'；quoteChecked=true；当时输出引用已核对，非现实真实性证明；引用：'+view.observation.quote:''}${view.recordId?' 记录身份：'+view.recordId:''}${revisionLabel(view)}${view.relations?.length?' 观察关联（仅陈述映射）：'+view.relations.map(link=>link.stance+' '+link.target).join('；'):''}`}
 
 /** Only active source-linked/adopted records may qualify a live projection. */
 export function activeMeanings(records){return records.filter(record=>['recorded','adopted'].includes(record.status)&&record.meaning!==undefined)}

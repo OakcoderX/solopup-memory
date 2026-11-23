@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.26.0-beta.6 — source recall and delivery review
+
+- Recover quoted owner statements and source locations from the current workspace, including when a question does not use explicit continuation wording.
+- Shorten the injected memory protocol when the current session has read-only memory tools.
+- Request one delivery review after recognized successful edits, including supported workspace shell writes and MCP mutations. The review prompts the agent to check deliverables, temporary files, and boundary cases.
+- Refine evidence ranking and surface source information for project memory. Maintain existing withdrawal and supersession handling.
+- Withdraw the earlier 8/8 claim. It mixed local tasks with official scores from earlier builds. In a separate local audit, the earlier beta.5 archive scored 2/12 against 1/12 without the plugin. A later Step-1.1 experiment with distilled memory at Flash Low scored 1/12 in both arms. These single-run historical results describe the exact experimental builds. This beta ships the tested engineering changes and makes no benchmark score claim for its own archive.
+
 ## 0.26.0-beta.3 — manuscript selection and delivery receipts
 
 - Authors can select the manuscript edition for a normal DSH turn. Current project rules can use that selection to resolve an edition condition or exception.

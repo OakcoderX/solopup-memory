@@ -127,3 +127,33 @@ test('detects successful project heredoc writes without treating read arguments 
   bash(5, "cat <<'EOF' > 小说初稿.md\n" + 'a'.repeat(9000) + "\nEOF")
   assert.equal(tracker.hasAppliedWork(session, 1), true)
 })
+
+test('detects workspace_bash mutations and MCP write tools while ignoring read-only MCP calls', () => {
+  const tracker = harness()
+  const session = { id: 'mcp-and-ws' }
+  tracker.emit(session, { type: 'turn/start', data: { turn: 1 } })
+  const run = (seq, name, args) => {
+    const callId = `c-${seq}`
+    tracker.emit(session, { type: 'tool/call', seq, data: { turn: 1, callId, name, arguments: args } })
+    tracker.emit(session, {
+      type: 'tool/result', surfaceOp: 'append', sourceEventSeqs: [seq], data: { turn: 1, message: {
+        role: 'tool', source: { kind: 'tool', callId }, toolCallId: callId, isError: false,
+      } },
+    })
+  }
+  run(1, 'mcp__teams__list_users', {})
+  run(2, 'workspace_bash', { command: 'git status' })
+  assert.equal(tracker.hasAppliedWork(session, 1), false)
+  run(3, 'workspace_bash', { command: "cd /workspace && cat <<'EOF' > solution.py\nprint(1)\nEOF" })
+  assert.equal(tracker.hasAppliedWork(session, 1), true)
+
+  const mcpSession = { id: 'mcp-write' }
+  tracker.emit(mcpSession, { type: 'turn/start', data: { turn: 1 } })
+  tracker.emit(mcpSession, { type: 'tool/call', seq: 10, data: { turn: 1, callId: 'm-1', name: 'mcp__teams__create_call', arguments: {} } })
+  tracker.emit(mcpSession, {
+    type: 'tool/result', surfaceOp: 'append', sourceEventSeqs: [10], data: { turn: 1, message: {
+      role: 'tool', source: { kind: 'tool', callId: 'm-1' }, toolCallId: 'm-1', isError: false,
+    } },
+  })
+  assert.equal(tracker.hasAppliedWork(mcpSession, 1), true)
+})

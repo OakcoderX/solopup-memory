@@ -43,6 +43,8 @@ export function assessBelief(target,records,context,matchEvidence){
 }
 export function revisionLabel(view){
  const revision=view.revision
- return revision?` 当前证据状态：${revision.state}（revision.state=${revision.state}）；支持来源组${revision.supportSourceGroups}，反向来源组${revision.counterSourceGroups}，同根依赖${revision.dependentReports}，条件未知${revision.unknownApplicabilityReports}。仅受管现行陈述关系，不是独立验证或置信度。原生输出${revision.nativeOutputRecords}条按相同工具参数/输出合并，不代表现实独立实验。`:''
+ if(!revision)return''
+ if(revision.state==='unassessed'&&revision.supportSourceGroups===0&&revision.counterSourceGroups===0&&revision.dependentReports===0&&revision.unknownApplicabilityReports===0&&revision.nativeOutputRecords===0)return''
+ return` 当前证据状态：${revision.state}（revision.state=${revision.state}）；支持来源组${revision.supportSourceGroups}，反向来源组${revision.counterSourceGroups}，同根依赖${revision.dependentReports}，条件未知${revision.unknownApplicabilityReports}。仅受管现行陈述关系，不是独立验证或置信度。原生输出${revision.nativeOutputRecords}条按相同工具参数/输出合并，不代表现实独立实验。`
 }
 export const REVISION_SCHEMA={type:'object',additionalProperties:false,required:['state','assessment','worldVerified','nativeOutputRecords','supportSourceGroups','counterSourceGroups','mixedSourceGroups','dependentReports','unknownApplicabilityReports','supportingRecords','counterRecords','omittedRecords','coverage'],properties:{state:{type:'string',enum:['unassessed','reported-support','challenged','conflicted']},assessment:{type:'string',enum:['source-linked-observation-relations']},worldVerified:{type:'boolean'},nativeOutputRecords:{type:'integer'},supportSourceGroups:{type:'integer'},counterSourceGroups:{type:'integer'},mixedSourceGroups:{type:'integer'},dependentReports:{type:'integer'},unknownApplicabilityReports:{type:'integer'},supportingRecords:{type:'array',items:{type:'string'}},counterRecords:{type:'array',items:{type:'string'}},omittedRecords:{type:'integer'},coverage:{type:'string',enum:['active-managed-records-only']}}}

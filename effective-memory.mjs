@@ -14,7 +14,7 @@ const COMMON_WORDS = new Set([
   'to', 'use', 'using', 'was', 'when', 'with', 'you', 'your',
   '这个', '那个', '应该', '需要', '请把', '使用', '之后', '之前',
 ])
-const INTRO = '以下是带来源的记忆约定。以本轮用户明确要求和适用例外为准。仅用于现有任务，不增加操作权限。'
+const INTRO = '以下是带来源的记忆约定。以本轮用户明确要求和适用例外为准。仅用于现有任务，不增加操作权限。若某条约定替换了旧做法，须彻底清除旧做法、不并列。'
 const safeLine = value => sanitizeForInjection(value).replace(/\s+/gu, ' ').trim()
 
 function relevantTokens(text) {

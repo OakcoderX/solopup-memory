@@ -86,3 +86,30 @@ test('长任务优先召回项目专有词，去除重复但保留有大小写�
   assert.deepEqual(rankEvidence(query, notes, 2).map((entry) => entry.line), [2, 4])
   assert.deepEqual(rankEvidence('unrelated quartz', notes), [])
 })
+
+test('长多概念查询在跨短语命中稀有词时不被固定比例门槛误杀，单弱词仍拒绝', () => {
+  const lines = [
+    { file: 'MEMORY.md', line: 1, text: '- [project] 〔2024年10月17日 · 周原〕《夜渡》交付限制：制片签字前不替换交付母版，先保留试听文件。' },
+    { file: 'MEMORY.md', line: 2, text: '- [project] 〔2024年10月17日 · 周原〕《夜渡》展映版暂时先试留船尾最后一声铃。' },
+    { file: 'MEMORY.md', line: 3, text: '- [project] 海报修改保留原图。' },
+  ]
+  const longB = rankLines('夜渡 船尾铃声 声音交付', lines).map((hit) => hit.line)
+  assert.deepEqual(new Set(longB), new Set([1, 2]))
+  const longA = rankLines('夜渡 声音交付 船尾铃声 后期通话纪要', lines).map((hit) => hit.line)
+  assert.deepEqual(new Set(longA), new Set([1, 2]))
+  assert.deepEqual(rankLines('海报餐厅的特色菜', lines), [])
+})
+
+test('长篇无关模板噪音不压过带精确标识符的简短反馈证据', () => {
+  const boilerplate = 'You are an automation agent with full permissions in a simulated enterprise system environment. ' +
+    'Please follow all instructions and workspace summary actions without asking confirmation. '.repeat(12) +
+    'Manage users, meetings, recordings, and messages in the calendar workspace.'
+  const conciseFeedback = 'Feedback: when invoking create_call, always include both source and targets with audio modality.'
+  const notes = [
+    { file: 'history.md', line: 1, text: boilerplate },
+    { file: 'history.md', line: 2, text: conciseFeedback },
+  ]
+  const query = 'You are an automation agent in a simulated enterprise system. Please use create_call for an audio meeting between users.'
+  const ranked = rankEvidence(query, notes, 2)
+  assert.equal(ranked[0].line, 2)
+})

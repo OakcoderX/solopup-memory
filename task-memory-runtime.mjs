@@ -5,7 +5,10 @@ import { findSecrets, normalizeText } from './security.mjs'
 const MAX_TEXT_BYTES = 64 * 1024
 const MAX_QUERY_CHARS = 4000
 const FILE_MUTATION = /^(?:edit|write|apply_patch|file_edit|file_write)$/u
+const SHELL_TOOL = /^(?:bash|workspace_bash|shell|run_command|mcp__[a-z0-9_-]+__(?:bash|workspace_bash|shell))$/iu
+const MCP_MUTATION = /^mcp__[a-z0-9_-]+__(?:create|update|edit|write|send|post|add|delete|remove|set|patch|put|upsert|move|assign|upgrade|extend|cancel|archive)_[a-z0-9_]+$/iu
 const COMMIT = /(?:^|[;&|]\s*)\s*git\s+commit(?:\s|$)/u
+const LEADING_CD = /^\s*cd\s+(?:(?:'[^']*'|"[^"]*"|[^\s;&|]+))\s*&&\s*/u
 const HEREDOC_REDIRECT_FIRST = /^\s*cat\s+>>?\s*(['"]?)([\p{L}\p{N}_./-]+)\1\s+<<-?\s*['"]?\w+['"]?\s*$/u
 const HEREDOC_INPUT_FIRST = /^\s*cat\s+<<-?\s*['"]?\w+['"]?\s+>>?\s*(['"]?)([\p{L}\p{N}_./-]+)\1\s*$/u
 const TRANSIENT_PATH = /^\/(?:dev|proc|sys|tmp|var\/tmp|private\/tmp)(?:\/|$)/u
@@ -37,12 +40,14 @@ function userTask(message) {
 }
 
 function changesFiles(call) {
-  if (FILE_MUTATION.test(call?.name ?? '')) return true
-  if (call?.name !== 'bash') return false
+  const name = call?.name ?? ''
+  if (FILE_MUTATION.test(name) || MCP_MUTATION.test(name)) return true
+  if (!SHELL_TOOL.test(name)) return false
   try {
     const args = typeof call.arguments === 'string' ? JSON.parse(call.arguments) : call.arguments
     if (typeof args?.command !== 'string') return false
-    const [firstLine] = args.command.slice(0, 512).split(/\r?\n/u, 1)
+    const [rawFirstLine] = args.command.slice(0, 512).split(/\r?\n/u, 1)
+    const firstLine = rawFirstLine.replace(LEADING_CD, '')
     const output = (HEREDOC_REDIRECT_FIRST.exec(firstLine) ?? HEREDOC_INPUT_FIRST.exec(firstLine))?.[2]
     return (args.command.length <= 8192 && COMMIT.test(args.command)) ||
       Boolean(firstLine.length < 512 && output && output !== '.' &&

@@ -2,13 +2,15 @@
 
 SoloPup Memory 是 DeepSeek Harness 的公开测试版记忆插件，采用 MIT 许可。配置的模型服务可能计费。
 
-## 0.26.0-beta.3 公开测试版 / Public beta
+## 0.26.0-beta.6 公开测试版 / Public beta
 
-第七章用第二版，结尾照旧，修改说明另附。继续同一工作区时，助手可以拿到少量有出处的现行约定。在普通 DSH 会话明确选稿后，插件可以据此判断条件约定是否适用。只读核验工具能读取指定项目 Markdown 稿件末行，给出是否符合已保存的约定及所检查文件的 SHA-256。它不会改稿，也不评判全文；编辑后收到复核提示不等于交付已通过。 [安装](guides/quickstart.md) · [发行包与源码](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.3)
+beta.6 改进同工作区原话找回，并让受支持的文件写入与 MCP 写操作触发交付复核。历史跑分的更正和边界见 [更新日志](../CHANGELOG.md)。
 
-When you resume a workspace, the plugin can surface a small set of relevant, source-linked agreements. An explicit manuscript selection can resolve a conditional agreement in a normal DSH turn. A read-only tool can check the named project Markdown file's last line against a saved agreement and identify the inspected revision by SHA-256. It neither edits the file nor grades the whole manuscript. [Quick start](guides/quickstart.md) · [Release and source](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.3)
+第七章用第二版，结尾照旧，修改说明另附。继续同一工作区时，助手可以拿到少量有出处的现行约定。在普通 DSH 会话明确选稿后，插件可以据此判断条件约定是否适用。只读核验工具能读取指定项目 Markdown 稿件末行，给出是否符合已保存的约定及所检查文件的 SHA-256。它不会改稿，也不评判全文；编辑后收到复核提示不等于交付已通过。 [安装](guides/quickstart.md) · [发行包与源码](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.6)
 
-历史归档曾在同一台 Mac 的 DSH 0.2.2-rc.3 上，用固定模型响应检查六项选稿与文件核验。归档所测插件包的 SHA-256 与当前公开 beta.3 下载附件不同，不能把历史结果直接归给公开包；公开包的同流程复跑尚未完成。脚本固定响应也不代表模型自主写作或完整原生 Super Agent 实测。 [历史试验与边界 / Historical protocol and scope](https://github.com/OakcoderX/solopup-memory/blob/v0.26.0-beta.3/docs/runs/2026-11-22-manuscript-delivery.md)
+When you resume a workspace, the plugin can surface a small set of relevant, source-linked agreements. An explicit manuscript selection can resolve a conditional agreement in a normal DSH turn. A read-only tool can check the named project Markdown file's last line against a saved agreement and identify the inspected revision by SHA-256. It neither edits the file nor grades the whole manuscript. [Quick start](guides/quickstart.md) · [Release and source](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.6)
+
+历史归档曾在同一台 Mac 的 DSH 0.2.2-rc.3 上，用固定模型响应检查六项选稿与文件核验。归档所测插件包的 SHA-256 与公开 beta.3 下载附件不同，不能把历史结果直接归给公开包；该公开包的同流程复跑尚未完成。脚本固定响应也不代表模型自主写作或完整原生 Super Agent 实测。 [历史试验与边界 / Historical protocol and scope](https://github.com/OakcoderX/solopup-memory/blob/v0.26.0-beta.3/docs/runs/2026-11-22-manuscript-delivery.md)
 
 此前实测，不是本次发行包复验：按关闭插件 / 0.25.0-beta.2 / 0.26.0-beta.1 顺序，两道小任务按最新约定交付 **0/2、1/2、2/2**，主任务均 **2/2**。cattrs 单题本地官方规则严格分 **0/1、0/1、1/1**，两个开启组预装了相同的已核历史约定。独立中文续写 **0/4（超时）、3/4、3/4**；beta.1 漏验了文件最后一行。这轮没有验证完整原生 Super Agent 链路。 [历史评测与复现 / Historical beta.1 comparison](https://github.com/OakcoderX/solopup-memory/blob/v0.26.0-beta.1/docs/runs/2026-11-18-memory-delivery.md)
 

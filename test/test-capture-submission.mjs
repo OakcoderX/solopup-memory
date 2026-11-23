@@ -77,3 +77,31 @@ test('final-only text copies are also bounded and must exactly agree',()=>{
  assert.equal(batch(events).responseItems,0)
  assert.throws(()=>batch([...chunks([]).slice(0,-1),{type:'block-end',index:2,block:{type:'text',text:'x'.repeat(65536)}},chunks().at(-1)]),/capture-response-too-large/)
 })
+
+test('dated handoff evidence survives alias restoration and remains a literal owner quote for validation',async()=>{
+ const {captureSourceAliases}=await import('../capture-source-aliases.mjs')
+ const {assessCandidate}=await import('../capture-evidence.mjs')
+ const body='授权撤销前，临时目录可供内部查看，外部人员不能下载公开包。'
+ const owner={role:'user',id:'owner',hash:'a'.repeat(64),text:'清理工作会议纪要，2025年3月2日。\n何琪：'+body}
+ const candidate={type:'project',scope:'project',basis:'explicit',summary:'授权撤销前外部人员不得下载公开包。',meaning:{kind:'claim'},evidence:[{messageId:'source1',quote:body}]}
+ const bind=(src,c=candidate)=>captureSourceAliases([src]).restore({candidates:[c]}).candidates[0]
+ const actual=bind(owner)
+ assert.ok(actual.summary.includes('2025年3月2日') && actual.summary.includes('何琪'))
+ assert.equal(actual.evidence[0].quote,'2025年3月2日。\n何琪：'+body)
+ assert.equal(assessCandidate(actual,[owner],true).evidence[0].hash,owner.hash)
+ const distant={...owner,text:owner.text.replace(body,'这里还讨论了其他内部事务。'+body)}
+ const limited=bind(distant)
+ assert.equal(limited.evidence[0].quote,body)
+ assert.equal(limited.summary,actual.summary)
+ for(const src of [owner.text+'\n史冰：这是另一位的记录。', owner.text.replace('何琪：','何琪：史冰：'),owner.text.replace('会议纪要','会议计划截止日期'),owner.text.replace('何琪：','何琪：联系电话及病史。'),owner.text.replace('何琪：','何琪：'+body)]) {
+   const r=bind({...owner,text:src});assert.equal(r.summary,candidate.summary);assert.equal(r.evidence[0].quote,body)
+ }
+ assert.equal(bind({...owner,sourceComplete:false}).summary,candidate.summary)
+ const unbound=bind(owner,{...candidate,evidence:[{messageId:'unknown',quote:body}]})
+ assert.equal(unbound.summary,candidate.summary)
+ assert.equal(bind(owner,{...candidate,basis:'inferred'}).summary,candidate.summary)
+ // Source context enriches only an existing explicit extraction. A per-turn
+ // instruction that produced no candidate must not turn into a memory record.
+ const current={...owner,text:'清理工作会议纪要，2025年3月2日。\n何琪：只把本轮输出倒过来读，读完就行。'}
+ assert.deepEqual(captureSourceAliases([current]).restore({candidates:[]}).candidates,[])
+})

@@ -18,3 +18,11 @@ test('reports available search and unknown availability separately', () => {
 test('no agent receives no protocol', () => {
   assert.equal(memoryProtocol({}, {}), '')
 })
+test('read-only sessions omit write-only boilerplate while retaining conflict rules', () => {
+  const readOnly = memoryProtocol({tools:{schemas:()=>[{name:'memory_search'}]}}, {agent:{}})
+  const readWrite = memoryProtocol({tools:{schemas:()=>[{name:'memory_write'},{name:'memory_search'}]}}, {agent:{}})
+  assert.doesNotMatch(readOnly, /星座推断|pending-review|callHash|每4轮/)
+  assert.match(readWrite, /pending-review/)
+  assert.match(readWrite, /不伪造 callHash/)
+  assert.ok(Buffer.byteLength(readOnly) < Buffer.byteLength(readWrite) * 0.65)
+})
