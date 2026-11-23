@@ -8,7 +8,7 @@ SoloPup Memory 是 DeepSeek Harness 的公开测试版记忆插件，采用 MIT 
 
 When you resume a workspace, the plugin can surface a small set of relevant, source-linked agreements. An explicit manuscript selection can resolve a conditional agreement in a normal DSH turn. A read-only tool can check the named project Markdown file's last line against a saved agreement and identify the inspected revision by SHA-256. It neither edits the file nor grades the whole manuscript. [Quick start](guides/quickstart.md) · [Release and source](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.3)
 
-同一台 Mac 的 DSH 0.2.2-rc.3，采用本地脚本固定模型响应，六项选稿与文件核验：beta.2 两项符合预期、一项不符、三项无独立核验结果；beta.3 六项符合预期。这不是模型自主写作得分。可选的 macOS Super Agent Worker 在固定原型和脚本响应下亦有单独宿主回执，不外推至其他宿主或真实模型自主交付。 [本版试验与边界 / Beta.3 protocol and scope](https://github.com/OakcoderX/solopup-memory/blob/v0.26.0-beta.3/docs/runs/2026-11-22-manuscript-delivery.md)
+历史归档曾在同一台 Mac 的 DSH 0.2.2-rc.3 上，用固定模型响应检查六项选稿与文件核验。归档所测插件包的 SHA-256 与当前公开 beta.3 下载附件不同，不能把历史结果直接归给公开包；公开包的同流程复跑尚未完成。脚本固定响应也不代表模型自主写作或完整原生 Super Agent 实测。 [历史试验与边界 / Historical protocol and scope](https://github.com/OakcoderX/solopup-memory/blob/v0.26.0-beta.3/docs/runs/2026-11-22-manuscript-delivery.md)
 
 此前实测，不是本次发行包复验：按关闭插件 / 0.25.0-beta.2 / 0.26.0-beta.1 顺序，两道小任务按最新约定交付 **0/2、1/2、2/2**，主任务均 **2/2**。cattrs 单题本地官方规则严格分 **0/1、0/1、1/1**，两个开启组预装了相同的已核历史约定。独立中文续写 **0/4（超时）、3/4、3/4**；beta.1 漏验了文件最后一行。这轮没有验证完整原生 Super Agent 链路。 [历史评测与复现 / Historical beta.1 comparison](https://github.com/OakcoderX/solopup-memory/blob/v0.26.0-beta.1/docs/runs/2026-11-18-memory-delivery.md)
 
@@ -21,6 +21,7 @@ When you resume a workspace, the plugin can surface a small set of relevant, sou
 下列案例提供操作步骤。历史离线样例的实际结果见其记录。 [离线来源回查记录](runs/2026-11-07-source-recall.md)
 
 - [快速上手 / Quick start](guides/quickstart.md)
+- [DSH 养鱼教程：大肥鱼换会话如何保留长期记忆](guides/dsh-fish-memory.md)
 - [适合谁 / Who it is for](guides/who-its-for.md)
 - [明确记住 / Explicit remember](guides/remember.md)
 - [换聊天验收 / Fresh-chat recall](guides/fresh-chat.md)
