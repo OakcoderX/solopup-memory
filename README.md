@@ -15,7 +15,7 @@ SoloPup 是 DeepSeek Harness（DSH） 的文字记忆插件。它尝试保存值
 
 答「小栗」且能指出更正的来源，是这次召回的预期结果。再换到一个没有这条约定的工作区问一次，那里不应沿用这个项目称呼。如果仍答旧称呼，或工具显示待审、拒绝、未应用，就不要记作成功。这是可复跑的虚构案例，不是已公布的养鱼实测；公开 beta 仍可能漏记或漏召回。
 
-[开始安装和核对版本](docs/guides/quickstart.md) · [如何验证跨会话记忆](docs/guides/fresh-chat.md)
+[完整养鱼教程：改称呼与新会话自测](docs/guides/dsh-fish-memory.md) · [开始安装和核对版本](docs/guides/quickstart.md) · [如何验证跨会话记忆](docs/guides/fresh-chat.md)
 
 ## 用起来是什么感觉？
 
