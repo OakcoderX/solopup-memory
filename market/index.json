@@ -5,8 +5,8 @@
     "zh": "SoloPup 插件"
   },
   "description": {
-    "en": "SoloPup Memory public beta for DeepSeek Harness.",
-    "zh": "面向 DeepSeek Harness 的 SoloPup Memory 公开测试版。"
+    "en": "SoloPup Memory for DeepSeek Harness.",
+    "zh": "面向 DeepSeek Harness 的 SoloPup Memory。"
   },
   "metadata": {
     "categories": {
@@ -31,8 +31,8 @@
       "name": "solopup-memory",
       "title": "SoloPup Memory",
       "description": {
-        "en": "SoloPup Memory — source-linked, layered text memory for DeepSeek Harness. Public beta.",
-        "zh": "保留原话来源、项目边界和修改历史的分层文字记忆。公开测试版。"
+        "en": "Source-linked project text memory for DeepSeek Harness.",
+        "zh": "保留原话来源、项目边界和修改历史的文字记忆。"
       },
       "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4Ij48cmVjdCB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgcng9IjI4IiBmaWxsPSIjMTIzYjM2Ii8+PHBhdGggZD0iTTMyIDM5IDIyIDI0IDE3IDU1IDMwIDY5TTk2IDM5bDEwLTE1IDUgMzEtMTMgMTQiIGZpbGw9IiNlM2I4NzgiLz48cmVjdCB4PSIyOSIgeT0iMzAiIHdpZHRoPSI3MCIgaGVpZ2h0PSI3NyIgcng9IjMwIiBmaWxsPSIjZjdlYWQ1Ii8+PGNpcmNsZSBjeD0iNDgiIGN5PSI1OCIgcj0iNSIgZmlsbD0iIzEyM2IzNiIvPjxjaXJjbGUgY3g9IjgwIiBjeT0iNTgiIHI9IjUiIGZpbGw9IiMxMjNiMzYiLz48cGF0aCBkPSJNNTYgNzVxOC05IDE2IDBsLTggOFoiIGZpbGw9IiMxMjNiMzYiLz48cGF0aCBkPSJNNDggOTRoMzIiIHN0cm9rZT0iIzEyM2IzNiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNODQgMTdoMjB2MjJIODR6IiBmaWxsPSIjNzNkNmI2Ii8+PHBhdGggZD0iTTg4IDI0aDEybS0xMiA3aDkiIHN0cm9rZT0iIzEyM2IzNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9zdmc+Cg==",
       "author": "OakcoderX",
@@ -42,9 +42,7 @@
       },
       "metadata": {
         "category": "memory",
-        "labels": [
-          "beta"
-        ],
+        "labels": [],
         "keywords": [
           "dsh-plugin",
           "deepseek-harness",
@@ -55,6 +53,17 @@
         ]
       },
       "versions": [
+        {
+          "version": "0.26.0",
+          "publishTimestamp": 1795494026,
+          "engines": {
+            "dsh": ">=0.2.1-rc.0 <0.3.0"
+          },
+          "source": {
+            "type": "npm",
+            "registry": "https://registry.npmjs.org/"
+          }
+        },
         {
           "version": "0.26.0-beta.6",
           "publishTimestamp": 1795420740,
