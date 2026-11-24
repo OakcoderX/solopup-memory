@@ -55,3 +55,17 @@ When you resume a workspace, the plugin can surface a small set of relevant, sou
 - [安装方式选择页](install-options.md)
 
 [Source repository](https://github.com/OakcoderX/solopup-memory) · [npm](https://www.npmjs.com/package/solopup-memory) · [Release evidence](../RELEASE.md)
+
+## 已收录 / Listed on
+
+<a href="https://agentstackdirectory.com/tools/solopup-memory/" rel="nofollow"><img src="https://agentstackdirectory.com/badge/featured-on-light.svg" alt="SoloPup Memory listed on Agent Stack Directory" width="189"></a>
+<a href="https://aisotools.com/tool/solopup-memory" rel="nofollow"><img src="https://aisotools.com/badges/aiso-featured-basic.svg" alt="SoloPup Memory listed on AISO Tools" width="176"></a>
+<a href="https://promoteindex.com/p/solopup-memory" rel="nofollow"><img src="https://promoteindex.com/api/v1/projects/solopup-memory/badge.svg" alt="SoloPup Memory listed on PromoteIndex" width="176"></a>
+
+**DSH 生态目录 / DSH ecosystem:** [DSH Sea](https://dshsea.com/r/oakcoderx/solopup-memory) · [Awesome DeepSeek Harness Plugins (vvlife)](https://github.com/vvlife/awesome-deepseek-harness-plugins#tools--editor-ux) · [Awesome DeepSeek Harness](https://github.com/awesome-deepseekharness/awesome-deepseek-harness/blob/fdfaf4d8ab50daad27265ce97c4f82c07a08dc79/README.md#L102)
+
+**其他公开目录 / Other public directories:** [AI Central Tools](https://aicentraltools.com/community-tools/solopup-memory/) · [Indie CN](https://dev.summhub.com/en/p/solopup-memory) · [NavXD](https://navxd.com/navigation/en/tool/solopup-memory/) · [Awesome AI Tools](https://docs.aliammari.dev/en/tools/solopup-memory/) · [aiagents.org](https://aiagents.org/agents/solopup-memory) · [爱自由](https://aiziyou.ai/tool/solopup-memory/)
+
+这些是收录记录，不代表认证、独立测试或推荐。部分条目仍描述早期公测版；安装请以[当前快速上手](guides/quickstart.md)和 [0.26.0 稳定版](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0)为准。
+
+These are listings, not endorsements or independent testing. Some describe earlier betas. For current installation instructions, use the [quick start](guides/quickstart.md) and the [0.26.0 stable release](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0).
