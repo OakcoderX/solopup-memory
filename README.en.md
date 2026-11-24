@@ -73,7 +73,7 @@ Ordinary DSH can run the entire review. An optional Super Agent Worker can run i
 Requires an installed DeepSeek Harness and Node >=24.9. For the desktop profile:
 
 ```sh
-dsh plugin --profile desktop add solopup-memory@latest --ignore-scripts
+dsh plugin --profile desktop add solopup-memory@0.26.0 --ignore-scripts
 ```
 
 If a DSH update leaves a conversation stuck with `memory-context-render-mismatch`, follow the [upgrade guide](docs/guides/quickstart.md) to install the current stable release, restart DSH, and retry in the same conversation.
@@ -108,7 +108,7 @@ The Chinese message asks to keep this project's delivery notes in Chinese. Curre
 
 Use the official plugin-manager command in [Quick install](#quick-install).
 
-`solopup-memory@latest` follows stable releases. Pin `solopup-memory@0.26.0` for reproducibility. Choose `@next` or `@beta` when you want to test a prerelease. Git installation is available with `github:OakcoderX/solopup-memory#v0.26.0`. The release page supplies a full commit SHA for an immutable Git pin. This package ships executable ESM and has no dependency installation or build scripts. You can also download the release tarball and install it with `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.26.0.tgz --offline --ignore-scripts`.
+`solopup-memory@latest` follows stable releases. Pin `solopup-memory@0.26.0` to install this exact version on release day or reproduce a run. Choose `@next` or `@beta` when you want to test a prerelease. Git installation is available with `github:OakcoderX/solopup-memory#v0.26.0`. The release page supplies a full commit SHA for an immutable Git pin. This package ships executable ESM and has no dependency installation or build scripts. You can also download the release tarball and install it with `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.26.0.tgz --offline --ignore-scripts`.
 
 Restart the profile and use `memory_status`. Existing legacy stores may require explicit local review. Do not delete control files to bypass that review. If upgrading from `dsh-memory`, create a full private backup, stop the hosts using that data, remove the old package, then install SoloPup Memory. Do not run both packages together. The data location and legacy format identifiers are intentionally retained.
 

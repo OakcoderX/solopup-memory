@@ -86,7 +86,7 @@ Super Agent 原型准备失败后直接重试，Worker 可能缺少项目记忆�
 需要已安装 DeepSeek Harness，Node >=24.9。以下以 desktop profile 为例：
 
 ```sh
-dsh plugin --profile desktop add solopup-memory@latest --ignore-scripts
+dsh plugin --profile desktop add solopup-memory@0.26.0 --ignore-scripts
 ```
 
 如果 DSH 更新后出现 `memory-context-render-mismatch`，请按[升级指南](docs/guides/quickstart.md)安装当前稳定版、重启 DSH，再回到原对话重试。原来的聊天记录可继续使用。
@@ -182,7 +182,7 @@ node /absolute/path/to/solopup-memory/scripts/superagent-worktree.mjs --owner /a
 
 使用上方[先试起来](#先试起来)的 DeepSeek Harness 官方插件管理器命令安装。代码为可直接执行的 ESM，无安装时构建脚本，也不需要 npm 账户。
 
-`latest` 跟随当前稳定版，复现时可固定为 `solopup-memory@0.26.0`。需要主动试用预览版时再选 `@next`（候选）或 `@beta`（测试）。Git 安装可用 `dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.26.0 --ignore-scripts`，需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。也可下载 `.tgz` 后运行 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.26.0.tgz --offline --ignore-scripts`。 [发行页与校验值](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0)
+`latest` 跟随当前稳定版，发布当天或需要复现时可固定为 `solopup-memory@0.26.0`。需要主动试用预览版时再选 `@next`（候选）或 `@beta`（测试）。Git 安装可用 `dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.26.0 --ignore-scripts`，需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。也可下载 `.tgz` 后运行 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.26.0.tgz --offline --ignore-scripts`。 [发行页与校验值](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0)
 
 已安装旧名 `dsh-memory` 时，先完成完整备份、关闭使用该库的宿主，用官方管理器移除旧包，再安装新包；不要同时启用两个记忆插件。新名字继续使用原记忆库和控制格式。
 
