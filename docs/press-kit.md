@@ -16,7 +16,7 @@
 | Install | [Stable install, host requirements, and first check](guides/quickstart.md) |
 | Historical evaluation | [Scores, comparison conditions, and failures](runs/2026-11-18-memory-delivery.md) |
 | Source and contributions | [Versioned source downloads](https://github.com/OakcoderX/solopup-memory/releases) · [Fork](https://github.com/OakcoderX/solopup-memory/fork) · [Contributing](../CONTRIBUTING.md) |
-| Artwork | [Project icon](../icon.svg) |
+| Artwork | [Project icon](https://github.com/OakcoderX/solopup-memory/blob/v0.26.0/icon.svg) |
 
 The earlier evaluation gives the tested versions and scope for each score. Dream Review is opt-in and Super Agent support remains experimental. Model services configured for review can incur charges. [Evaluation and reproduction](runs/2026-11-18-memory-delivery.md) · [Privacy and cost](guides/privacy.md)
 
