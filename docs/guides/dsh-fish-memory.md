@@ -9,14 +9,14 @@ locale: zh_CN
 
 你在 DeepSeek Harness（DSH）里养大肥鱼。昨天让它叫你“小柚”，今天改成“小栗”。新开会话后，它还会叫对吗？如果叫对了，能找出你改口的那句原话吗？
 
-这是一个用**虚构称呼**测试长期记忆的练习，不是一次已完成的实机评测。SoloPup Memory 是 DSH 原生文字会话的开源记忆插件（MIT，公开测试版），不是桌宠，不会接管 QQ、B 站机器人或其他插件自己的记忆库。如果你用的桌宠已经有独立记忆，可以先拿下面的步骤测现有方案，不用同时安装两套记忆插件。
+这是一个用**虚构称呼**测试长期记忆的练习，不是一次已完成的实机评测。SoloPup Memory 是 DSH 原生文字会话的开源文字记忆插件（MIT），不是桌宠，不会接管 QQ、B 站机器人或其他插件自己的记忆库。如果你用的桌宠已经有独立记忆，可以先拿下面的步骤测现有方案，不用同时安装两套记忆插件。
 
 ## 先准备一个空白工作区
 
-按[固定版本快速上手](https://github.com/OakcoderX/solopup-memory/blob/v0.26.0-beta.6/docs/guides/quickstart.md)安装。以下以桌面 profile 为例：
+按[固定版本快速上手](https://github.com/OakcoderX/solopup-memory/blob/v0.26.0/docs/guides/quickstart.md)安装。以下以桌面 profile 为例：
 
 ```sh
-dsh plugin --profile desktop add solopup-memory@0.26.0-beta.6 --ignore-scripts
+dsh plugin --profile desktop add solopup-memory@0.26.0 --ignore-scripts
 ```
 
 重启同一个 DSH profile，让助手调用 `memory_status` 核对加载版本。已有记忆库或旧插件的用户，先看[备份说明](backup.md)与[升级步骤](quickstart.md)，不要直接叠装或迁移。只用合成对话，不放密钥、真人聊天或个人资料。
@@ -41,6 +41,6 @@ dsh plugin --profile desktop add solopup-memory@0.26.0-beta.6 --ignore-scripts
 
 给关闭插件和启用插件的两组使用**独立的临时 DSH 用户目录**，保持宿主版本、模型和输入一致，不共用记忆库或旧会话。启用组中的第二个测试工作区用于查项目串读，不能代替关闭组。脚本化的固定模型回复，只能测插件有没有把信息交给宿主，不能证明真实模型会自主用对。
 
-欢迎[下载发行包或源码](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.6)、[Fork](https://github.com/OakcoderX/solopup-memory/fork) 或[用复现模板反馈](../../.github/ISSUE_TEMPLATE/semantic_report.md)。给出 DSH、模型和插件版本、虚构步骤，以及成功或失败发生在哪一步。不需要提交完整聊天。
+欢迎[下载发行包或源码](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0)、[Fork](https://github.com/OakcoderX/solopup-memory/fork) 或[用复现模板反馈](../../.github/ISSUE_TEMPLATE/semantic_report.md)。给出 DSH、模型和插件版本、虚构步骤，以及成功或失败发生在哪一步。不需要提交完整聊天。
 
-[如何验收换聊天的召回](fresh-chat.md) · [如何明确更正一条记忆](corrections.md) · [测试版限制](limits.md)
+[如何验收换聊天的召回](fresh-chat.md) · [如何明确更正一条记忆](corrections.md) · [当前能力与限制](limits.md)

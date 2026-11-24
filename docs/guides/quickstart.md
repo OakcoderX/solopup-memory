@@ -3,21 +3,21 @@
 先确认正在使用 DeepSeek Harness（DSH），Node >=24.9，DSH >=0.2.1-rc.0 且 <0.3.0。当前本地验证环境为 macOS。
 
 ```sh
-dsh plugin --profile desktop add solopup-memory@0.26.0-beta.6 --ignore-scripts
+dsh plugin --profile desktop add solopup-memory@latest --ignore-scripts
 ```
 
-[0.26.0-beta.6 发布包及源码 / Release package and source](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.6)
+`latest` 跟随稳定版。复现时可将其换成 `0.26.0`。 Use `latest` for stable releases or pin `0.26.0` to reproduce a run. [下载 0.26.0 发布包与源码 / Download 0.26.0 and its source](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0)
 
-重启对应 profile，运行 `memory_status`，核对版本。新会话说「记住：本项目使用两空格缩进」，等记忆写入后，再开新会话询问此约定。
+重启对应 profile，运行 `memory_status`，核对已加载的版本。新会话说「记住：本项目使用两空格缩进」，等记忆写入后，再开新会话询问此约定。
 
 在 DSH 里养大肥鱼？用[换会话与改口自测](dsh-fish-memory.md)检查新称呼、原话来源和项目边界。
 
-从旧版本升级时，先退出正在使用的 DSH profile，运行 `dsh plugin --profile desktop remove solopup-memory`，再运行上面的安装命令。此前的 0.25 → 0.26 → 0.25 隔离回退测试验证了同一份已有记忆在该过程中保留，并在每次启动时重新读到。Web 用户把 `desktop` 换成实际 profile。
+从旧版本升级时，先[完成备份](backup.md)，再退出正在使用的 DSH profile，运行 `dsh plugin --profile desktop remove solopup-memory`，再运行上面的安装命令。此前的 0.25 → 0.26 → 0.25 隔离回退测试验证了同一份已有记忆在该过程中保留，并在每次启动时重新读到。Web 用户把 `desktop` 换成实际 profile。
 
-Restart the same profile, check the loaded version with `memory_status`, then test an explicit remember request and recall it in a fresh conversation.
+Restart the same profile, check the loaded version with `memory_status`, then test an explicit remember request and recall it in a fresh conversation. [0.26.0 旧库升级、回退与复核验收 / Acceptance and scope](../runs/2026-11-24-stable-desktop.md)
 
-For an existing install, stop the profile, remove `solopup-memory` from that profile, then install the pinned version above. In the earlier 0.25 → 0.26 → 0.25 isolated upgrade and rollback test, the same memory files were retained and read after each restart.
+For an existing install, [back up your data](backup.md), stop the profile, remove `solopup-memory` from it, and install the stable release above. In the earlier 0.25 → 0.26 → 0.25 isolated upgrade and rollback test, the same memory files were retained and read after each restart.
 
-Idle review is optional. Select your project and model, leave DSH running, then open the latest dream report in that project's session. Check the source and use the regular memory write flow to adopt any correction. Ordinary DSH can run the review on its own. Super Agent mode uses a tested prototype setup. [Idle review setup](../dream-review.md) · [Test results and limits](../runs/2026-11-13-dream-review-beta1.md)
+Idle review is optional. Select your project and model, leave DSH running, then open the latest dream report in that project's session. Check the source and use the regular memory write flow to adopt any correction. Ordinary DSH can run the review on its own. Super Agent mode remains experimental. [Idle review setup](../dream-review.md) · [Test results and limits](../runs/2026-11-13-dream-review-beta1.md)
 
 [安装与限制](../../README.md) · [English](../../README.en.md) · [试用导航](../README.md)

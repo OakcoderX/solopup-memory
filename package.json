@@ -1,7 +1,7 @@
 {
   "name": "solopup-memory",
-  "version": "0.26.0-rc.2",
-  "description": "SoloPup Memory — source-linked, layered text memory for DeepSeek Harness. Public beta.",
+  "version": "0.26.0",
+  "description": "SoloPup Memory — source-linked, layered text memory for DeepSeek Harness.",
   "type": "module",
   "main": "index.mjs",
   "exports": {

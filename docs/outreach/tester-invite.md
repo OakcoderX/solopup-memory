@@ -8,4 +8,4 @@
 
 插件按 MIT 许可发布。配置的模型服务可能收费。反馈时请用虚构材料，保留自己的项目原稿和聊天记录。
 
-欢迎用手边的测试再跑一遍，或 Fork 源码加入可重放的用例。 [安装](../guides/quickstart.md) · [0.26 得分和复现记录](../runs/2026-11-18-memory-delivery.md) · [下载版本源码](https://github.com/OakcoderX/solopup-memory/releases) · [Fork 源码](https://github.com/OakcoderX/solopup-memory/fork) · [反馈入口](../feedback.md)
+欢迎用手边的测试再跑一遍，或 Fork 源码加入可重放的用例。 [安装](../guides/quickstart.md) · [历史得分和复现记录](../runs/2026-11-18-memory-delivery.md) · [下载版本源码](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0) · [Fork 源码](https://github.com/OakcoderX/solopup-memory/fork) · [反馈入口](../feedback.md)

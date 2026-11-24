@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.26.0 — core text memory release
+
+- Keep long-term preferences and current project decisions with source references, scope and historical revisions. Follow a confirmed correction while retaining its unrelated exceptions.
+- Resume work with source-linked recall, and request delivery review after supported successful writes. Verify important files and tool results before relying on the outcome.
+- The release attaches the desktop DSH and real-model acceptance for its exact archive, covering migration, rollback, current rules, scope, withdrawal and delivery review. Historical benchmark results retain their original experimental scope.
+- Delivery review uses the existing result or a read-only lookup for a successful external write. If verification is unavailable, the prompt tells the agent to report the limit and leave the existing write alone.
+- Dream Review remains opt-in. The macOS Super Agent companion remains experimental.
+
 ## 0.26.0-rc.2 — core text memory release candidate
 
 - Candidate for the first 0.26 general release. Retains beta.6 source-linked recall, project rules and delivery review on supported writes.

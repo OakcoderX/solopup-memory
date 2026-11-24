@@ -2,9 +2,9 @@
 
 **Help DSH remember your preferences and project decisions, so you have less to repeat next time.**
 
-SoloPup is a text-memory plugin for DeepSeek Harness (DSH). It attempts to save useful long-term context for DSH to recall and consider later. **Public beta:** saving or recall may fail; check important details.
+SoloPup is a text-memory plugin for DeepSeek Harness (DSH). It attempts to save useful long-term context for DSH to recall and consider later. **Current stable release: 0.26.0.** Check important details, since saving or recall can fail.
 
-[Quick start](docs/guides/quickstart.md) · [Install](#quick-install) · [0.26 evaluation](docs/runs/2026-11-18-memory-delivery.md) · [Scores for all 12 tasks](docs/runs/2026-11-20-frontiermemory-text.md) · [Dreaming study](docs/research/dreaming-in-dsh/README.en.md) · [More fictional examples](docs/README.md) · [FAQ](docs/faq.md) · [中文](README.md)
+[Install the stable release](docs/guides/quickstart.md) · [0.26.0 release](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0) · [Historical evaluation](docs/runs/2026-11-18-memory-delivery.md) · [Historical 12-task scores](docs/runs/2026-11-20-frontiermemory-text.md) · [Dreaming study](docs/research/dreaming-in-dsh/README.en.md) · [More fictional examples](docs/README.md) · [FAQ](docs/faq.md) · [中文](README.md)
 
 ## What could it look like?
 
@@ -22,7 +22,7 @@ For a project, you might record a travel budget or an agreed character detail fo
 
 ## How does memory help?
 
-In 0.26, SoloPup surfaces a small set of current, source-linked conventions for the active task. On supported DSH hosts, after a successful edit, it can ask the model to review the deliverables once before the turn closes. See the evaluation for scores, observed failures and reproduction steps. Download or fork the source to try it on your own DSH workflows. [Evaluation](docs/runs/2026-11-18-memory-delivery.md) · [Source downloads](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0-beta.6) · [Fork](https://github.com/OakcoderX/solopup-memory/fork)
+In 0.26, SoloPup surfaces a small set of current, source-linked conventions for the active task. On supported DSH hosts, after a successful edit, it can ask the model to review the deliverables once before the turn closes. The earlier evaluation lists the tested versions, scores, observed failures and reproduction steps. Download or fork the source to try it on your own DSH workflows. [Historical evaluation](docs/runs/2026-11-18-memory-delivery.md) · [Source downloads](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0) · [Fork](https://github.com/OakcoderX/solopup-memory/fork)
 
 **① You share something worth remembering**<br>
 ↓<br>
@@ -73,10 +73,10 @@ Ordinary DSH can run the entire review. An optional Super Agent Worker can run i
 Requires an installed DeepSeek Harness and Node >=24.9. For the desktop profile:
 
 ```sh
-dsh plugin --profile desktop add solopup-memory@0.26.0-beta.6 --ignore-scripts
+dsh plugin --profile desktop add solopup-memory@latest --ignore-scripts
 ```
 
-If a DSH update leaves a conversation stuck with `memory-context-render-mismatch`, follow the [upgrade guide](docs/guides/quickstart.md) to install the current public beta, restart DSH, and retry in the same conversation.
+If a DSH update leaves a conversation stuck with `memory-context-render-mismatch`, follow the [upgrade guide](docs/guides/quickstart.md) to install the current stable release, restart DSH, and retry in the same conversation.
 
 Restart that profile's host, then use `memory_status` to check the loaded version and status. If upgrading from `dsh-memory`, back up and remove the old plugin first; do not enable both. See [installation details](#install-in-dsh) for exact versions, legacy-store review and removal.
 
@@ -108,7 +108,7 @@ The Chinese message asks to keep this project's delivery notes in Chinese. Curre
 
 Use the official plugin-manager command in [Quick install](#quick-install).
 
-`solopup-memory@beta` follows the public beta tag. Git installation is available with `github:OakcoderX/solopup-memory#v0.26.0-beta.6`. The release page supplies a full commit SHA for an immutable Git pin. This package ships executable ESM and has no dependency installation or build scripts. You can also download the release tarball and install it with `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.26.0-beta.6.tgz --offline --ignore-scripts`.
+`solopup-memory@latest` follows stable releases. Pin `solopup-memory@0.26.0` for reproducibility. Choose `@next` or `@beta` when you want to test a prerelease. Git installation is available with `github:OakcoderX/solopup-memory#v0.26.0`. The release page supplies a full commit SHA for an immutable Git pin. This package ships executable ESM and has no dependency installation or build scripts. You can also download the release tarball and install it with `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.26.0.tgz --offline --ignore-scripts`.
 
 Restart the profile and use `memory_status`. Existing legacy stores may require explicit local review. Do not delete control files to bypass that review. If upgrading from `dsh-memory`, create a full private backup, stop the hosts using that data, remove the old package, then install SoloPup Memory. Do not run both packages together. The data location and legacy format identifiers are intentionally retained.
 
@@ -181,6 +181,6 @@ node accept.mjs --profile desktop
 
 MIT License. Copyright © 2026 oakfilm.
 
-Explicit requests to remember durable information are directed to the native `memory_write` tool in the same turn. A separate protocol context is available even when the memory store is empty. Personal self-reports remain claims; assistant guesses are not confirmed facts. Automatic capture uses short, code-bound source labels before the original identity and quote checks. This remains a public beta, and instructions do not guarantee model compliance.
+Explicit requests to remember durable information are directed to the native `memory_write` tool in the same turn. A separate protocol context is available even when the memory store is empty. Personal self-reports remain claims; assistant guesses are not confirmed facts. Automatic capture uses short, code-bound source labels before the original identity and quote checks. Check the actual write result. The model can miss or misunderstand an instruction.
 
 Recognized private content is excluded from automatic memory projection and unrelated saved-memory context in capture/admission review. Current and historical search hide it by default; includePrivate=true enables explicit on-demand retrieval. These are conservative content rules, not exhaustive classification or a filesystem security boundary. Raw Markdown and provenance remain local plaintext. Explicit retrieval still enters session history and model requests. Existing session archives, exports, backups and already-sent data are not erased.

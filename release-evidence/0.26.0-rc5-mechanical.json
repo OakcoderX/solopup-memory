@@ -1,0 +1,64 @@
+{
+  "pluginVersion": "0.26.0",
+  "archiveSha256": "7518d22c52b82c04a947a9c186be66050b64d0a41872f1228252825daecf82c2",
+  "hostVersion": "0.2.2-rc.5",
+  "hostNode": "25.8.1",
+  "modelCalls": 0,
+  "passed": true,
+  "cases": [
+    {
+      "name": "uncompressed",
+      "savedBytes": 506,
+      "readCalls": 1,
+      "outcome": "verified"
+    },
+    {
+      "name": "once",
+      "savedBytes": 1202,
+      "readCalls": 1,
+      "outcome": "verified"
+    },
+    {
+      "name": "twice",
+      "savedBytes": 1364,
+      "readCalls": 1,
+      "outcome": "verified"
+    },
+    {
+      "name": "actually-replaced",
+      "savedBytes": 1259,
+      "readCalls": 1,
+      "outcome": "source-replaced"
+    },
+    {
+      "name": "long-inline",
+      "savedBytes": 600,
+      "readCalls": 1,
+      "outcome": "verified"
+    },
+    {
+      "name": "oversized-indexed",
+      "savedBytes": 315328,
+      "readCalls": 0,
+      "outcome": "verified"
+    },
+    {
+      "name": "oversized-unindexed",
+      "savedBytes": 315186,
+      "readCalls": 0,
+      "outcome": "stored-size-cap"
+    },
+    {
+      "name": "other-workspace",
+      "savedBytes": 1315,
+      "readCalls": 1,
+      "outcome": "workspace-mismatch"
+    }
+  ],
+  "indexedNegativeControls": {
+    "withdrawn": "source-withdrawn",
+    "changedRevision": "stored-size-cap",
+    "readCalls": 0
+  },
+  "withdrawn": "source-withdrawn"
+}

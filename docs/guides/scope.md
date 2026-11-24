@@ -6,6 +6,6 @@
 
 Keep project conventions separate from global preferences. Inspect scope in returned records. Only make a global rule when that is actually what the user means.
 
-公开测试版 / Public beta.
+[当前能力与限制 / Capabilities and limitations](limits.md)
 
 [安装与限制](../../README.md) · [English](../../README.en.md) · [试用导航](../README.md)

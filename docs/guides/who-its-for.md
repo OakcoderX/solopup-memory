@@ -6,6 +6,6 @@
 
 For DSH users who revisit projects and want source-linked decisions. Start with a non-sensitive convention. Text only; no embedding retrieval or general reliability guarantee.
 
-公开测试版 / Public beta.
+[当前能力与限制 / Capabilities and limitations](limits.md)
 
 [安装与限制](../../README.md) · [English](../../README.en.md) · [试用导航](../README.md)

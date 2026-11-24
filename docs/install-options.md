@@ -1,12 +1,12 @@
 # Installation choices / 安装方式
 
-Pin the public beta from npm for the desktop profile.
+Use the stable release from npm for the desktop profile. 桌面 profile 默认推荐稳定版。
 
 ```sh
-dsh plugin --profile desktop add solopup-memory@0.26.0-beta.1 --ignore-scripts
+dsh plugin --profile desktop add solopup-memory@latest --ignore-scripts
 ```
 
-`solopup-memory@beta` follows the beta tag and can change. The GitHub release also supplies a local archive. Install it with the official manager using its absolute path and `--offline --ignore-scripts`. See the root README for the full command and upgrade precautions.
+Pin `solopup-memory@0.26.0` for a reproducible installation. Choose `@next` or `@beta` only to try a prerelease. The [0.26.0 GitHub release](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0) supplies the archive and checksum. Install it with the official manager using its absolute path and `--offline --ignore-scripts`. See the root README for the full command and upgrade precautions.
 
 Custom plugin markets users can add `https://raw.githubusercontent.com/OakcoderX/solopup-memory/main/market/index.json` in Discover → Add index source after enabling the experimental feature. This is a self-hosted source, not an official endorsement.
 

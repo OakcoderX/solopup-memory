@@ -8,7 +8,7 @@
 
 **为什么说记住了却找不到？** 先查真实写入状态，再区分项目归属、召回表达和当前会话上下文。待审或拒绝不等于成功。
 
-**Is this a stable release?** No. Read RELEASE.md for bounded evidence and unresolved acceptance work.
+**Is this a stable release?** 0.26.0 is the stable text-memory release. Idle review is opt-in and Super Agent support remains experimental. See the release notes for the tested hosts and scenarios. [Release notes](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0)
 
 **会把所有聊天都记下来吗？** 不会。候选须经审查，自动整理通常每四轮尝试；明确要求记住的持久信息应走当轮正式工具，仍需检查模型是否实际遵循。
 

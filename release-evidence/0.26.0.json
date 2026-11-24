@@ -1,0 +1,277 @@
+{
+  "pluginVersion": "0.26.0",
+  "archiveSha256": "7518d22c52b82c04a947a9c186be66050b64d0a41872f1228252825daecf82c2",
+  "hostVersion": "0.2.2-rc.3",
+  "model": "deepseek-flash",
+  "modelRoute": "deepseek-account",
+  "reasoningEffort": "off",
+  "modelCalls": 28,
+  "passed": true,
+  "checks": {
+    "upgrade_readback": true,
+    "rollback_readback": true,
+    "fresh_rule_and_exception": true,
+    "withdrawal_and_scope": true,
+    "delivery_positive_and_negative": true
+  },
+  "archiveFilesCompared": 223,
+  "oldPluginVersion": "0.21.0-beta.1",
+  "oldArchiveSha256": "02c430a786e450442fce06e26a5f36b46060b7072f7365609d6f868ed6c543ba",
+  "oldHostVersion": "0.2.1-rc.5",
+  "syntheticOnly": true,
+  "desktopNativeRoute": "installed signed macOS app CLI; isolated web profile, no active desktop restart",
+  "rollbackMethod": "restore old byte-identical snapshot and reopen with old runtime; candidate-era snapshot retained separately",
+  "totals": {
+    "requests": 28,
+    "usageEntries": 28,
+    "tokens": 59275,
+    "inputUncached": 12263,
+    "inputCacheRead": 44160,
+    "output": 2852
+  },
+  "cases": [
+    {
+      "case": "changed-main",
+      "reason": {
+        "kind": "completed"
+      },
+      "noticeCount": 1,
+      "tools": [
+        "file_read",
+        "file_write",
+        "file_read",
+        "file_read"
+      ],
+      "file": "远帆金签",
+      "fixture": null
+    },
+    {
+      "case": "preserved-exception",
+      "reason": {
+        "kind": "completed"
+      },
+      "noticeCount": 1,
+      "tools": [
+        "file_read",
+        "file_write",
+        "file_read",
+        "file_read"
+      ],
+      "file": "溪桥白签",
+      "fixture": null
+    },
+    {
+      "case": "foreign-and-chat",
+      "reason": {
+        "kind": "completed"
+      },
+      "noticeCount": 0,
+      "tools": [],
+      "file": "远帆金签",
+      "fixture": null
+    },
+    {
+      "case": "read-only",
+      "reason": {
+        "kind": "completed"
+      },
+      "noticeCount": 0,
+      "tools": [
+        "file_read"
+      ],
+      "file": "远帆金签",
+      "fixture": null
+    },
+    {
+      "case": "failed-mutation",
+      "reason": {
+        "kind": "completed"
+      },
+      "noticeCount": 0,
+      "tools": [
+        "mcp__solopup_release_fixture__update_deliverable"
+      ],
+      "file": "远帆金签",
+      "fixture": null
+    },
+    {
+      "case": "successful-mutation",
+      "reason": {
+        "kind": "completed"
+      },
+      "noticeCount": 1,
+      "tools": [
+        "mcp__solopup_release_fixture__update_deliverable"
+      ],
+      "file": "远帆金签",
+      "fixture": "远帆金签"
+    },
+    {
+      "case": "successful-with-readback",
+      "reason": {
+        "kind": "completed"
+      },
+      "noticeCount": 1,
+      "tools": [
+        "mcp__solopup_release_fixture__get_deliverable",
+        "mcp__solopup_release_fixture__update_deliverable",
+        "mcp__solopup_release_fixture__get_deliverable",
+        "mcp__solopup_release_fixture__get_deliverable"
+      ],
+      "file": null,
+      "fixture": "远帆金签",
+      "fixtureCorrectedRerun": true
+    }
+  ],
+  "receiptSha256": {
+    "upgrade-before.json": "d9662abea1f3de43c3ea24f2cd6b7e7ea439d2977e46061cfe5e031abf136763",
+    "upgrade-after.json": "0793a265a4c234aedea45257313ec3f58742d240d696d3559c9bad8f91a7962d",
+    "upgrade-revision.json": "99d430bb9d6c499af8970d0ee2eee43637e141c585ba28ad115341df92bc4eba",
+    "upgrade-recheck.json": "1bb750fae0d1f63584767f28a1d98141b0193190bd6b3ce4cebc0f06095ef2a4"
+  },
+  "executionPhases": {
+    "initial": {
+      "meters": {
+        "requests": 22,
+        "usageEntries": 22,
+        "tokens": 45948,
+        "inputUncached": 10170,
+        "inputCacheRead": 33536,
+        "output": 2242,
+        "ledgerSha256": "be9b7cdb918b9f596ddaff6e59c2ec247576aeab8d8ddc640cc6dc3616af0ee3"
+      },
+      "cases": [
+        {
+          "case": "changed-main",
+          "reason": {
+            "kind": "completed"
+          },
+          "noticeCount": 1,
+          "tools": [
+            "file_read",
+            "file_write",
+            "file_read",
+            "file_read"
+          ],
+          "file": "远帆金签",
+          "fixture": null
+        },
+        {
+          "case": "preserved-exception",
+          "reason": {
+            "kind": "completed"
+          },
+          "noticeCount": 1,
+          "tools": [
+            "file_read",
+            "file_write",
+            "file_read",
+            "file_read"
+          ],
+          "file": "溪桥白签",
+          "fixture": null
+        },
+        {
+          "case": "foreign-and-chat",
+          "reason": {
+            "kind": "completed"
+          },
+          "noticeCount": 0,
+          "tools": [],
+          "file": "远帆金签",
+          "fixture": null
+        },
+        {
+          "case": "read-only",
+          "reason": {
+            "kind": "completed"
+          },
+          "noticeCount": 0,
+          "tools": [
+            "file_read"
+          ],
+          "file": "远帆金签",
+          "fixture": null
+        },
+        {
+          "case": "failed-mutation",
+          "reason": {
+            "kind": "completed"
+          },
+          "noticeCount": 0,
+          "tools": [
+            "mcp__solopup_release_fixture__update_deliverable"
+          ],
+          "file": "远帆金签",
+          "fixture": null
+        },
+        {
+          "case": "successful-mutation",
+          "reason": {
+            "kind": "completed"
+          },
+          "noticeCount": 1,
+          "tools": [
+            "mcp__solopup_release_fixture__update_deliverable"
+          ],
+          "file": "远帆金签",
+          "fixture": "远帆金签"
+        },
+        {
+          "case": "successful-with-readback",
+          "reason": {
+            "kind": "completed"
+          },
+          "noticeCount": 0,
+          "tools": [
+            "mcp__solopup_release_fixture__get_deliverable"
+          ],
+          "file": "远帆金签",
+          "fixture": null
+        }
+      ],
+      "passedAllChecks": false
+    },
+    "readbackFixtureRerun": {
+      "meters": {
+        "requests": 6,
+        "usageEntries": 6,
+        "tokens": 13327,
+        "inputUncached": 2093,
+        "inputCacheRead": 10624,
+        "output": 610,
+        "ledgerSha256": "667f28b975667d7f77920a346ad1d05ed47f2edc252bb58131ac68ad1c76d8bb"
+      },
+      "case": {
+        "case": "successful-with-readback",
+        "reason": {
+          "kind": "completed"
+        },
+        "noticeCount": 1,
+        "tools": [
+          "mcp__solopup_release_fixture__get_deliverable",
+          "mcp__solopup_release_fixture__update_deliverable",
+          "mcp__solopup_release_fixture__get_deliverable",
+          "mcp__solopup_release_fixture__get_deliverable"
+        ],
+        "file": null,
+        "fixture": "远帆金签"
+      },
+      "initialSnapshotRestored": true,
+      "archiveUnchanged": true
+    }
+  },
+  "testFixtureCorrection": {
+    "case": "successful-with-readback",
+    "initialObservation": "Read before write returned ENOENT from a nonexistent local fixture file. The model did not attempt a mutation, so this run was unable to exercise the post-write review.",
+    "correction": "Simulated read endpoint reports an unregistered initial state normally; the product archive and prompt remained unchanged. Only the affected case was rerun using a fresh isolated upgrade.",
+    "repeatedOnlyAffectedCase": true,
+    "allInitialResultsRetained": true
+  },
+  "rerunReceiptSha256": {
+    "upgrade-before.json": "be0807e2e6ad2f1e0e4453b23a1deb90351615ec70cfba3c483a3ac3762b1628",
+    "upgrade-after.json": "7e11d872268150bca1e6f105a14587b147d7eb5e4f7c34508b285ece98ad7cee",
+    "upgrade-revision.json": "cb1f2a6d7aad2be59a428a853b5b6291e6bdd4c00a63e296622e462fb2446e20",
+    "upgrade-recheck.json": "5594ee08ea719ab381cd6aee7b2d2a2b9090dfafa8f3f9e63a670749ecb1244b"
+  }
+}
