@@ -1,0 +1,39 @@
+{
+  "passed": false,
+  "pluginVersion": "0.26.0",
+  "archiveSha256": "0fa0952094ba0acfa4e5cd4cc80b2719af524965c791aa839b5d48d8e0da6a80",
+  "channel": "latest",
+  "observedDistTags": {
+    "latest": "0.26.0",
+    "beta": "0.26.0-beta.6",
+    "next": "0.26.0-rc.2"
+  },
+  "installRoute": "signed macOS DSH desktop-profile registry install, fresh isolated pnpm stores; exact installed bundle started via isolated CLI profile because desktop is Electron-only; no model calls",
+  "checks": [
+    {
+      "installSpec": "solopup-memory",
+      "installedVersion": "0.26.0-beta.3",
+      "expectedVersion": "0.26.0",
+      "hostVersion": "0.2.2-rc.3",
+      "modelRequests": 0,
+      "memoryStatusLoaded": null,
+      "memorySearchLoaded": null,
+      "archiveFilesCompared": null,
+      "expectedVersionInstalled": false
+    },
+    {
+      "installSpec": "solopup-memory@latest",
+      "installedVersion": "0.26.0-beta.3",
+      "expectedVersion": "0.26.0",
+      "hostVersion": "0.2.2-rc.3",
+      "modelRequests": 0,
+      "memoryStatusLoaded": null,
+      "memorySearchLoaded": null,
+      "archiveFilesCompared": null,
+      "expectedVersionInstalled": false
+    }
+  ],
+  "freshPackageAgeExclusionDiagnostic": false,
+  "exactVersionDiagnostic": false,
+  "stockFallbackRun": true
+}

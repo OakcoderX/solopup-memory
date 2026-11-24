@@ -15,6 +15,8 @@
 
 覆盖范围是指定 macOS 宿主、模型与合成案例。同一归档在官方 DSH `0.2.2-rc.5` CLI 通过零模型调用的长历史检查。Dream Review 默认关闭，Super Agent 仍为实验功能。历史 FrontierMemory 成绩属于对应实验版本。 [完整机器回执](../../release-evidence/0.26.0.json) · [安装与回退](../guides/quickstart.md)
 
+**上架后复验。** 从 npm 显式安装 `solopup-memory@0.26.0`，可读回版本并加载 `memory_status` 和 `memory_search`，安装的 223 个文件再次与归档一致。npm `latest` 已指向 0.26.0。发布当天，两次全新 DSH 安装用裸包名或浮动标签都解析到 beta.3，符合内置 pnpm 的新包观察期。安装指南因此将精确稳定版放在首位。 [固定版本回执](../../release-evidence/0.26.0-public-install.json) · [浮动安装回执](../../release-evidence/0.26.0-floating-install.json)
+
 ## English
 
 **After the upgrade, Flash followed the corrected project rule in a fresh session and retained the exception in a separate review draft.** We read both files back. The old memory and its source references remained readable, and restoring the pre-upgrade backup allowed the original version to read the old store again.
@@ -24,3 +26,5 @@ We seeded the store with the published npm package `0.21.0-beta.1` on official D
 Each successful file or simulated tool write triggered one review. Chat, read-only operations, and failed writes triggered none. The two successful simulated actions each mutated state once. An early candidate caused Flash to repeat an external write during review. The revised cue asks the model to inspect the existing result or use a read-only lookup.
 
 During preflight, a simulated lookup returned a filesystem error for an empty record. We corrected the simulator, then ran all seven cases on the final archive. The attached receipt covers that final run. This acceptance covers the named host, model and synthetic tasks. The same archive passed the long-history checks on the official DSH `0.2.2-rc.5` CLI without model calls. Dream Review is opt-in. The Super Agent companion remains experimental. [Machine-readable receipt](../../release-evidence/0.26.0.json)
+
+**Public installation check.** Installing `solopup-memory@0.26.0` from npm loaded both memory tools, and the 223 installed files matched the release archive. The npm `latest` tag pointed to 0.26.0. Two clean, unpinned installs resolved to beta.3 during the package-age window, so the DSH guide leads with the verified exact version. [Pinned installation receipt](../../release-evidence/0.26.0-public-install.json) · [Floating installation receipt](../../release-evidence/0.26.0-floating-install.json)
