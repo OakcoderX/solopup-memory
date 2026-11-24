@@ -49,6 +49,8 @@ test('steers one plugin notice per turn without creating direct-user evidence', 
   assert.match(message.content[0].text, /临时或调试文件/)
   assert.match(message.content[0].text, /边界用例/)
   assert.match(message.content[0].text, /当前的明确要求优先/)
+  assert.match(message.content[0].text, /成功的外部写入不得重做/)
+  assert.match(message.content[0].text, /已有返回值或只读查询，无法核实就说明/)
   assert.equal(captureMessage({ type: 'user/message', data: message }, 'not-owner-evidence'), undefined)
 })
 

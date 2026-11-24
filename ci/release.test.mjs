@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {createHash} from 'node:crypto'
-import {releaseIdentity,checkDigest,checkFiles,checkLongHistory,maySubmit} from './release.mjs'
+import {releaseIdentity,checkDigest,checkFiles,checkLongHistory,checkDesktopAcceptance,maySubmit} from './release.mjs'
 test('unknown prior submissions cannot be automatically repeated after a 404',()=>{
   assert.equal(maySubmit('push',1),true)
   assert.equal(maySubmit('push',2),false)
@@ -24,9 +24,13 @@ test('paired performance comparison rejects regression, invalid samples and outl
   assert.throws(()=>compareTiming([6],[6]))
   assert.throws(()=>compareTiming([6,6,6],[NaN,6,6]))
 })
-test('release tags must match the beta version and exact repository',()=>{
-  assert.equal(releaseIdentity('0.21.0-beta.4','v0.21.0-beta.4').filename,'solopup-memory-0.21.0-beta.4.tgz')
-  for(const [version,ref,repo] of [['0.21.0','v0.21.0'],['0.21.0-beta.4','main'],['0.21.0-beta.4','v0.21.0-beta.3'],['0.21.0-beta.4','v0.21.0-beta.4','someone/else']])assert.throws(()=>releaseIdentity(version,ref,repo))
+test('only an exact version tag in the official repository determines the npm channel',()=>{
+  for(const [version,channel] of [['0.21.0-beta.4','beta'],['0.26.0-rc.1','next'],['0.26.0','latest']]){
+    const id=releaseIdentity(version,`v${version}`)
+    assert.equal(id.filename,`solopup-memory-${version}.tgz`)
+    assert.equal(id.channel,channel)
+  }
+  for(const [version,ref,repo] of [['0.26.0-dev.1','v0.26.0-dev.1'],['0.21.0-beta.4','main'],['0.21.0-beta.4','v0.21.0-beta.3'],['0.21.0-beta.4','v0.21.0-beta.4','someone/else']])assert.throws(()=>releaseIdentity(version,ref,repo))
 })
 test('archive verification refuses modified bytes and mismatched independent digests',()=>{
   const b=Buffer.from('synthetic public archive'),m={sha256:createHash('sha256').update(b).digest('hex'),integrity:'sha512-'+createHash('sha512').update(b).digest('base64')}
@@ -39,6 +43,16 @@ test('history acceptance must describe the exact successful release archive', ()
   assert.throws(() => checkLongHistory(undefined, manifest))
   assert.throws(() => checkLongHistory({ ...receipt, passed: false }, manifest))
   assert.throws(() => checkLongHistory({ ...receipt, archiveSha256: 'different-archive' }, manifest))
+})
+test('stable publishing requires all real-desktop checks on the exact stable archive',()=>{
+  const manifest={version:'0.26.0',sha256:'expected-archive'}
+  const checks={upgrade_readback:true,rollback_readback:true,fresh_rule_and_exception:true,withdrawal_and_scope:true,delivery_positive_and_negative:true}
+  const receipt={passed:true,pluginVersion:manifest.version,archiveSha256:manifest.sha256,hostVersion:'0.2.2-rc.3',model:'deepseek-flash',modelCalls:3,checks}
+  checkDesktopAcceptance(receipt,manifest)
+  assert.throws(()=>checkDesktopAcceptance({...receipt,modelCalls:0},manifest))
+  assert.throws(()=>checkDesktopAcceptance({...receipt,pluginVersion:'0.26.0-rc.1'},manifest))
+  assert.throws(()=>checkDesktopAcceptance({...receipt,archiveSha256:'another-archive'},manifest))
+  assert.throws(()=>checkDesktopAcceptance({...receipt,checks:{...checks,rollback_readback:false}},manifest))
 })
 test('private stores, research, credentials and traversal cannot enter the release',()=>{
   checkFiles([{path:'index.mjs'},{path:'README.md'}])

@@ -15,9 +15,9 @@ function reviewMessage() {
   // owned by the live memory projection rather than being copied here.
   const text = [
     'SoloPup 交付复核。一次性插件提示。',
-    '按现行用户约定核对产物位置与内容（可用 memory_check_delivery）。',
-    '自检：必交文件落盘且改动已读回；被替换旧做法已清除、不并列；核查工作区并清理临时或调试文件；确认空输入等边界用例已验证。',
-    '可在授权内补齐普通项目文件。用户当前的明确要求优先，超出权限如实说明。',
+    '按现行用户约定核对。成功的外部写入不得重做。核对已有返回值或只读查询，无法核实就说明。',
+    '如已改项目文件，核对位置并读回（可用 memory_check_delivery），确认旧做法未并列，清理临时或调试文件，验证适用的边界用例。',
+    '已经正确就汇报。仅在授权内补齐确实缺失的文件。用户当前的明确要求优先。',
   ].join('\n')
   return {
     id: randomUUID(),

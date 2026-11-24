@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.26.0-rc.2 — core text memory release candidate
+
+- Candidate for the first 0.26 general release. Retains beta.6 source-linked recall, project rules and delivery review on supported writes.
+- Delivery review checks an existing successful external write through its result or a read-only lookup. The prompt asks the agent to report unverified results rather than repeat the write.
+- Uses the npm \`next\` channel for testing. Backup, upgrade, real DSH continuation and rollback are the focus of release acceptance.
+- Dream Review remains opt-in. The macOS Super Agent companion remains experimental.
+
 ## 0.26.0-beta.6 — source recall and delivery review
 
 - Recover quoted owner statements and source locations from the current workspace, including when a question does not use explicit continuation wording.

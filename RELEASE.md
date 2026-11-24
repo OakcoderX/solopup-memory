@@ -1,5 +1,7 @@
-# 0.26.0-beta.6 — source recall and delivery review
+# SoloPup Memory 0.26.0-rc.2
 
-SoloPup can recover a user's original words from the current workspace with source references. Read-only sessions get a shorter memory protocol. On supported DSH hosts, recognized successful workspace edits and MCP writes can trigger one delivery review. The model still verifies the actual deliverable.
+本版是核心文字记忆的正式发布候选。保留 beta.6 的原话回读、现行约定和写入后的交付复核。做梦默认关闭，Super Agent 配合仍属实验功能。
 
-原来的 8/8 报告已撤回。历史真机结果只适用于对应实验包。本版包含经复验的工程改动。 [变更与评测边界 / Changes and evaluation scope](CHANGELOG.md) · [安装 / Installation](docs/guides/quickstart.md)
+This release candidate carries forward beta.6 text recall, active project rules and delivery review. Dream Review stays opt-in, and the macOS Super Agent companion remains experimental.
+
+[变更记录 / Changelog](CHANGELOG.md) · [安装指南 / Installation guide](docs/guides/quickstart.md)
