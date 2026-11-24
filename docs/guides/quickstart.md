@@ -2,11 +2,26 @@
 
 先确认正在使用 DeepSeek Harness（DSH），Node >=24.9，DSH >=0.2.1-rc.0 且 <0.3.0。当前本地验证环境为 macOS。
 
+**当前稳定版是 0.26.0。** 安装这一版请使用明确版本号。需要离线安装或复验时，可以下载同一发行页中的 `solopup-memory-0.26.0.tgz` 和 `SHA256SUMS`。 [下载发布包和校验文件](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0)
+
+```sh
+dsh plugin --profile desktop add solopup-memory@0.26.0 --ignore-scripts
+```
+
+也可在下载目录校验后安装发布包。
+
+```sh
+shasum -a 256 -c SHA256SUMS &&
+  dsh plugin --profile desktop add "$PWD/solopup-memory-0.26.0.tgz" --offline --ignore-scripts
+```
+
+npm 的 `latest` 随稳定版更新。新版发布当天，使用 pnpm 11 的 DSH 安装器对浮动标签可能暂时选择较早版本。用 `memory_status` 核对实际加载版本。 [pnpm 的新包观察期](https://pnpm.io/blog/releases/11.0#security--build-defaults)
+
 ```sh
 dsh plugin --profile desktop add solopup-memory@latest --ignore-scripts
 ```
 
-`latest` 跟随稳定版。复现时可将其换成 `0.26.0`。 Use `latest` for stable releases or pin `0.26.0` to reproduce a run. [下载 0.26.0 发布包与源码 / Download 0.26.0 and its source](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0)
+Pin `0.26.0` to install this exact stable release immediately, or install the checked archive offline. The npm `latest` tag tracks the stable release. DSH installations using pnpm 11 may still resolve an earlier version during the new package's first day. Use `memory_status` to check the version you actually loaded.
 
 重启对应 profile，运行 `memory_status`，核对已加载的版本。新会话说「记住：本项目使用两空格缩进」，等记忆写入后，再开新会话询问此约定。
 

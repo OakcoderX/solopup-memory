@@ -1,6 +1,6 @@
 {
   "pluginVersion": "0.26.0",
-  "archiveSha256": "7518d22c52b82c04a947a9c186be66050b64d0a41872f1228252825daecf82c2",
+  "archiveSha256": "0fa0952094ba0acfa4e5cd4cc80b2719af524965c791aa839b5d48d8e0da6a80",
   "hostVersion": "0.2.2-rc.5",
   "hostNode": "25.8.1",
   "modelCalls": 0,
@@ -8,19 +8,19 @@
   "cases": [
     {
       "name": "uncompressed",
-      "savedBytes": 506,
+      "savedBytes": 507,
       "readCalls": 1,
       "outcome": "verified"
     },
     {
       "name": "once",
-      "savedBytes": 1202,
+      "savedBytes": 1198,
       "readCalls": 1,
       "outcome": "verified"
     },
     {
       "name": "twice",
-      "savedBytes": 1364,
+      "savedBytes": 1365,
       "readCalls": 1,
       "outcome": "verified"
     },
@@ -32,7 +32,7 @@
     },
     {
       "name": "long-inline",
-      "savedBytes": 600,
+      "savedBytes": 597,
       "readCalls": 1,
       "outcome": "verified"
     },
@@ -44,13 +44,13 @@
     },
     {
       "name": "oversized-unindexed",
-      "savedBytes": 315186,
+      "savedBytes": 315187,
       "readCalls": 0,
       "outcome": "stored-size-cap"
     },
     {
       "name": "other-workspace",
-      "savedBytes": 1315,
+      "savedBytes": 1311,
       "readCalls": 1,
       "outcome": "workspace-mismatch"
     }

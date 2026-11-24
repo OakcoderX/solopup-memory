@@ -20,8 +20,10 @@ Every tag must exactly match the package version. A beta goes to `beta`, a relea
 stable version goes to `latest`. The npm environment must allow the intended
 release tag. Release candidates do not alter the default market entry.
 
-Before pushing a stable tag, build the final archive with the workflow's npm
-version, and test that archive on the supported desktop DSH with a real model.
+Before pushing a stable tag, dry-run this workflow on the staging branch.
+Download the tested archive, then test those exact compressed bytes on the
+supported desktop DSH with a real model. Identical files can produce a
+different archive SHA-256 under another Node or gzip build.
 Commit the sanitized receipt at `release-evidence/<version>.json`. It must
 identify the version, archive SHA-256, host, model and number of model calls,
 and confirm upgrade, rollback, current rule and exception, withdrawal and

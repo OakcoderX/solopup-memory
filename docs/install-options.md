@@ -1,12 +1,12 @@
 # Installation choices / 安装方式
 
-Use the stable release from npm for the desktop profile. 桌面 profile 默认推荐稳定版。
+桌面用户优先打开[稳定版安装指南](guides/quickstart.md)。指南提供当前 0.26.0 发布包、校验文件和安装命令。 The guide links to the current stable archive and explains how to verify it before installation.
 
 ```sh
-dsh plugin --profile desktop add solopup-memory@latest --ignore-scripts
+dsh plugin --profile desktop add solopup-memory@0.26.0 --ignore-scripts
 ```
 
-Pin `solopup-memory@0.26.0` for a reproducible installation. Choose `@next` or `@beta` only to try a prerelease. The [0.26.0 GitHub release](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0) supplies the archive and checksum. Install it with the official manager using its absolute path and `--offline --ignore-scripts`. See the root README for the full command and upgrade precautions.
+The npm `latest` channel tracks stable. A DSH installer using pnpm 11 can still resolve an older version on release day. Use the verified [0.26.0 GitHub release archive](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0) for an exact installation. Choose `@next` or `@beta` only to try a prerelease.
 
 Custom plugin markets users can add `https://raw.githubusercontent.com/OakcoderX/solopup-memory/main/market/index.json` in Discover → Add index source after enabling the experimental feature. This is a self-hosted source, not an official endorsement.
 
