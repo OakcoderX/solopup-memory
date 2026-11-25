@@ -286,12 +286,12 @@ export function openDreamQueue(dataRoot, {
     `)
   }
 
-  function requeuePrepared(row, reason) {
+  function requeuePrepared(row, reason, availableAt = row.available_at) {
     db.prepare(`
       UPDATE runs SET status='queued', owner=NULL, mode=NULL, epoch=NULL, manual=NULL,
-        lease_until=NULL, remote_id=NULL, remote_binding=NULL, reason=?
+        lease_until=NULL, remote_id=NULL, remote_binding=NULL, reason=?, available_at=?
       WHERE id=? AND status='prepared'
-    `).run(reason, row.id)
+    `).run(reason, availableAt, row.id)
   }
 
   function recoverExpired(at) {
@@ -526,12 +526,14 @@ export function openDreamQueue(dataRoot, {
     })
   }
 
-  function release(claimValue) {
+  function release(claimValue, { delayMs = 0 } = {}) {
+    integer(delayMs, 0, 604_800_000, 'release-delay')
     return write(() => {
-      recoverExpired(time())
+      const at = time()
+      recoverExpired(at)
       const row = matchingClaim(claimValue, ['prepared'])
       if (!row) return undefined
-      requeuePrepared(row, 'released-before-dispatch')
+      requeuePrepared(row, 'released-before-dispatch', delayMs ? at + delayMs : row.available_at)
       completeModeSwitch()
       return getRun(row.id)
     })
@@ -547,7 +549,7 @@ export function openDreamQueue(dataRoot, {
     confirmedUnsent = false,
     retryAfterMs = 60_000,
     reason
-  } = {}) {
+  } = {}, local = false) {
     if (!['completed', 'retryable', 'failed', 'invalidated', 'cancelled', 'uncertain'].includes(outcome)) fail('invalid-outcome')
     if (usedTokens !== undefined && usedTokens !== null) integer(usedTokens, 0, 100_000_000, 'used-tokens')
     if (typeof confirmedUnsent !== 'boolean' || (confirmedUnsent && (
@@ -567,7 +569,8 @@ export function openDreamQueue(dataRoot, {
       const row = matchingClaim(claimValue, ['prepared', 'dispatching', 'running'])
       if (!row) return undefined
       const attempt = usageFor(row)
-      if (!attempt && ['completed', 'uncertain'].includes(outcome)) fail('no-dispatch')
+      if (local && (row.status !== 'prepared' || attempt || settings().pending_mode !== null)) return undefined
+      if (!attempt && !local && ['completed', 'uncertain'].includes(outcome)) fail('no-dispatch')
       if (outcome === 'retryable' && attempt && !confirmedUnsent && usedTokens == null) {
         fail('retry-requires-termination-proof')
       }
@@ -720,7 +723,14 @@ export function openDreamQueue(dataRoot, {
     claim,
     beginDispatch,
     markRunning,
-    finish,
+    finish(claimValue, outcome) { return finish(claimValue, outcome) },
+    finishWithoutModel(claimValue, { report, reviewedItemKeys } = {}) {
+      if (!Array.isArray(report?.items) || !report.items.length || report.usage !== null ||
+          report.items.some(item => item?.verdict !== 'needs-evidence' || Object.hasOwn(item, 'proposedSummary'))) {
+        fail('invalid-local-report')
+      }
+      return finish(claimValue, { status: 'completed', report, reviewedItemKeys }, true)
+    },
     release,
     requestMode,
     requestExecutor,
@@ -745,6 +755,15 @@ export function openDreamQueue(dataRoot, {
       identifier(projectId, 'project-id')
       identifier(itemKey, 'item-key')
       return !!db.prepare('SELECT 1 FROM reviewed WHERE project_id=? AND item_key=?').get(projectId, itemKey)
+    },
+    reviewedTargets(projectId) {
+      identifier(projectId, 'project-id')
+      return new Set(db.prepare(`
+        SELECT DISTINCT targets.value AS id FROM runs
+        JOIN reports ON reports.run_id=runs.id
+        JOIN json_each(runs.metadata,'$.itemIds') AS targets
+        WHERE runs.project_id=? AND runs.status='completed' AND targets.type='text'
+      `).all(projectId).map(({ id }) => id))
     },
     scanCheckpoint(projectId) {
       identifier(projectId, 'project-id')

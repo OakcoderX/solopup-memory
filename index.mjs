@@ -8,8 +8,8 @@ import {memoryProtocol} from './memory-protocol.mjs'
 import { archivedSearchEvidence, defineContinuityTool, installContinuity } from './continuity.mjs'
 import { effectiveRuleText, renderEffectiveMemory, selectEffectiveMemory } from './effective-memory.mjs'
 import { installDeliveryReview } from './delivery-review.mjs'
-import { trackTaskMemory } from './task-memory-runtime.mjs'
-import { readWorkspaceHistorySources, searchWorkspaceHistory, workspaceHistoryAvailable } from './workspace-history.mjs'
+import { defineMemoryReceiptTool, trackTaskMemory } from './task-memory-runtime.mjs'
+import { readWorkspaceHistorySources, searchWorkspaceHistory, strictWorkspaceSourceAvailable, workspaceHistoryAvailable } from './workspace-history.mjs'
 import {privateMemory,publicMemoryRecords,publicMemoryIndex,PRIVATE_MEMORY_NOTICE} from './privacy.mjs'
 import {nativeOwnerEvidence,validateNativeWrite} from './native-write-validation.mjs'
 import {toolProposal} from './source-record.mjs'
@@ -49,7 +49,7 @@ import {captureJobStatus,CAPTURE_STATUS_SCHEMA} from './capture-jobs.mjs'
 import { claimCaptureJob, assertCaptureClaim, finishCaptureJob, recoverCaptureJobs, retryBusyWrite } from './capture-jobs.mjs'
 import { setupMemoryHistory } from './context-history.mjs'
 import { captureSessionEligible, captureInputDescriptor, enqueueCaptureInput, bindCaptureInput, blockCaptureInput, pendingCaptureInputs, listCaptureInputs, reconstructCaptureInput, observeCaptureSource } from './capture-inputs.mjs'
-import { basename, join, resolve, relative } from 'node:path'
+import { basename, isAbsolute, join, resolve, relative } from 'node:path'
 import { DEFAULT_AUTO_CAPTURE, normalizePluginConfig } from './plugin-config.mjs'
 import { optionalService } from './host-services.mjs'
 import { projectStoreDir, inspectProjectStore, migrateProjectStore, recoverProjectStore, linkWorktreeProject, unlinkWorktreeProject } from './project-stores.mjs'
@@ -1077,6 +1077,7 @@ function writeMemoryLocal({ type, dir, line, detail, summary, expires, supersede
       ...(detailPath === undefined ? {} : { detailPath }),
       ...(supersededLine === undefined||hiddenLine(supersededLine) ? {} : { superseded: supersededLine }),
       id: newId,
+      ...(published ? { recordId: published.id } : {}),
       related:related.filter(edge=>!hiddenLine(edge.line)),
       ...(visibleWarnings.length === 0 ? {} : { warning: visibleWarnings.join('；') }),
     }
@@ -1900,7 +1901,7 @@ async function admitNativeWrite(ctx,sourceInputs,config,args,exec,target){
     const lines=(readTextSafe(join(target.dir,'MEMORY.md'))??'').split(/\r?\n/).map(line=>line.trim())
     if(!lines.includes(target.line))return
     const prior=meaningForLine(activeMeanings(candidateSnapshot(target.dir,target.scope).records),target.line)
-    if(prior&&JSON.stringify(prior.meaning)===JSON.stringify(target.meaning)&&(prior.detail??undefined)===target.detail)return{path:join(target.dir,'MEMORY.md'),indexLine:target.line,duplicate:true,lineCount:0,status:'duplicate'}
+    if(prior&&JSON.stringify(prior.meaning)===JSON.stringify(target.meaning)&&(prior.detail??undefined)===target.detail)return{path:join(target.dir,'MEMORY.md'),indexLine:target.line,duplicate:true,lineCount:0,status:'duplicate',recordId:prior.id}
   })
   if(existing)return existing
   const assertCurrent=()=>{
@@ -1933,7 +1934,7 @@ async function admitNativeWrite(ctx,sourceInputs,config,args,exec,target){
   }catch(error){if(error?.code==='memory-withdrawn-content')return stage('withdrawn-content-needs-review');throw error}
 }
 
-function defineWriteTool(ctx, sourceInputs, config) {
+function defineWriteTool(ctx, sourceInputs, config, receipts) {
   return {
     name: 'memory_write',
     description:
@@ -1989,6 +1990,7 @@ function defineWriteTool(ctx, sourceInputs, config) {
           status:{type:'string',enum:['recorded','duplicate','pending-review','rejected','not-applied']},
           reason:{type:'string'},
           candidateId:{type:'string'},
+          recordId:{type:'string'},
           reviewIssues:{type:'object',additionalProperties:false,required:['unsupported','uncertain'],properties:Object.fromEntries(['unsupported','uncertain'].map(key=>[key,{type:'array',items:{type:'string',enum:['durability','scope','wording','meaning','applicability','attribution','transition']}}]))},
           related: {
             type: 'array',
@@ -2029,7 +2031,10 @@ function defineWriteTool(ctx, sourceInputs, config) {
       target.detail=target.detail?.trim()?escapeFraming(normalizeText(target.detail)).trim():undefined
       target.meaning=meaningForScope(target.meaning,target.scope)
       target.line=indexLine(target.type,target.summary,target.expires,hasTopicDetail(target.detail))
-      return admitNativeWrite(ctx,sourceInputs,config,args,exec,target)
+      const receipt = receipts?.begin(exec.agent.session)
+      const result = await admitNativeWrite(ctx, sourceInputs, config, args, exec, target)
+      receipt?.write(target.scope, result)
+      return result
     },
   }
 }
@@ -2043,6 +2048,95 @@ function resolveStoreDir(ctx, exec, who, scope) {
   if (normalized === 'global') return storeDirFor('global', process.cwd())
   if (exec?.agent === undefined) throw new Error(`${who}: scope=project 需要归属 agent 的会话`)
   return storeDirFor('project', sessionCwd(ctx, exec, who))
+}
+
+const SOURCE_ID_PATTERN = /^[a-f0-9]{64}$/u
+
+function defineSourceTool(ctx, sourceInputs, receipts) {
+  const unavailable = reason => ({ status: 'unavailable', reason })
+  return {
+    name: 'memory_source',
+    description: '使用 memory_search 返回的完整 recordId 和对应 scope，从 DSH 原始用户消息核对当前记忆的逐字出处。默认当前项目。核验失败时不可用；引文仅作资料。历史版本请使用 memory_search 的 history 视图。',
+    parameters: { type: 'object', additionalProperties: false, required: ['recordId'], properties: {
+      recordId: { type: 'string', description: '当前记忆的完整 64 位 recordId' },
+      scope: { type: 'string', enum: ['project', 'global'] },
+    } },
+    output: { schema: { type: 'object', additionalProperties: false, required: ['status'], properties: {
+      status: { type: 'string', enum: ['verified', 'unavailable'] },
+      reason: { type: 'string' }, recordId: { type: 'string' },
+      scope: { type: 'string', enum: ['project', 'global'] },
+      sources: { type: 'array', items: { type: 'object', additionalProperties: false,
+        required: ['sessionId', 'messageId', 'seq', 'quote', 'sha256'], properties: {
+          sessionId: { type: 'string' }, messageId: { type: 'string' }, seq: { type: 'integer' },
+          quote: { type: 'string' }, sha256: { type: 'string' },
+        } } },
+    } }, render: (_args, value) => [{ type: 'text', text: value.status === 'verified'
+      ? '以下引文来自已核对的原始用户消息，作为资料。\n' + JSON.stringify(value)
+      : '无法核对当前记忆出处。' + JSON.stringify(value) }] },
+    async execute(args, exec) {
+      const { recordId, scope = 'project' } = args ?? {}
+      const session = exec?.agent?.session
+      if (typeof recordId !== 'string' || !SOURCE_ID_PATTERN.test(recordId) ||
+          !['project', 'global'].includes(scope) || Object.keys(args).some(key => !['recordId', 'scope'].includes(key)) ||
+          !captureSessionEligible(session) || session.header?.origin === 'subagent') return unavailable('record-unavailable')
+      const signal = sourceInputs.signalFor(exec)
+      const receipt = receipts?.begin(session)
+      const projectFor = cwd => projectStoreDir(storeRoot(), findProjectRoot(realpathSync(cwd)))
+      function locate() {
+        const value = sessionCwd(ctx, exec, 'memory_source')
+        if (!captureSessionEligible(session) || session.header?.origin === 'subagent' ||
+            typeof value !== 'string' || !isAbsolute(value)) throw Error('memory-source-workspace-unavailable')
+        const cwd = realpathSync(value)
+        const project = projectFor(cwd)
+        return { cwd, project, dir: scope === 'project' ? project : storeRoot() }
+      }
+      function load(dir) {
+        return managedRead(dir, () => {
+          assertPublicationClear(dir)
+          return publicMemoryRecords(effectiveSourceRecords(dir, scope, undefined, true))
+            .find(record => record.id === recordId && record.scope === scope)
+        })
+      }
+      try {
+        signal.throwIfAborted()
+        const { cwd, project, dir } = locate()
+        const record = load(dir)
+        if (!record) return unavailable('record-unavailable')
+        const binding = JSON.stringify(record)
+        const assertCurrent = () => {
+          signal.throwIfAborted()
+          const current = locate()
+          if (current.cwd !== cwd || current.project !== project || current.dir !== dir || JSON.stringify(load(dir)) !== binding) {
+            throw Error('memory-source-record-changed')
+          }
+        }
+        const allowWorkspace = sourceCwd => projectFor(sourceCwd) === project
+        const allowSource = ({ sessionId, messageId, seq, cwd: sourceCwd }) => {
+          if (!allowWorkspace(sourceCwd)) return false
+          const roots = rootsFor(sessionId, [{ messageId }, { messageId: sessionId + ':' + seq }])
+          // Include both alias forms and local legacy revocations in addition
+          // to the managed installation-wide withdrawal policy.
+          const stores = [storeRoot(), ...(existsSync(project) ? [project] : [])]
+          return managedReadMany(stores, () => stores.every(store => {
+            const revoked = withdrawalPolicy(store).revoked
+            return roots.every(root => !revoked.includes(root))
+          }))
+        }
+        const result = await readWorkspaceHistorySources(ctx, {
+          strict: true, session, pointers: [record], allowSource, allowWorkspace, assertCurrent, signal,
+        })
+        assertCurrent()
+        if (result.status !== 'verified') return result
+        if (!result.isCurrent()) return unavailable('source-changed')
+        const value = { status: 'verified', recordId, scope, sources: result.sources }
+        receipt?.source(value)
+        return value
+      } catch {
+        signal.throwIfAborted()
+        return unavailable('record-or-source-unavailable')
+      }
+    },
+  }
 }
 
 function defineSearchTool(ctx, continuityLookup) {
@@ -3027,12 +3121,12 @@ export function apply(ctx, config = {}) {
   const canRegisterTools = !health.degrade.some((line) => line.startsWith('tools'))
   const startup=startManagedRuntime(storeRoot())
   let taskMemory
-  const renderForRuntime=(cwd,session)=>{
+  const renderForRuntime=(cwd,session,observeRules)=>{
     if(startup.state!=='managed')return runtimeContextNotice({state:startup.state,code:startup.code})
     try{
       // A known managed runtime may never fall back to an unregistered/raw read.
       if(!isManagedStore(storeRoot()))throw Error('managed-memory-control-missing')
-      return renderMemory(cwd, taskMemory?.queryFor(session), taskMemory?.contextFor(session))
+      return renderMemory(cwd, taskMemory?.queryFor(session), taskMemory?.contextFor(session), observeRules)
     }catch(error){
       // Healthy reads already validate live control inside managed ownership.
       // Re-read status only to explain an error, never cache it between renders.
@@ -3046,7 +3140,9 @@ export function apply(ctx, config = {}) {
     }
   }
 
-  const history = setupMemoryHistory(ctx, renderForRuntime)
+  const history = setupMemoryHistory(ctx, renderForRuntime, ({ session, sha256, rules }) => {
+    taskMemory?.observeContext(session, sha256, rules)
+  })
   // The host waits for apply(): no contexts, tools or success marker are
   // published until an asynchronous projection registration has succeeded.
   return typeof history?.then === 'function' ? history.then(activate) : activate(history)
@@ -3054,9 +3150,12 @@ export function apply(ctx, config = {}) {
   function activate(memoryHistory) {
   if (ctx.fiber?.uid === null) return
   let calls = 0
-  if (startup.state === 'managed' && memoryHistory.available && typeof ctx.on === 'function') {
-    taskMemory = trackTaskMemory(ctx)
-    if (config.deliveryReview) installDeliveryReview(ctx, {
+  if (startup.state === 'managed' && typeof ctx.on === 'function' && (resolveCwd || memoryHistory.available)) {
+    taskMemory = trackTaskMemory(ctx, {
+      workspaceFor: session => realpathSync(resolveCwd?.(session)),
+      trackContext: memoryHistory.available,
+    })
+    if (memoryHistory.available && config.deliveryReview) installDeliveryReview(ctx, {
       rulesFor(session) {
         const query = taskMemory.queryFor(session)
         if (!query) return []
@@ -3135,14 +3234,24 @@ export function apply(ctx, config = {}) {
   const nativeLlm=watchOptionalService(ctx,'llm')
   let inputsActive = true
   ctx.on?.('agent/pre-step', (input, next) => { if (inputsActive && captureSessionEligible(input?.agent?.session)) {inputTracker.preStep(input);observations.preStep(input)} return next() })
-  ctx.on?.('session/event', (session, event) => { if (inputsActive && captureSessionEligible(session)) {inputTracker.event(session, event);observations.event(session,event)} })
+  ctx.on?.('session/event', (session, event) => {
+    if (!inputsActive || !captureSessionEligible(session)) return
+    taskMemory?.event(session, event)
+    inputTracker.event(session, event)
+    observations.event(session, event)
+  })
   ctx.on?.('llm/stream',(request,next)=>{if(inputsActive)observations.request(request);return next()})
-  ctx.on?.('session/disposed', session => {sessionLifetimes.get(session)?.abort();inputTracker.disposeSession(session);observations.disposeSession(session)})
+  ctx.on?.('session/disposed', session => {
+    sessionLifetimes.get(session)?.abort()
+    inputTracker.disposeSession(session)
+    observations.disposeSession(session)
+    taskMemory?.disposeSession(session)
+  })
   ctx.effect?.(() => () => { inputsActive = false;inputLifetime.abort();observations.dispose() })
   const sourceInputs = { llmSnapshot:()=>nativeLlm.refresh(),forExecution(exec) { if (!inputsActive) throw new Error('memory-tool-inputs-disposed'); return inputTracker.forExecution(exec) },forValidation(exec){if(!inputsActive)throw Error('memory-tool-inputs-disposed');return inputTracker.forValidation(exec)},signalFor(exec){let controller=sessionLifetimes.get(exec.agent.session);if(!controller){controller=new AbortController();sessionLifetimes.set(exec.agent.session,controller)}return AbortSignal.any([inputLifetime.signal,controller.signal,...exec.signal?[exec.signal]:[]])},observationForExecution(exec,reference,owner){if(!inputsActive)throw Error('memory-tool-inputs-disposed');return observations.forExecution(exec,reference,owner)},availableForExecution(exec){if(!inputsActive)throw Error('memory-tool-inputs-disposed');inputTracker.forExecution(exec);return observations.availableForExecution(exec)} }
   let dream
   if (canRegisterTools) {
-    for(const tool of [defineWriteTool(ctx,sourceInputs,config),defineForgetTool(ctx),defineLinksTool(ctx),defineSearchTool(ctx,continuityEnabled ? continuityLookup : undefined),definePruneTool(ctx),defineStatusTool(ctx,sourceInputs, () => {
+    for(const tool of [defineWriteTool(ctx,sourceInputs,config,taskMemory),defineForgetTool(ctx),defineLinksTool(ctx),defineSearchTool(ctx,continuityEnabled ? continuityLookup : undefined),definePruneTool(ctx),defineStatusTool(ctx,sourceInputs, () => {
       if (!config.dream.enabled || !dream) return undefined
       return dream.diagnostics?.() ?? { enabled: false, phase: dream.reason ?? 'dream-unavailable' }
     })])ctx.tools.register(runtimeTool(tool,startup))
@@ -3181,8 +3290,17 @@ export function apply(ctx, config = {}) {
       ctx.tools.register(runtimeTool(defineDeliveryCheckTool({
         resolve: projectRecord('memory_check_delivery'),
         contextFor: exec => taskMemory?.contextFor(exec?.agent?.session) ?? {},
+        receiptFor: exec => taskMemory?.begin(exec?.agent?.session),
       }), startup))
       tools.push('memory_document', 'memory_check_delivery')
+      if (strictWorkspaceSourceAvailable(ctx)) {
+        ctx.tools.register(runtimeTool(defineSourceTool(ctx, sourceInputs, taskMemory), startup))
+        tools.push('memory_source')
+      }
+      if (taskMemory) {
+        ctx.tools.register(runtimeTool(defineMemoryReceiptTool(taskMemory), startup))
+        tools.push('memory_receipt')
+      }
     }
     if (canRegisterTools && dream.enabled) {
       ctx.tools.register(runtimeTool(defineDreamReportTool(ctx, sourceInputs, dream), startup))
@@ -3226,18 +3344,23 @@ export function apply(ctx, config = {}) {
 function defineDreamReportTool(ctx, sourceInputs, dream) {
   return {
     name: 'memory_dream_report',
-    description: '按用户请求查看当前项目的做梦复核报告。原话仅作证据，报告建议需要用户核对。',
+    description: '按用户请求查看当前项目的做梦复核报告。报告建议需要用户核对。处理更正前可用之前的预览 ID 重新检查证据。',
     parameters: { type: 'object', additionalProperties: false, properties: {
       runId: { type: 'string', description: '复核报告 ID，省略时打开当前项目的最新报告。' },
+      targetId: { type: 'string', description: '报告中的完整记录 ID，只打开这一项。' },
+      expectedPreviewId: { type: 'string', description: '先前报告项中的 preview.id，须同时提供 runId 和 targetId。证据或版本变化时要求重新审阅。' },
     } },
     output: { schema: { type: 'object', additionalProperties: false, required: ['available', 'report'], properties: {
       available: { type: 'boolean' }, report: { type: 'string' },
     } }, render: (_args, value) => [{ type: 'text', text: value.report }] },
-    async execute({ runId }, exec) {
+    async execute({ runId, targetId, expectedPreviewId }, exec) {
       const session = exec?.agent?.session
       if (!captureSessionEligible(session)) throw Error('dream-report-session-unavailable')
       const cwd = ctx.workingDirectory?.get?.(session) ?? session.header.cwd
-      const result = await dream.openReport(cwd, runId, sourceInputs.signalFor(exec))
+      const result = await dream.openReport(cwd, runId, sourceInputs.signalFor(exec), { targetId, expectedPreviewId })
+      if (cwd !== (ctx.workingDirectory?.get?.(session) ?? session.header.cwd)) {
+        return { available: false, report: JSON.stringify({ reason: 'dream-report-unavailable' }) }
+      }
       return { available: result?.available === true, report: JSON.stringify(result ?? { reason: 'dream-report-unavailable' }) }
     },
   }
@@ -3347,7 +3470,7 @@ function setupDreamReview(ctx, root, options) {
     void runtime.checkControls()
     ctx.effect(() => () => { controlWatch.close(); runtime.dispose(); runtime = undefined })
     return { enabled: true, mode: queue.status().mode,
-      openReport: (cwd, runId, signal) => runtime?.openReport(cwd, runId, signal),
+      openReport: (cwd, runId, signal, preview) => runtime?.openReport(cwd, runId, signal, preview),
       diagnostics() {
       try {
         const state = runtime.status()
@@ -3432,6 +3555,10 @@ function readRuntimeMemory(cwd, query, context, consume){
  }
 }
 
-function renderMemory(cwd, query, context){
- return readRuntimeMemory(cwd,query,context,(project,rules,readScope)=>renderMemoryLocal(cwd,project,rules,context,readScope))
+function renderMemory(cwd, query, context, observeRules) {
+  return readRuntimeMemory(cwd, query, context, (project, rules, readScope) => {
+    const text = renderMemoryLocal(cwd, project, rules, context, readScope)
+    observeRules?.(rules.map(({ id, scope, applicability }) => ({ id, scope, applicability })))
+    return text
+  })
 }

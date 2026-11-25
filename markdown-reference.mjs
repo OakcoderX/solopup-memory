@@ -260,7 +260,7 @@ function fileReadStatus(error) {
   return 'unavailable'
 }
 
-export function defineDeliveryCheckTool({ resolve, contextFor }) {
+export function defineDeliveryCheckTool({ resolve, contextFor, receiptFor }) {
   return {
     name: 'memory_check_delivery',
     description: '按当前项目已生效的作者交付约定，独立核对指定 Markdown 文件的真正末行。只传记忆记录 ID，返回检查时的指纹和结果。',
@@ -286,7 +286,11 @@ export function defineDeliveryCheckTool({ resolve, contextFor }) {
       }
       const { recordId } = args
       const signal = exec?.signal
-      const currentRule = async () => deliveryRule(await resolve(recordId, exec), recordId, normalizeContext(await contextFor(exec)))
+      const receipt = receiptFor?.(exec)
+      const currentRule = async () => {
+        const context = normalizeContext(await contextFor(exec))
+        return deliveryRule(await resolve(recordId, exec), recordId, context)
+      }
       try {
         signal?.throwIfAborted()
         const rule = await currentRule()
@@ -301,10 +305,14 @@ export function defineDeliveryCheckTool({ resolve, contextFor }) {
         // One terminal line break closes a line; a second one starts an empty last line.
         const content = file.content.replace(/(?:\r\n|[\r\n])$/u, '')
         const lastLine = content.slice(1 + Math.max(content.lastIndexOf('\n'), content.lastIndexOf('\r')))
-        return { status: lastLine === rule.expected ? 'matched' : 'mismatch', recordId, path: rule.path, sha256: file.sha256 }
+        const result = { status: lastLine === rule.expected ? 'matched' : 'mismatch', recordId, path: rule.path, sha256: file.sha256 }
+        receipt?.file(result)
+        return result
       } catch (error) {
         signal?.throwIfAborted()
-        return { status: fileReadStatus(error) }
+        const status = fileReadStatus(error)
+        receipt?.file({ status, recordId })
+        return { status }
       }
     },
   }

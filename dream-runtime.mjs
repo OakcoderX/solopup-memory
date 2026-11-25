@@ -1,10 +1,14 @@
 import { createHash, randomUUID } from 'node:crypto'
-import { buildDreamEvidence, dreamReviewMessages, validateDreamReview } from './dream-review.mjs'
+import { buildDreamEvidence, dreamReviewMessages, incompleteDreamReview, validateDreamReview } from './dream-review.mjs'
 import { createDreamScheduler } from './dream-scheduler.mjs'
 
-const REVIEW_POLICY = 'solopup-project-review-v3'
+const REVIEW_POLICY = 'solopup-project-review-v4'
 const MAX_OUTPUT_TOKENS = 1800
 const SUPER_AGENT_RESERVE = 8000
+const REPLAY_RETRY_MS = 60_000
+const HASH = /^[a-f0-9]{64}$/
+const isHash = value => typeof value === 'string' && HASH.test(value)
+const permanentReplayLoss = new Set(['source-replaced', 'source-withdrawn'])
 const digest = value => createHash('sha256').update(JSON.stringify(value)).digest('hex')
 const ordinaryReservation = input => Buffer.byteLength(JSON.stringify(dreamReviewMessages(input))) + MAX_OUTPUT_TOKENS + 512
 function itemKey(project, record, byId) {
@@ -14,13 +18,20 @@ function itemKey(project, record, byId) {
     related.map(id => byId.get(id) ?? id), project.replayPointers?.[record.id] ?? additional.map(source => [source.hash, source.occurredAt])])
 }
 
+function priority(project, record, invalidEvidence) {
+  if (project.replayPointers?.[record.id]?.length || project.additionalEvidenceByTarget?.[record.id]?.length) return 0
+  if (project.relatedRecordIdsByTarget?.[record.id]?.length || invalidEvidence) return 1
+  return record.fieldLineage?.parentId ? 2 : 3
+}
+
 const selectedPointers = (project, ids) => Object.fromEntries(ids.flatMap(id =>
   project.replayPointers?.[id]?.length ? [[id, project.replayPointers[id]]] : []))
 
 /** Show quotes only while this row still resolves to the same authorized evidence. */
-export function renderDreamReport(project, run, report, now = Date.now()) {
+export function renderDreamReport(project, run, report, now = Date.now(), { previewChecked = false } = {}) {
   if (!run || !report) return { available: false, reason: 'dream-report-missing' }
-  if (project?.projectId !== report.projectId || run.projectId !== project.projectId) {
+  if (project?.projectId !== report.projectId || run.projectId !== project.projectId || run.runId !== report.runId ||
+      run.inputHash !== report.inputHash) {
     return { available: false, reason: 'dream-report-project-mismatch' }
   }
   const input = buildDreamEvidence({ ...project, targetIds: run.metadata.itemIds, now })
@@ -39,7 +50,11 @@ export function renderDreamReport(project, run, report, now = Date.now()) {
   const sameSnapshot = digest(input) === report.inputHash
   const items = report.items.map(row => {
     const item = byId.get(row.id)
-    if (!item || (row.evidenceDigest ? digest(item) !== row.evidenceDigest : !sameSnapshot) ||
+    const pointers = project.replayPointers?.[row.id] ?? []
+    const pointerDigest = digest(pointers)
+    const changedPointers = (previewChecked || project.replayPointers !== undefined) && (row.pointerDigest
+      ? row.pointerDigest !== pointerDigest : pointers.length > 0 && !row.historical)
+    if (!item || changedPointers || (row.evidenceDigest ? digest(item) !== row.evidenceDigest : !sameSnapshot) ||
         !row.sourceIds.every(id => item.sources.some(source => source.id === id))) {
       if (item && row.historical && !project.additionalEvidenceByTarget) {
         return { id: row.id, state: 'source-recheck-required' }
@@ -47,7 +62,12 @@ export function renderDreamReport(project, run, report, now = Date.now()) {
       return { id: row.id, state: 'evidence-changed' }
     }
     const sources = item.sources.filter(source => row.sourceIds.includes(source.id)).map(source => ({ ...source, ...origins.get(source.id) }))
-    return { ...row, state: 'current', current: item.summary, sources }
+    const preview = previewChecked && row.verdict === 'propose-correction' && !item.incompleteEvidence &&
+      sources.every(source => source.sessionId !== undefined && source.messageId !== undefined)
+      ? { id: digest(['solopup-dream-preview-v1', project.projectId, run.runId, run.inputHash, row.id,
+          digest(item), digest(row), sources.map(({ id, hash }) => [id, hash]), pointerDigest, project.storeRevision]),
+          storeRevision: project.storeRevision, scope: 'project', ...(item.meaning ? { meaning: item.meaning } : {}) } : undefined
+    return { ...row, state: 'current', current: item.summary, sources, ...(preview ? { preview } : {}) }
   })
   return { available: true, ...report, items }
 }
@@ -61,6 +81,8 @@ function deadline(signal, timeoutMs) {
     linked.addEventListener('abort', onAbort, { once: true })
     if (linked.aborted) onAbort()
   })
+  // Some phases pass only the signal to the reader before observing the deadline promise.
+  void expired.catch(() => {})
   const timer = setTimeout(() => controller.abort(Error('dream-deadline')), timeoutMs)
   timer.unref?.()
   return {
@@ -82,23 +104,38 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, ex
 
   function select(project, queued, targetOverride) {
     const byId = new Map(project.records.map(record => [record.id, record]))
-    const keys = new Map(project.records.map(record => [record.id, itemKey(project, record, byId)]))
-    const preferred = [...new Set([...Object.keys(project.replayPointers ?? {}), ...keys.keys()])]
-    const targetIds = queued?.metadata.itemIds ?? targetOverride ?? preferred.filter(id =>
-      keys.has(id) && !queue.wasReviewed(project.projectId, keys.get(id)))
+    const withdrawn = new Set(project.withdrawnSourceIds)
+    const candidates = project.records.map(record => {
+      const key = itemKey(project, record, byId)
+      if (queued && queued.policyVersion !== REVIEW_POLICY) return { id: record.id, key }
+      const linked = (project.relatedRecordIdsByTarget?.[record.id] ?? []).flatMap(id => byId.get(id)?.sources ?? [])
+      const replay = (project.replayPointers?.[record.id] ?? []).map(({ sessionId, seq }) => digest([sessionId, `${sessionId}:${seq}`]))
+      const revoked = [...new Set([...linked, ...replay].filter(id => withdrawn.has(id)))].sort()
+      return { id: record.id, key: revoked.length ? digest([key, revoked]) : key,
+        rank: priority(project, record, revoked.length > 0), date: String(record.createdAt ?? '') }
+    })
+    const keys = new Map(candidates.map(({ id, key }) => [id, key]))
+    let targetIds = queued?.metadata.itemIds ?? targetOverride
+    if (targetIds === undefined) {
+      const eligible = candidates.filter(({ key }) => !queue.wasReviewed(project.projectId, key))
+      if (!eligible.length) return
+      const reviewed = queue.reviewedTargets(project.projectId)
+      for (const item of eligible) if (reviewed.has(item.id)) item.rank = Math.min(item.rank, 2)
+      targetIds = eligible.sort((a, b) => a.rank - b.rank || b.date.localeCompare(a.date, 'en') || a.id.localeCompare(b.id, 'en'))
+        .map(({ id }) => id)
+    }
     const input = buildDreamEvidence({ ...project, targetIds, now: now() })
     // Fit new batches before they receive an identity. A queued batch is always
     // reconstructed byte-for-byte, including when the executor changes.
-    if (!queued) while (input.items.length && ordinaryReservation(input) > Math.min(dailyTokens, 12_000)) input.items.pop()
-    if (!input.items.length) return undefined
-    return {
-      input,
-      metadata: {
-        itemIds: input.items.map(item => item.id),
-        itemKeys: input.items.map(item => keys.get(item.id)),
-      },
-      inputHash: digest(input),
+    if (!queued) while (input.items.length) {
+      const modelItems = input.items.filter(item => !item.incompleteEvidence)
+      if (!modelItems.length || ordinaryReservation({ ...input, items: modelItems }) <= Math.min(dailyTokens, 12_000)) break
+      input.items.pop()
     }
+    if (!input.items.length) return undefined
+    const metadata = { itemIds: input.items.map(item => item.id), itemKeys: input.items.map(item => keys.get(item.id)) }
+    const legacy = queued && queued.policyVersion !== REVIEW_POLICY
+    return { input, metadata, inputHash: digest(legacy ? input : [input, metadata.itemKeys]) }
   }
 
   function liveProject(path, consume) {
@@ -146,9 +183,32 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, ex
       return
     }
     if (Object.keys(pending.pointers).length) {
-      const replay = await readReplay(pending, signal)
+      let replay
+      try { replay = await readReplay(pending, signal) }
+      catch {
+        signal.throwIfAborted()
+        if (claim) throw Error('dream-replay-deferred')
+        return
+      }
       signal.throwIfAborted()
-      pending.additionalEvidenceByTarget = replay.additionalEvidenceByTarget
+      const transient = new Set(Object.keys(pending.pointers).filter(id => {
+        const verified = replay.additionalEvidenceByTarget?.[id]
+        if (verified?.length === pending.pointers[id].length && verified.every(source => isHash(source?.hash))) return false
+        const losses = replay.skips?.filter(skip => skip.targetId === id) ?? []
+        return !losses.length || losses.some(skip => !permanentReplayLoss.has(skip.reason))
+      }))
+      if (transient.size && claim) throw Error('dream-replay-deferred')
+      if (claim && claim.policyVersion !== REVIEW_POLICY) {
+        if (replay.skips?.some(skip => permanentReplayLoss.has(skip.reason))) throw Error('dream-evidence-changed')
+        pending.additionalEvidenceByTarget = replay.additionalEvidenceByTarget
+        return current(path, claim, selected => selected && { ...selected, proof: pending }, pending)
+      }
+      if (transient.size) {
+        pending.targetIds = pending.targetIds.filter(id => !transient.has(id))
+        for (const id of transient) delete pending.pointers[id]
+      }
+      pending.additionalEvidenceByTarget = Object.fromEntries(Object.keys(pending.pointers).map(id =>
+        [id, replay.additionalEvidenceByTarget?.[id]?.length ? replay.additionalEvidenceByTarget[id] : [{}]]))
     }
     return current(path, claim, selected => selected && { ...selected, proof: pending }, pending)
   }
@@ -179,11 +239,47 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, ex
       const { input, proof } = await prepare(path, claim, limit.signal)
       const hasReplay = Object.keys(proof.pointers).length > 0
       let verified = proof, historyChecked = !hasReplay
-      const ordinaryReserve = ordinaryReservation(input)
+      const local = new Map(claim.policyVersion === REVIEW_POLICY ? input.items.filter(item => item.incompleteEvidence)
+        .map(item => [item.id, incompleteDreamReview(item)]) : [])
+      const modelInput = { ...input, items: input.items.filter(item => !local.has(item.id)) }
+      const finish = (rows, localOnly = false) => {
+        const report = {
+          schema: 1, runId: claim.runId, projectId: claim.projectId, mode: claim.mode,
+          inputHash: claim.inputHash, storeRevision: input.storeRevision,
+          createdAt: new Date(now()).toISOString(), route,
+          items: input.items.map(item => ({ ...rows.get(item.id), evidenceDigest: digest(item),
+            pointerDigest: digest(proof.pointers[item.id] ?? []),
+            ...(claim.policyVersion === REVIEW_POLICY && item.incompleteEvidence ? { reviewMethod: 'evidence-check' } : {}),
+            ...(proof.pointers[item.id] ? { historical: true } : {}) })),
+          usage: usage ?? null,
+        }
+        const finished = current(path, claim, selected => {
+          const result = { report, reviewedItemKeys: selected.metadata.itemKeys }
+          return localOnly ? queue.finishWithoutModel(claim, result) :
+            queue.finish(claim, { ...result, status: 'completed', usedTokens: usage?.totalTokens })
+        }, verified)
+        completed = finished?.status === 'completed'
+        last = completed ? 'report-ready' : finished?.status === 'failed' ? 'review-failed' : 'lease-changed'
+      }
+      if (!modelInput.items.length) {
+        if (hasReplay) verified = (await prepare(path, claim, limit.signal)).proof
+        limit.signal.throwIfAborted()
+        finish(local, true)
+        return
+      }
+      const readiness = await Promise.race([limit.expired,
+        Promise.resolve().then(() => executor?.ready({ signal: limit.signal })).catch(() => undefined)])
+      limit.signal.throwIfAborted()
+      if (!readiness?.ready) {
+        queue.release(claim)
+        last = claim.mode === 'superagent' ? 'superagent-unavailable' : 'model-unavailable'
+        return { retryAt: null }
+      }
+      const ordinaryReserve = ordinaryReservation(modelInput)
       reservedTokens = claim.mode === 'superagent' ? Math.max(ordinaryReserve, SUPER_AGENT_RESERVE) : ordinaryReserve
       const outcome = await Promise.race([limit.expired, Promise.resolve().then(() => {
         limit.signal.throwIfAborted()
-        return executor.execute(input, {
+        return executor.execute(modelInput, {
           signal: limit.signal, runId: claim.runId, attempt: claim.attempt, route,
           maxTokens: MAX_OUTPUT_TOKENS, maxTotalTokens: reservedTokens,
           onReceipt: receipt => {
@@ -220,29 +316,19 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, ex
       if (!dispatched) throw Error('dream-executor-did-not-claim')
       returned = true
       usage = outcome?.usage
-      const result = validateDreamReview(input, outcome?.output)
-      const report = {
-        schema: 1, runId: claim.runId, projectId: claim.projectId, mode: claim.mode,
-        inputHash: claim.inputHash, storeRevision: input.storeRevision,
-        createdAt: new Date(now()).toISOString(), route,
-        items: result.items.map(row => ({ ...row, evidenceDigest: digest(input.items.find(item => item.id === row.id)),
-          ...(proof.pointers[row.id] ? { historical: true } : {}) })),
-        usage: usage ?? null,
-      }
+      const result = validateDreamReview(modelInput, outcome?.output)
+      for (const row of result.items) local.set(row.id, row)
       if (hasReplay) verified = (await prepare(path, claim, limit.signal)).proof
-      const finished = current(path, claim, selected => {
-        return queue.finish(claim, {
-          status: 'completed', report, reviewedItemKeys: selected.metadata.itemKeys, usedTokens: usage?.totalTokens,
-        })
-      }, verified)
-      completed = finished?.status === 'completed'
-      last = completed ? 'report-ready' : finished?.status === 'failed' ? 'review-failed' : 'lease-changed'
+      finish(local)
     } catch (error) {
       if (completed) return
-      if (!dispatched && (limit.signal.aborted || error?.message === 'dream-dispatch-not-admitted')) {
-        queue.release(claim)
-        last = limit.signal.aborted ? 'deferred' : 'dispatch-not-admitted'
-        if (!limit.signal.aborted) return { retryAt: queue.nextAutomaticAt({ reservedTokens, projectIds }) ?? null }
+      if (!dispatched && (limit.signal.aborted || ['dream-dispatch-not-admitted', 'dream-replay-deferred'].includes(error?.message))) {
+        const replayDeferred = error?.message === 'dream-replay-deferred'
+        queue.release(claim, { delayMs: replayDeferred ? REPLAY_RETRY_MS : 0 })
+        last = limit.signal.aborted || replayDeferred ? 'deferred' : 'dispatch-not-admitted'
+        if (!limit.signal.aborted) {
+          return { retryAt: queue.nextAutomaticAt({ reservedTokens: replayDeferred ? undefined : reservedTokens, projectIds }) ?? null }
+        }
       } else {
         const confirmedUnsent = !dispatched || error?.notDispatched === true
         const status = dispatched && confirmedUnsent ? 'retryable' : !dispatched || returned ? 'invalidated' : 'uncertain'
@@ -270,9 +356,6 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, ex
         state = queue.status()
       }
       const executor = executors[state.mode]
-      const readiness = await Promise.race([limit.expired, Promise.resolve().then(() => executor?.ready({ signal: limit.signal }))])
-      limit.signal.throwIfAborted()
-      if (!readiness?.ready) { last = state.mode === 'superagent' ? 'superagent-unavailable' : 'model-unavailable'; return }
       const locations = projects()
       for (const [projectId, path] of locations) {
         limit.signal.throwIfAborted()
@@ -290,7 +373,7 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, ex
       const projectIds = [...locations.keys()]
       const claim = queue.claim({ owner, projectIds })
       if (claim) {
-        // A change after the readiness probe may have assigned a different executor.
+        // A concurrent mode change may have assigned a different executor.
         if (claim.mode !== state.mode) { queue.release(claim); return { nextAt: now() + 1000 } }
         last = 'running'
         const outcome = await process(claim, locations.get(claim.projectId), executor, limit.signal, projectIds)
@@ -334,10 +417,13 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, ex
     return checkingControls
   }
 
-  async function openReport(path, runId, signal = controlLifetime.signal) {
+  async function openReport(path, runId, signal = controlLifetime.signal, { targetId, expectedPreviewId } = {}) {
     const unavailable = reason => ({ available: false, reason })
-    if (disposed || !path || (runId !== undefined && (typeof runId !== 'string' || !/^[a-f0-9]{64}$/.test(runId)))) {
-      return unavailable('dream-report-unavailable')
+    const unavailableReason = expectedPreviewId === undefined ? 'dream-report-unavailable' : 'dream-preview-unavailable'
+    if (disposed || !path || (runId !== undefined && !isHash(runId)) ||
+        (targetId !== undefined && !isHash(targetId)) ||
+        (expectedPreviewId !== undefined && (!isHash(expectedPreviewId) || !runId || !targetId))) {
+      return unavailable(unavailableReason)
     }
     const linked = AbortSignal.any([signal, controlLifetime.signal])
     try {
@@ -350,11 +436,11 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, ex
         const run = queue.getRun(id)
         const report = queue.report(id)
         if (run?.projectId !== project.projectId || !report) return
-        const ids = report.items.filter(row => row.historical).map(row => row.id)
+        const ids = report.items.map(row => row.id)
         return { projectId: project.projectId, storeRevision: project.storeRevision,
           ids, pointers: selectedPointers(project, ids), withdrawnSourceIds: project.withdrawnSourceIds ?? [], run, report }
       })
-      if (!snapshot) return unavailable('dream-report-missing')
+      if (!snapshot) return unavailable(expectedPreviewId === undefined ? 'dream-report-missing' : unavailableReason)
       let additionalEvidenceByTarget
       if (snapshot.ids.length && readReplay && Object.keys(snapshot.pointers).length) {
         const limit = deadline(linked, Math.min(5000, options.timeoutMs))
@@ -366,14 +452,25 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, ex
       linked.throwIfAborted()
       return liveProject(path, project => {
         if (!project || project.projectId !== snapshot.projectId || !queue.report(snapshot.run.runId)) {
-          return unavailable('dream-report-unavailable')
+          return unavailable(unavailableReason)
         }
         const same = project.storeRevision === snapshot.storeRevision &&
           digest(selectedPointers(project, snapshot.ids)) === digest(snapshot.pointers)
         const checked = same && additionalEvidenceByTarget ? { ...project, additionalEvidenceByTarget } : project
-        return renderDreamReport(checked, snapshot.run, snapshot.report, now())
+        const rendered = renderDreamReport(checked, snapshot.run, snapshot.report, now(), { previewChecked: same })
+        if (targetId === undefined || !rendered.available) return rendered
+        const row = rendered.items.find(item => item.id === targetId)
+        if (!row) return unavailable(unavailableReason)
+        if (expectedPreviewId !== undefined) {
+          if (!same) return unavailable(unavailableReason)
+          if (row.state === 'evidence-changed' || (row.preview && row.preview.id !== expectedPreviewId)) {
+            return unavailable('dream-preview-stale')
+          }
+          if (!row.preview) return unavailable(unavailableReason)
+        }
+        return { ...rendered, items: [row] }
       })
-    } catch { return unavailable('dream-report-unavailable') }
+    } catch { return unavailable(unavailableReason) }
   }
 
   return {

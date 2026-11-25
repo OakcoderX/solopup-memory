@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, existsSync, readFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, existsSync, readFileSync, realpathSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { setupMemoryHistory } from '../context-history.mjs'
@@ -76,9 +76,10 @@ for (const success of [true, false]) test(`apply awaits registration before tool
       assert.equal(prompts.length, 2)
       const status = JSON.parse(readFileSync(marker))
       assert.equal(status.memoryHistory.available, true)
-      assert.equal(tools.length, status.sourceControl?.state === 'managed' ? 8 : 6)
+      assert.equal(tools.length, status.sourceControl?.state === 'managed' ? 9 : 6)
       assert.equal(tools.some(tool => tool.name === 'memory_document'), status.sourceControl?.state === 'managed')
       assert.equal(tools.some(tool => tool.name === 'memory_check_delivery'), status.sourceControl?.state === 'managed')
+      assert.equal(tools.some(tool => tool.name === 'memory_receipt'), status.sourceControl?.state === 'managed')
     } else {
       deferred.reject(Error('synthetic-owner-disposed'))
       await assert.rejects(pending, /synthetic-owner-disposed/)
@@ -109,6 +110,40 @@ test('a successful handle arriving after owner disposal cannot activate history 
     assert.equal(existsSync(join(root, 'memory', '.loaded.json')), false)
     assert.equal(deferred.calls, 0)
   } finally {
+    if (previous === undefined) delete process.env.DSH_HOME; else process.env.DSH_HOME = previous
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+
+test('managed host without projections exposes turn receipts independently of automatic delivery review', async () => {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'dsh-receipt-registration-')))
+  const previous = process.env.DSH_HOME
+  process.env.DSH_HOME = root
+  const tools = new Map(), handlers = [], effects = []
+  try {
+    apply({ systemPrompt: { context() {} }, workingDirectory: { get: () => root },
+      tools: { register: tool => tools.set(tool.name, tool) }, on(name, handle) { handlers.push([name, handle]) },
+      effect(factory) { effects.push(factory()) },
+    }, { autoCapture: { enabled: false }, deliveryReview: false })
+    const session = { id: 'synthetic-session' }
+    const exec = { agent: { session } }
+    const emit = event => {
+      for (const [name, handle] of handlers) if (name === 'session/event') handle(session, event)
+    }
+    assert.equal(JSON.parse(readFileSync(join(root, 'memory', '.loaded.json'))).memoryHistory.available, false)
+    assert.ok(tools.has('memory_receipt'))
+    assert.ok(!handlers.some(([name]) => name === 'agent/request'))
+    const receipt = tools.get('memory_receipt')
+    assert.deepEqual(await receipt.execute({}, exec), { status: 'unavailable' })
+    emit({ type: 'turn/start', data: { turn: 1 } })
+    const current = await receipt.execute({}, exec)
+    assert.deepEqual(current, { status: 'observed', view: 'current', turn: 1,
+      writes: [], sources: [], delivery: [], truncated: false })
+    emit({ type: 'turn/end', data: { turn: 1 } })
+    assert.deepEqual(await receipt.execute({ view: 'previous' }, exec), { ...current, view: 'previous' })
+  } finally {
+    for (const dispose of effects.reverse()) dispose?.()
     if (previous === undefined) delete process.env.DSH_HOME; else process.env.DSH_HOME = previous
     rmSync(root, { recursive: true, force: true })
   }

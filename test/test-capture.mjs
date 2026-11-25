@@ -757,7 +757,7 @@ test('作业接线：损坏账本暂停自动捕获，前台工具与主注入�
     const { ctx, handlers, captured } = mount(box, { llm })
     const { applyWithValidationFixture: apply } = await import('../fixture-host.mjs'); prepareMountedFixture(); apply(ctx)
     assert.equal(handlers.filter(([name]) => name === 'session/event').length, 1); assert.equal(llm.calls, 0)
-    assert.equal(captured.tools.length, 8); assert.equal(typeof captured.context.text, 'function')
+    assert.equal(captured.tools.length, 9); assert.equal(typeof captured.context.text, 'function')
     assert.ok(captured.tools.some(tool => tool.name === 'memory_document'))
     const marker = JSON.parse(readFileSync(join(box.store, '.loaded.json')))
     assert.equal(marker.autoCapture.enabled, false)

@@ -1,4 +1,5 @@
 import test from 'node:test'
+import { createHash } from 'node:crypto'
 import assert from 'node:assert/strict'
 import { readWorkspaceHistorySources, searchWorkspaceHistory, workspaceHistoryAvailable } from '../workspace-history.mjs'
 
@@ -21,7 +22,7 @@ function fixture(data) {
   const reads = []
   const ctx = {
     workingDirectory: { get(session) { return session.header.cwd } },
-    sessionPersistence: { stat(id) { return { header: data[id].header, sizeBytes: data[id].sizeBytes ?? 5000 } } },
+    sessionPersistence: { stat(id) { return { header: data[id].header, sizeBytes: data[id].sizeBytes ?? 5000, revision: data[id].revision ?? 'fixture-revision' } } },
     sessionQuery: {
       filterSessions(filters) {
         assert.deepEqual(filters, [{ kind: 'cwd', values: [workspace] }, { kind: 'parent', values: [null] }])
@@ -298,4 +299,77 @@ test('pointer dereference returns only the bound source message, isolates same-n
   })
   assert.equal(revoked.status, 'no-match')
   assert.deepEqual(revoked.sessions, [])
+})
+
+test('strict source reads require a complete native owner event, bound hash and exact quote', async () => {
+  const quote = '第七章保留渡口的船铃。'
+  const text = '会议纪要 2026-11-20\n林岚：' + quote
+  const data = { old: { header: header('old'), events: [
+    message(0, text), message(1, text, 'user', { kind: 'user-rpc' }),
+    event(2, 'working-directory/change', { cwd: other }), message(3, text),
+  ] } }
+  const { ctx, reads } = fixture(data)
+  const digest = createHash('sha256').update(text).digest('hex')
+  const proof = { messageId: 'old:0', quote, hash: digest }
+  const read = (ref = proof, options = {}) => readWorkspaceHistorySources(ctx, {
+    strict: true, session: caller, assertCurrent() {},
+    allowWorkspace: cwd => cwd === workspace,
+    allowSource: source => source.cwd === workspace,
+    pointers: [{ sessionId: 'old', evidence: [ref] }], ...options,
+  })
+  const verified = await read()
+  assert.equal(verified.status, 'verified')
+  assert.deepEqual(verified.sources, [{ sessionId: 'old', messageId: 'old:0', seq: 0, quote, sha256: digest }])
+  assert.equal(verified.isCurrent(), true)
+  const legacy = await read({ ...proof, messageId: 'message-0' })
+  assert.equal(legacy.status, 'verified')
+  assert.equal(legacy.sources[0].messageId, 'message-0')
+  assert.deepEqual(reads, ['old', 'old'])
+  data.old.header = header('old', other)
+  assert.equal((await read()).status, 'unavailable')
+  assert.deepEqual(reads, ['old', 'old'])
+  data.old.header = header('old')
+  for (const bad of [
+    { ...proof, hash: 'c'.repeat(64) }, { ...proof, quote: '把船铃移到下周。' },
+    { ...proof, messageId: 'old:1' }, { ...proof, messageId: 'old:3' }, { ...proof, messageId: 'old:99' },
+  ]) assert.deepEqual(await read(bad), { status: 'unavailable', reason: 'source-proof-unavailable' })
+  data.old.events[0] = message(0, text + '这一整句后来已被改动。')
+  assert.equal((await read()).status, 'unavailable')
+  data.old.events[0] = message(0, text)
+  data.old.events[4] = message(4, '用新决定替换原文。', 'user', { kind: 'user' }, {
+    surfaceOp: { op: 'replace', startSeq: 0, endSeq: 0 }, sourceEventSeqs: [0],
+  })
+  assert.equal((await read()).status, 'unavailable')
+})
+
+test('strict source checks freshness again after host awaits, with no proof in an unavailable result', async () => {
+  const quote = '第七章的船铃保留在渡口。'
+  const row = { header: header('old'), events: [message(0, quote)] }
+  const { ctx } = fixture({ old: row })
+  const hash = createHash('sha256').update(quote).digest('hex')
+  let current = true, allowed = true
+  const read = () => readWorkspaceHistorySources(ctx, {
+    strict: true, session: caller, pointers: [{ sessionId: 'old', evidence: [{ messageId: 'old:0', quote, hash }] }],
+    assertCurrent() { if (!current) throw Error('synthetic record withdrawal') },
+    allowSource: () => allowed, allowWorkspace: cwd => cwd === workspace,
+  })
+  const inspect = ctx.sessionQuery.inspectSession
+  ctx.sessionQuery.inspectSession = (id, callback) => {
+    const seen = inspect(id, callback)
+    current = false
+    return seen
+  }
+  assert.deepEqual(await read(), { status: 'unavailable', reason: 'source-unavailable' })
+  current = true
+  ctx.sessionQuery.inspectSession = (id, callback) => {
+    const seen = inspect(id, callback)
+    row.revision = 'mutated'
+    return seen
+  }
+  assert.deepEqual(await read(), { status: 'unavailable', reason: 'source-changed' })
+  ctx.sessionQuery.inspectSession = inspect
+  const result = await read()
+  assert.equal(result.status, 'verified')
+  allowed = false
+  assert.equal(result.isCurrent(), false)
 })

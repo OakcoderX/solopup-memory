@@ -2,6 +2,7 @@ import { isAbsolute } from 'node:path'
 import { transcriptSourceContext } from './dream-transcripts.mjs'
 import { foldEnglishInflection, queryTokens } from './retrieval.mjs'
 import { optionalService } from './host-services.mjs'
+import { captureMessage } from './capture-evidence.mjs'
 import { privateMemory } from './privacy.mjs'
 import { escapeFraming, findSecrets, normalizeText } from './security.mjs'
 
@@ -290,8 +291,127 @@ function speakerPassage(turn, pattern, speakers) {
   return best
 }
 
-/** Read exact user source messages bound to already-matched project records. */
-export async function readWorkspaceHistorySources(ctx, { session, pointers = [], signal, allowSource } = {}) {
+const STRICT_ID = /^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,299}$/u
+const STRICT_HASH = /^[a-f0-9]{64}$/u
+
+export function strictWorkspaceSourceAvailable(ctx) {
+  return typeof optionalService(ctx, 'sessionQuery')?.inspectSession === 'function' &&
+    typeof optionalService(ctx, 'workingDirectory')?.get === 'function'
+}
+
+function sameHeader(left, right) {
+  return ownerSession(left) && ownerSession(right) && left.id === right.id &&
+    left.cwd === right.cwd && Number.isSafeInteger(left.createdAt) && left.createdAt === right.createdAt &&
+    left.version === right.version
+}
+
+function verifiedSourceQuotes(previous, sessionId, evidence, allowSource, signal) {
+  const { header, inheritedEventCount, seq } = previous
+  if (!ownerSession(header) || header.id !== sessionId || inheritedEventCount !== 0 ||
+      !Number.isSafeInteger(seq) || seq < 0 || seq > MAX_EVENTS) return []
+  const events = Array.from({ length: seq }, (_, at) => previous.eventAt(at))
+  const matches = evidence.map(ref => {
+    if (ref.messageId.startsWith(sessionId + ':')) {
+      const index = ref.messageId.slice(sessionId.length + 1)
+      if (!/^(?:0|[1-9]\d*)$/u.test(index)) return []
+      const event = events[Number(index)]
+      return event ? [event] : []
+    }
+    return events.filter(event => event && sourceId(event) === ref.messageId)
+  })
+  const indices = new Set(matches.flatMap(rows => rows.length === 1 ? [rows[0].seq] : []))
+  const { dirs, replaced } = transcriptSourceContext(events, indices, header)
+  return matches.flatMap((rows, index) => {
+    signal.throwIfAborted()
+    if (rows.length !== 1) return []
+    const [event] = rows
+    const ref = evidence[index]
+    const hostMessageId = sourceId(event)
+    const cwd = dirs.get(event.seq)
+    const nativePointer = sessionId + ':' + event.seq
+    if (event.surfaceOp !== 'append' || messageRole(event) !== 'user' ||
+        !hostMessageId || !cwd || replaced.has(event.seq) ||
+        !Number.isSafeInteger(event.time) || event.time < header.createdAt ||
+        !allowSource({ sessionId, messageId: hostMessageId, seq: event.seq, cwd })) return []
+    const text = messageBody(event)
+    const bound = captureMessage(event, nativePointer)
+    if (!text || !bound || bound.sourceComplete === false || bound.text !== text ||
+        bound.hash !== ref.hash || !text.includes(ref.quote)) return []
+    return [{ seq: event.seq, messageId: ref.messageId, quote: ref.quote, sha256: ref.hash, hostMessageId, cwd }]
+  })
+}
+
+async function readStrictWorkspaceSource(ctx, { session, pointers, signal, allowSource, allowWorkspace, assertCurrent }) {
+  const unavailable = reason => ({ status: 'unavailable', reason })
+  if (pointers?.length !== 1 || typeof allowSource !== 'function' ||
+      typeof allowWorkspace !== 'function' || typeof assertCurrent !== 'function') {
+    return unavailable('source-binding-unavailable')
+  }
+  const [{ sessionId, evidence }] = pointers
+  if (typeof sessionId !== 'string' || !STRICT_ID.test(sessionId) ||
+      !Array.isArray(evidence) || evidence.length < 1 || evidence.length > 3 ||
+      new Set(evidence.map(ref => ref?.messageId)).size !== evidence.length ||
+      evidence.some(ref => typeof ref?.messageId !== 'string' || !STRICT_ID.test(ref.messageId) ||
+        typeof ref.hash !== 'string' || !STRICT_HASH.test(ref.hash) ||
+        typeof ref.quote !== 'string' || ref.quote.length > 500 || ref.quote !== safeBody(ref.quote) ||
+        ref.quote !== escapeFraming(ref.quote))) return unavailable('source-binding-unavailable')
+
+  const host = optionalService(ctx, 'sessionQuery')
+  const persistence = optionalService(ctx, 'sessionPersistence')
+  const registry = optionalService(ctx, 'sessions')
+  if (typeof host?.inspectSession !== 'function') return unavailable('host-source-unavailable')
+  const timeout = AbortSignal.timeout(TIMEOUT_MS)
+  const readSignal = signal ? AbortSignal.any([signal, timeout]) : timeout
+  // A current session is already host-owned. For other live sessions the
+  // public registry lets us check the log cursor without opening another view.
+  const liveSource = () => registry?.get?.(sessionId) ?? (session?.id === sessionId ? session : undefined)
+  const validStat = stored => ownerSession(stored?.header) && stored.header.id === sessionId && allowWorkspace(stored.header.cwd) &&
+    Number.isSafeInteger(stored.sizeBytes) && stored.sizeBytes >= 0 && stored.sizeBytes <= MAX_STORED_BYTES &&
+    typeof stored.revision === 'string' && stored.revision.length > 0
+  const assertReadCurrent = () => {
+    readSignal.throwIfAborted()
+    assertCurrent()
+  }
+  try {
+    assertReadCurrent()
+    const live = liveSource()
+    const cursor = live?.seq
+    if (live && (!ownerSession(live.header) || live.header.id !== sessionId || !allowWorkspace(live.header.cwd) ||
+        !Number.isSafeInteger(cursor) || cursor < 0 || cursor > MAX_EVENTS)) return unavailable('source-session-unavailable')
+    const stored = live ? undefined : await persistence?.stat?.(sessionId, { signal: readSignal })
+    assertReadCurrent()
+    if (!live && !validStat(stored)) return unavailable('source-session-unavailable')
+
+    const rows = await host.inspectSession(sessionId, previous => {
+      assertReadCurrent()
+      if (!sameHeader(previous?.header, live?.header ?? stored?.header) || (live && previous.seq !== cursor)) return []
+      return verifiedSourceQuotes(previous, sessionId, evidence, allowSource, readSignal)
+    }, readSignal)
+    assertReadCurrent()
+    if (rows?.length !== evidence.length) return unavailable('source-proof-unavailable')
+    if (!live) {
+      const latest = await persistence.stat(sessionId, { signal: readSignal })
+      assertReadCurrent()
+      if (liveSource() || !validStat(latest) || !sameHeader(latest.header, stored.header) ||
+          latest.revision !== stored.revision) return unavailable('source-changed')
+    }
+    const isCurrent = () => {
+      assertReadCurrent()
+      return (!live || liveSource() === live && live.seq === cursor && allowWorkspace(live.header.cwd)) &&
+        rows.every(({ hostMessageId, seq, cwd }) => allowSource({ sessionId, messageId: hostMessageId, seq, cwd }))
+    }
+    if (!isCurrent()) return unavailable('source-changed')
+    const sources = rows.map(({ seq, messageId, quote, sha256 }) => ({ sessionId, seq, messageId, quote, sha256 }))
+    return { status: 'verified', sources, isCurrent }
+  } catch {
+    signal?.throwIfAborted()
+    return unavailable(timeout.aborted ? 'source-timeout' : 'source-unavailable')
+  }
+}
+
+/** Resolve named source pointers. Strict mode checks the full normalized message and quotes. */
+export async function readWorkspaceHistorySources(ctx, { session, pointers = [], signal, allowSource, allowWorkspace, strict = false, assertCurrent } = {}) {
+  if (strict) return readStrictWorkspaceSource(ctx, { session, pointers, signal, allowSource, allowWorkspace, assertCurrent })
   const sessions = []
   const coverage = { scannedSources: 0, skippedSources: 0, skippedReasons: {},
     scanLimitReached: false, resultLimitReached: false, timedOut: false }

@@ -1,9 +1,9 @@
-# SoloPup Memory 0.26.0
+# SoloPup Memory 0.27.0-beta.1 开发候选
 
-SoloPup 为 DSH 保留文字记忆和出处。换会话后可找回当前项目约定与例外，完成受支持的写入后可以按约定核对交付。重要内容请核实原话及实际产物。
+本候选新增原话回读和本轮回执。先用 `memory_search` 找到现行记忆的完整记录 ID，再用 `memory_source` 回查 DSH 原话。使用 `memory_receipt` 核对保存、请求和文件读回各自的状态。
 
-SoloPup keeps source-linked text memory for DSH. It can recall current project decisions and their exceptions in a new session, and request a delivery review after a supported successful write. Check important details against the source and deliverable.
+This development candidate adds source readback and turn receipts. Search for the current memory by topic, then use its complete record ID to open the original source. The receipt records observations such as a successful write, a validated request, or a file check.
 
-做梦默认关闭。macOS Super Agent 仍为实验功能。Dream Review remains opt-in. The macOS Super Agent companion remains experimental.
+做梦默认关闭。重新打开更正提案时，`memory_dream_report` 可用预览 ID 核验记录与出处。报告和回执均为只读。macOS Super Agent 仍为实验功能。
 
-[安装 / Install](docs/guides/quickstart.md) · [变更记录 / Changelog](CHANGELOG.md) · [实测回执 / Release evidence](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0)
+[实施与验收](docs/runs/2026-11-25-0.27-development.md) · [变更记录 / Changelog](CHANGELOG.md) · [已发布稳定版](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0)

@@ -33,6 +33,7 @@ function tools() {
   apply({
     systemPrompt: { context() {} },
     workingDirectory: { get: () => cwd },
+    sessionQuery: { inspectSession() {} },
     tools: { register: (definition) => captured.tools.push(definition) },
     on() {},
   })
@@ -78,7 +79,10 @@ function walk(node, path, problems) {
 test('所有工具的 parameters 与 output.schema 都过宿主的 schema 规则', () => {
   const { list, cleanup } = tools()
   try {
-    assert.equal(list.length, 8)
+    assert.deepEqual(list.map(tool => tool.name).sort(), [
+      'memory_check_delivery', 'memory_document', 'memory_forget', 'memory_links',
+      'memory_prune', 'memory_receipt', 'memory_search', 'memory_source', 'memory_status', 'memory_write',
+    ].sort())
     for (const tool of list) {
       const problems = []
       walk(tool.parameters, `${tool.name}.parameters`, problems)

@@ -1,12 +1,12 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { trackTaskMemory } from '../task-memory-runtime.mjs'
+import { defineMemoryReceiptTool, trackTaskMemory } from '../task-memory-runtime.mjs'
 
 function harness() {
   const callbacks = new Map()
   const tracker = trackTaskMemory({ on: (event, fn) => callbacks.set(event, fn) })
-  return { ...tracker, emit: (session, event) => callbacks.get('session/event')(session, event),
-    preStep: (session, turn, messages) => callbacks.get('agent/pre-step')({ agent: { session }, turn, messages }, () => {}) }
+  return { ...tracker, emit: tracker.event,
+    preStep: (session, turn, messages, step) => callbacks.get('agent/pre-step')({ agent: { session }, turn, step, messages }, () => {}) }
 }
 
 function message(text, kind = 'user') {
@@ -156,4 +156,59 @@ test('detects workspace_bash mutations and MCP write tools while ignoring read-o
     } },
   })
   assert.equal(tracker.hasAppliedWork(mcpSession, 1), true)
+})
+
+test('receipts separate a pending save, a checked request, a tool response and a file fingerprint', () => {
+  const tracker = harness()
+  const session = { id: 'writer', header: { cwd: '/private/project' } }
+  const receipt = defineMemoryReceiptTool(tracker)
+  const execute = (view, caller = session) => receipt.execute({ view }, { agent: { session: caller } })
+  const id = 'a'.repeat(64), candidateId = 'b'.repeat(64), sha256 = 'd'.repeat(64)
+  tracker.emit(session, { type: 'turn/start', data: { turn: 7 } })
+  tracker.preStep(session, 7, [message('内容不应出现在回执。').data], 2)
+  assert.equal(execute('current').context, undefined)
+  tracker.observeContext(session, sha256, [{ id, scope: 'project', applicability: 'applicable' }])
+  const observed = tracker.begin(session)
+  observed.write('project', { status: 'pending-review', candidateId, recordId: id, indexLine: '内容不应出现在回执。' })
+  observed.write('project', { status: 'recorded', recordId: id })
+  observed.source({ status: 'verified', recordId: id, scope: 'project', sources: [{ sha256, seq: 5, quote: '内容不应出现在回执。' }] })
+  observed.file({ status: 'matched', recordId: id, sha256, path: '/private/project/终稿.md' })
+  tracker.emit(session, { type: 'tool/call', seq: 20, data: { name: 'write', turn: 7, callId: 'write-file' } })
+  tracker.emit(session, { type: 'tool/result', seq: 21, surfaceOp: 'append', sourceEventSeqs: [20],
+    data: { turn: 7, message: { role: 'tool', source: { kind: 'tool', callId: 'write-file' }, toolCallId: 'write-file',
+      content: [{ type: 'text', text: '内容不应出现在回执。' }] } } })
+  const current = execute('current')
+  assert.equal(current.status, 'observed')
+  assert.deepEqual(current.context, { phase: 'request-validated', step: 2, sha256,
+    rules: [{ recordId: id, scope: 'project', applicability: 'applicable' }] })
+  assert.deepEqual(current.writes, [{ scope: 'project', status: 'pending-review', candidateId },
+    { scope: 'project', status: 'recorded', recordId: id }])
+  assert.deepEqual(current.sources, [{ recordId: id, scope: 'project', pointers: [{ sha256, seq: 5 }] }])
+  assert.deepEqual(current.delivery[0], { kind: 'file-checked', status: 'matched', recordId: id, sha256 })
+  assert.equal(current.delivery[1].kind, 'tool-result-observed')
+  assert.notEqual(current.delivery[1].sha256, sha256)
+  assert.doesNotMatch(JSON.stringify(current), /private|内容不应|终稿/u)
+  assert.deepEqual(execute('current', { id: session.id, header: session.header }), { status: 'unavailable' })
+  tracker.emit(session, { type: 'turn/end', data: { turn: 7 } })
+  tracker.emit(session, { type: 'turn/start', data: { turn: 8 } })
+  observed.file({ status: 'mismatch', recordId: id, sha256 })
+  assert.deepEqual(execute('previous'), { ...current, view: 'previous' })
+  assert.deepEqual(execute('current').delivery, [])
+  session.header.cwd = '/private/other'
+  tracker.emit(session, { type: 'working-directory/change' })
+  assert.deepEqual(execute('previous'), { status: 'unavailable' })
+  assert.equal(execute('current').context, undefined)
+})
+
+test('six most recent entries per phase bound the receipt deterministically', () => {
+  const tracker = harness(), session = { id: 'writer', header: { cwd: '/workspace' } }
+  tracker.emit(session, { type: 'turn/start', data: { turn: 1 } })
+  const record = tracker.begin(session)
+  for (let seq = 0; seq < 10; seq++) {
+    record.file({ status: 'matched', recordId: 'a'.repeat(64), sha256: seq.toString().padStart(64, '0') })
+  }
+  const receipt = tracker.receiptFor(session, 'current')
+  assert.equal(receipt.truncated, true)
+  assert.equal(receipt.delivery.length, 6)
+  assert.deepEqual(receipt.delivery.map(item => Number(item.sha256)), [4, 5, 6, 7, 8, 9])
 })

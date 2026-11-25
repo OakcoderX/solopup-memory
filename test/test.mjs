@@ -127,6 +127,7 @@ test('注册形态：名字、依赖、上下文条目及工具', () => {
       'memory_forget',
       'memory_links',
       'memory_prune',
+      'memory_receipt',
       'memory_search',
       'memory_status',
       'memory_write',

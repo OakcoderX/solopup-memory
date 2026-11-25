@@ -46,6 +46,23 @@ function enqueue(queue, label, projectId = 'test-project', checkpoint = label) {
   })
 }
 
+test('a fenced local evidence report cannot contain a correction or complete a dispatched claim', t => {
+  const { queue } = fixture(t)
+  enqueue(queue, 'local-missing')
+  const first = queue.claim({ owner: 'prepared-owner' })
+  const resolving = { report: { items: [{ verdict: 'needs-evidence' }], usage: null }, reviewedItemKeys: ['local-missing'] }
+  assert.throws(() => queue.finish(first, { ...resolving, status: 'completed' }), /no-dispatch/)
+  assert.throws(() => queue.finishWithoutModel(first, { ...resolving,
+    report: { ...resolving.report, items: [{ verdict: 'propose-correction', proposedSummary: '改变约定' }] } }), /invalid-local-report/)
+  queue.requestMode('superagent')
+  assert.equal(queue.finishWithoutModel(first, resolving), undefined)
+  const current = queue.claim({ owner: 'current-owner' })
+  assert.equal(current.mode, 'superagent')
+  assert.equal(queue.beginDispatch(current, { reservedTokens: 100 }).status, 'dispatching')
+  assert.equal(queue.finishWithoutModel(current, resolving), undefined)
+  assert.equal(queue.report(current.runId), undefined)
+})
+
 test('only one owner can claim, reserve, and commit the same batch and its item progress', (t) => {
   const env = fixture(t)
   const q = env.queue

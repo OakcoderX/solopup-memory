@@ -108,17 +108,25 @@ test('宿主缺历史服务时不伪造能力；未声明服务的反射错误�
 })
 test('请求边界改写后继续宿主流程，发送前变更则阻断本地模型调用',()=>{
  const f=fixture([context('old','old')]);f.id='fixture-session'
- const handlers=new Map();let current='current';let calls=0;let unit
+ const handlers=new Map(), observed=[];let current='current';let calls=0;let unit
  const ctx={sessionProjections:{register(d){unit=d},stateOf(session,key){assert.equal(session,f);assert.equal(key,HISTORY_PROJECTION_KEY);return f.state}},workingDirectory:{get:()=>'/synthetic'},on(name,fn){handlers.set(name,fn)}}
- const history=setupMemoryHistory(ctx,()=>current);assert.equal(history.available,true);assert.equal(unit.wire,undefined)
+ const rules=[{id:'a'.repeat(64),scope:'project',applicability:'applicable'}]
+ const history=setupMemoryHistory(ctx,(_cwd,_session,observe)=>{observe?.(rules);return current},event=>observed.push(event))
+ assert.equal(history.available,true);assert.equal(unit.wire,undefined)
  history.observe(f,'/synthetic')
  const result=handlers.get('agent/request')({agent:{session:f}},()=> 'continued')
  assert.equal(result,'continued');assert.ok(!JSON.stringify(f.deriveMessages()).includes('"text":"old"'))
+ assert.equal(observed.length,0)
  f.accept(context('new','current'))
  assert.equal(handlers.get('llm/stream')({sessionId:f.id,messages:f.deriveMessages()},()=>{calls++;return'local-stream'}),'local-stream')
+ assert.equal(observed.length,1)
+ assert.equal(observed[0].session,f)
+ assert.equal(observed[0].rules,rules)
+ assert.match(observed[0].sha256,/^[a-f0-9]{64}$/u)
  current='withdrawn'
  assert.throws(()=>handlers.get('llm/stream')({sessionId:f.id,messages:f.deriveMessages()},()=>{calls++;}),/stale-request/)
  assert.equal(calls,1)
+ assert.equal(observed.length,1)
  handlers.get('session/disposed')(f)
  assert.throws(()=>handlers.get('llm/stream')({sessionId:f.id,messages:f.deriveMessages()},()=>{}),/session-unavailable/)
 })

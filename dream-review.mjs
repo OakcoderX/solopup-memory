@@ -194,6 +194,12 @@ export function dreamReviewMessages(input) {
   return messages
 }
 
+/** The model has no decision to make when an evidence check already requires abstention. */
+export function incompleteDreamReview(item) {
+  if (!item.incompleteEvidence) return undefined
+  return { id: item.id, verdict: 'needs-evidence', sourceIds: [], reason: '相关原话未能完整核对，请确认后再更正。' }
+}
+
 export function validateDreamReview(input, result) {
   dreamReviewMessages(input)
   if (typeof result === 'string') {

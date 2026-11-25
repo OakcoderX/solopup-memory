@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.27.0-beta.1 — source readback, turn receipts, and dream review
+
+- Open original DSH evidence for a saved current record with `memory_source`. Check the authorized workspace, message identity, source fingerprint, and current record before returning the quoted passage.
+- Use `memory_receipt` to inspect bounded observations for a turn. The receipt distinguishes a memory write, a validated model request, and a point-in-time file check.
+- Prioritize changed, conflicting, and replayed evidence for Dream Review. Check the proposal preview against the current project revision before relying on it. Adoption still uses the existing memory write flow.
+
 ## 0.26.0 — core text memory release
 
 - Keep long-term preferences and current project decisions with source references, scope and historical revisions. Follow a confirmed correction while retaining its unrelated exceptions.

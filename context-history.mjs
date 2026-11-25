@@ -1,5 +1,5 @@
 /** Remove this plugin's superseded context sections, never ordinary conversation. */
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { optionalService } from './host-services.mjs'
 
 export const MEMORY_CONTEXT_NAME = 'memory:index'
@@ -102,9 +102,10 @@ export function assertCurrentMemoryRequest(messages,currentText) {
   // append an otherwise identical memory section. Duplication alone is safe;
   // every retained copy must still equal the current memory view.
   if(contexts.some(context=>context.memory.text!==currentText))fail('memory-context-stale-request')
+  return contexts.length
 }
 
-export function setupMemoryHistory(ctx,render) {
+export function setupMemoryHistory(ctx,render,onVerifiedRequest) {
   const projections = optionalService(ctx, 'sessionProjections')
   if(typeof projections?.register!=='function')return{available:false,observe:()=>{}}
   const registration=projections.register(memoryContextProjection())
@@ -118,12 +119,12 @@ export function setupMemoryHistory(ctx,render) {
       ? session=>handle.stateOf(session)
       : typeof projections.stateOf==='function'
         ? session=>projections.stateOf(session,HISTORY_PROJECTION_KEY)
-        : undefined)
+        : undefined, onVerifiedRequest)
   }
   return typeof registration?.then==='function'?Promise.resolve(registration).then(ready):ready(registration)
 }
 
-function installMemoryHistory(ctx,render,stateOf) {
+function installMemoryHistory(ctx,render,stateOf,onVerifiedRequest) {
   if(!stateOf)fail('memory-context-reader-unavailable')
   const sessions=new Map()
   const cwdFor=(session,fallback)=>typeof ctx.workingDirectory?.get==='function'?ctx.workingDirectory.get(session):fallback
@@ -145,7 +146,13 @@ function installMemoryHistory(ctx,render,stateOf) {
     if(owned){
       const stored=sessions.get(request.sessionId),session=stored?.ref.deref()
       if(!session)fail('memory-context-session-unavailable')
-      assertCurrentMemoryRequest(request.messages,render(cwdFor(session,stored.cwd),session))
+      let rules
+      const text = render(cwdFor(session, stored.cwd), session, currentRules => { rules = currentRules })
+      const copies = assertCurrentMemoryRequest(request.messages, text)
+      if (copies && text && rules && !request.signal?.aborted) {
+        const sha256 = createHash('sha256').update(text).digest('hex')
+        onVerifiedRequest?.({ session, sha256, rules })
+      }
     }
     return next()
   })

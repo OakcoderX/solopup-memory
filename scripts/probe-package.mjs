@@ -46,8 +46,11 @@ try {
   if(testArgs[0]!=='node'||testArgs[1]!=='--test'||testArgs.slice(2).some(arg=>!arg.endsWith('.mjs')&&!/^--test-concurrency=[1-9]\d*$/.test(arg)))throw Error('package-probe-unsupported-test-command')
   const testOutput = run(process.execPath, testArgs.slice(1), unpacked)
   report.packagedTests = Number(/(?:ℹ|#) tests (\d+)/.exec(testOutput)?.[1])
+  report.packagedTestResults = Object.fromEntries(['pass', 'fail', 'skipped'].map(name =>
+    [name, Number(new RegExp(`(?:ℹ|#) ${name} (\\d+)`).exec(testOutput)?.[1])]))
   report.lockContention = testOutput.split('\n').filter((line) => /accepted=40; lock-busy retries=/.test(line))
-  if (!Number.isInteger(report.packagedTests) || report.packagedTests < 1) throw new Error('package-probe-test-count-missing')
+  if (!Number.isInteger(report.packagedTests) || report.packagedTests < 1 ||
+      !Object.values(report.packagedTestResults).every(Number.isInteger)) throw new Error('package-probe-test-count-missing')
 
   const historyOutput = run(process.execPath, ['scripts/probe-history.mjs'], unpacked, { env: { ...cleanEnv, DSH_CLI: CLI } })
   report.historyContract = JSON.parse(historyOutput.trim().split('\n').at(-1))
@@ -79,7 +82,8 @@ try {
     await sleep(100)
   }
   if (!stamp) throw new Error(`package-probe-host-load-failed:${hostError ?? host.exitCode ?? 'timeout'}`)
-  const expected = ['memory_write', 'memory_forget', 'memory_links', 'memory_search', 'memory_prune', 'memory_status', 'memory_document', 'memory_check_delivery']
+  const expected = ['memory_write', 'memory_forget', 'memory_links', 'memory_search', 'memory_prune',
+    'memory_status', 'memory_document', 'memory_check_delivery', 'memory_source', 'memory_receipt']
   if (stamp.version !== pkg.version || expected.some((tool) => !stamp.tools.includes(tool)) || stamp.degraded.length || stamp.sourceControl?.state !== 'managed' || stamp.memoryHistory?.available !== true) throw new Error('package-probe-host-registration-failed')
   report.hostLoad = { version: stamp.version, node: stamp.node, tools: stamp.tools, cleanHome: true, profileCopied: false, sourceControl: stamp.sourceControl, memoryHistory: stamp.memoryHistory,
     environmentAllowlist: Object.keys(cleanEnv).sort(), parentEnvironmentInherited: false }

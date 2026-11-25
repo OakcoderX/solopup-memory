@@ -479,7 +479,7 @@ test('注册了项目工具，并通过 execute 验证常用入口', async () =>
     const mounted = mount(box.cwd)
     assert.deepEqual(
       mounted.tools.map((item) => item.name).sort(),
-      ['memory_check_delivery', 'memory_document', 'memory_forget', 'memory_links', 'memory_prune', 'memory_search', 'memory_status', 'memory_write'],
+      ['memory_check_delivery', 'memory_document', 'memory_forget', 'memory_links', 'memory_prune', 'memory_receipt', 'memory_search', 'memory_status', 'memory_write'],
     )
 
     const write = mounted.tools.find((item) => item.name === 'memory_write')

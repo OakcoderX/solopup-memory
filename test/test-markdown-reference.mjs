@@ -7,7 +7,7 @@ import { join } from 'node:path'
 import { test } from 'node:test'
 import { defineDeliveryCheckTool, defineMarkdownReferenceTool, prepareMarkdownReference } from '../markdown-reference.mjs'
 import { normalizeMeaning } from '../meaning.mjs'
-import { apply, linkProjectWorktree, storeDirFor, withdrawManagedSource } from '../index.mjs'
+import { apply, linkProjectWorktree, storeDirFor, withdrawManagedSource, writeMemory } from '../index.mjs'
 import { candidateSnapshot } from '../candidates.mjs'
 import { scriptedNativeValidationLlm } from '../fixture-host.mjs'
 
@@ -230,6 +230,13 @@ test('registered tool reads a reviewed current record only in the current projec
   const previousHome = process.env.DSH_HOME
   process.env.DSH_HOME = home
   const registered = new Map(), handlers = [], disposers = [], workspaces = new Map()
+  let sourceLog, afterSourceRead
+  const inspectSession = async (id, visit) => {
+    assert.equal(id, sourceLog.header.id)
+    const evidence = visit(sourceLog)
+    afterSourceRead?.()
+    return evidence
+  }
   const emit = async (event, ...args) => {
     for (const [name, handle] of handlers) if (name === event) await handle(...args)
   }
@@ -242,17 +249,27 @@ test('registered tool reads a reviewed current record only in the current projec
     llm: scriptedNativeValidationLlm(),
     tools: { register: tool => registered.set(tool.name, tool) },
     systemPrompt: { context() {} },
+    sessionQuery: { inspectSession },
+    sessionProjections: { register: () => ({ stateOf: () => ({ nodes: [], overflow: false }) }) },
+    sessionPersistence: { stat: () => ({ header: sourceLog.header, revision: 'unchanged', sizeBytes: 512 }) },
     workingDirectory: { get: session => workspaces.get(session.id) },
     on: (name, handle) => handlers.push([name, handle]),
     effect(factory) { const dispose = factory(); if (typeof dispose === 'function') disposers.push(dispose) },
   }, { autoCapture: { enabled: false } })
-  const session = { id: 'approve-manuscript' }
+  const session = { id: 'approve-manuscript', seq: 2, header: {
+    id: 'approve-manuscript', cwd: root, createdAt: 1000, isSeeded: false,
+  } }
   const agent = { session, options: { provider: 'fixture', model: 'fixture' } }
   workspaces.set(session.id, root)
   const callId = 'approve-manuscript-call'
   const owner = { id: 'approval-text', role: 'user', source: { kind: 'user' }, content: [{ type: 'text', text: prepared.approval }] }
+  const events = [{ seq: 0, type: 'session/start', time: 1000 }, {
+    seq: 1, type: 'user/message', time: 1001, surfaceOp: 'append', data: owner,
+  }]
+  sourceLog = { header: session.header, inheritedEventCount: 0, seq: events.length, eventAt: seq => events[seq] }
   const summary = '第七章渡口采用 V2'
   const input = { type: 'project', scope: 'project', summary, detail: prepared.marker, meaning: { kind: 'decision' } }
+  await emit('session/event', session, { type: 'turn/start', data: { turn: 1 } })
   await emit('agent/pre-step', { agent, turn: 1, step: 1, messages: [owner] }, () => {})
   await emit('session/event', session, { type: 'user/message', seq: 1, data: owner })
   await emit('session/event', session, { type: 'tool/call', seq: 2, data: { callId, name: 'memory_write', turn: 1, step: 1 } })
@@ -260,26 +277,66 @@ test('registered tool reads a reviewed current record only in the current projec
   assert.equal(written.status, 'recorded')
   const dir = storeDirFor('project', root)
   const record = candidateSnapshot(dir, 'project').records[0]
+  const global = writeMemory({
+    dir: storeDirFor('global', root), scope: 'global', type: 'feedback', summary: '测试全局来源范围',
+    line: '- [feedback] 测试全局来源范围 — 索引摘要',
+    meaning: { kind: 'preference' }, provenance: { sessionId: record.sessionId,
+      basis: 'tool-context', callHash: hash('global source fixture'), evidence: record.evidence },
+  }).recordId
+  assert.match(global, /^[a-f0-9]{64}$/u)
   const document = registered.get('memory_document')
+  const source = registered.get('memory_source')
   assert.ok(document)
+  assert.equal(written.recordId, record.id)
+  const bound = await source.execute({ recordId: record.id }, { agent })
+  assert.deepEqual(bound, { status: 'verified', recordId: record.id, scope: 'project', sources: [{
+    sessionId: session.id, messageId: session.id + ':1', seq: 1,
+    quote: prepared.approval, sha256: hash(prepared.approval),
+  }] })
+  assert.equal((await source.execute({ recordId: record.id, scope: 'global' }, { agent })).status, 'unavailable')
+  assert.equal((await source.execute({ recordId: global, scope: 'global' }, { agent })).status, 'verified')
+  assert.equal((await source.execute({ recordId: record.id.slice(0, 8) }, { agent })).status, 'unavailable')
+  const receipt = registered.get('memory_receipt')
+  const firstReceipt = await receipt.execute({}, { agent })
+  assert.deepEqual(firstReceipt.writes, [{ scope: 'project', status: 'recorded', recordId: record.id }])
+  assert.equal(firstReceipt.sources.length, 2)
+  assert.equal(firstReceipt.context, undefined)
+  const otherSession = { id: 'another-turn', header: { ...session.header, id: 'another-turn' } }
+  workspaces.set(otherSession.id, root)
+  assert.equal((await source.execute({ recordId: record.id }, { agent: { session: otherSession } })).status, 'verified')
+  afterSourceRead = () => workspaces.set(otherSession.id, other)
+  assert.equal((await source.execute({ recordId: record.id }, { agent: { session: otherSession } })).status, 'unavailable')
+  afterSourceRead = undefined
   const read = await document.execute({ recordId: record.id }, { agent })
   assert.equal(read.path, v2)
   assert.equal(read.status, 'verified')
   const reviewed = linkProjectWorktree(linked, root).reviewed
   linkProjectWorktree(linked, root, { apply: true, reviewed })
   workspaces.set(session.id, linked)
+  assert.equal((await source.execute({ recordId: record.id }, { agent })).status, 'verified')
   assert.equal((await document.execute({ recordId: record.id }, { agent })).status, 'verified')
   await writeFile(join(linked, v2), manuscript.replace('采纳稿', '试验稿'))
   assert.deepEqual(await document.execute({ recordId: record.id }, { agent }), { status: 'changed' })
   workspaces.set(session.id, other)
+  assert.equal((await source.execute({ recordId: record.id }, { agent })).status, 'unavailable')
+  assert.equal((await source.execute({ recordId: global, scope: 'global' }, { agent })).status, 'unavailable')
+  assert.deepEqual(await receipt.execute({}, { agent }), { status: 'unavailable' })
   assert.deepEqual(await document.execute({ recordId: record.id }, { agent }), { status: 'record-unavailable' })
   workspaces.set(session.id, root)
   session.header = { parentSession: 'other-session' }
+  assert.equal((await source.execute({ recordId: record.id }, { agent })).status, 'unavailable')
   assert.deepEqual(await document.execute({ recordId: record.id }, { agent }), { status: 'record-unavailable' })
-  delete session.header
+  session.header = sourceLog.header
   const plan = withdrawManagedSource(dir, record.sessionId, record.evidence[0].messageId)
-  withdrawManagedSource(dir, record.sessionId, record.evidence[0].messageId, { apply: true, controlReview: plan.controlReview })
+  afterSourceRead = () => withdrawManagedSource(dir, record.sessionId, record.evidence[0].messageId,
+    { apply: true, controlReview: plan.controlReview })
+  assert.equal((await source.execute({ recordId: record.id }, { agent })).status, 'unavailable')
+  afterSourceRead = undefined
+  assert.equal((await source.execute({ recordId: global, scope: 'global' }, { agent })).status, 'unavailable')
   assert.deepEqual(await document.execute({ recordId: record.id }, { agent }), { status: 'record-unavailable' })
+  await emit('session/event', session, { type: 'turn/end', data: { turn: 1 } })
+  await emit('session/event', session, { type: 'turn/start', data: { turn: 2 } })
+  assert.deepEqual(await receipt.execute({ view: 'previous' }, { agent }), { ...firstReceipt, view: 'previous' })
 
   const instruction = { ...owner, id: 'delivery-rule', content: [{ type: 'text', text: deliveryQuote }] }
   const writeCall = 'delivery-rule-call'
@@ -294,7 +351,16 @@ test('registered tool reads a reviewed current record only in the current projec
   await writeFile(join(root, '终稿.md'), '灯灭了。\n')
   await writeFile(join(other, '终稿.md'), '灯灭了。\n')
   const check = () => registered.get('memory_check_delivery').execute({ recordId: delivery.id }, { agent })
-  assert.equal((await check()).status, 'matched')
+  const matched = await check()
+  assert.equal(matched.status, 'matched')
+  assert.deepEqual((await receipt.execute({}, { agent })).delivery,
+    [{ kind: 'file-checked', recordId: delivery.id, status: 'matched', sha256: matched.sha256 }])
+  await writeFile(join(root, '终稿.md'), '灯亮了。\n')
+  assert.deepEqual((await receipt.execute({}, { agent })).delivery,
+    [{ kind: 'file-checked', recordId: delivery.id, status: 'matched', sha256: matched.sha256 }])
+  const changed = await check()
+  assert.equal(changed.status, 'mismatch')
+  assert.notEqual(changed.sha256, matched.sha256)
   workspaces.set(session.id, other)
   assert.deepEqual(await check(), { status: 'record-unavailable' })
   workspaces.set(session.id, root)
