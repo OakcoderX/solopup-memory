@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdtempSync, rmSync, statSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
 import test from 'node:test'
 import { openDreamQueue } from '../dream-queue.mjs'
 
@@ -61,6 +62,42 @@ test('a fenced local evidence report cannot contain a correction or complete a d
   assert.equal(queue.beginDispatch(current, { reservedTokens: 100 }).status, 'dispatching')
   assert.equal(queue.finishWithoutModel(current, resolving), undefined)
   assert.equal(queue.report(current.runId), undefined)
+})
+
+test('v4 queue migration preserves older reports and replay pointers without arming them', t => {
+  const env = fixture(t), projectId = inputHash('project'), targetId = inputHash('target')
+  const pointer = { sessionId: 'older-owner', createdAt: INITIAL_TIME - 2000, seq: 4, hash: inputHash('old-quote') }
+  env.queue.recordReplaySource(projectId, targetId, pointer, INITIAL_TIME - 1000)
+  const { runId } = enqueue(env.queue, 'v4-report', projectId)
+  const claim = env.queue.claim({ owner: 'v4-host' })
+  env.queue.beginDispatch(claim, { reservedTokens: 300 })
+  const report = { items: [{ id: targetId, verdict: 'propose-correction' }] }
+  env.queue.finish(claim, { status: 'completed', report, reviewedItemKeys: ['v4-report'], usedTokens: 180 })
+  env.close(env.queue)
+  const db = new DatabaseSync(join(env.dataRoot + '.dream', 'state.sqlite'))
+  db.exec('DROP TABLE auto_applications; DROP TABLE auto_owner_activity; PRAGMA user_version=4;')
+  db.close()
+  const migrated = env.open()
+  assert.deepEqual(migrated.report(runId), report)
+  assert.deepEqual(migrated.replaySources(projectId), { [targetId]: [pointer] })
+  assert.equal(migrated.status().budget.tokens, 180)
+  assert.equal(migrated.wasReviewed(projectId, 'v4-report'), true)
+  assert.deepEqual(migrated.pendingAutoApplications([projectId]), [])
+  assert.equal(migrated.ownerActivity(projectId), undefined)
+})
+
+test('an equal-time owner event with another source fences project publication', t => {
+  const { queue } = fixture(t), projectId = inputHash('project')
+  const first = inputHash('first'), second = inputHash('second')
+  queue.recordOwnerActivity(projectId, first, INITIAL_TIME)
+  queue.recordOwnerActivity(projectId, first, INITIAL_TIME)
+  assert.equal(queue.ownerActivity(projectId), first)
+  queue.recordOwnerActivity(projectId, second, INITIAL_TIME)
+  assert.equal(queue.ownerActivity(projectId), null)
+  queue.recordOwnerActivity(projectId, first, INITIAL_TIME)
+  assert.equal(queue.ownerActivity(projectId), null)
+  queue.recordOwnerActivity(projectId, second, INITIAL_TIME + 1)
+  assert.equal(queue.ownerActivity(projectId), second)
 })
 
 test('only one owner can claim, reserve, and commit the same batch and its item progress', (t) => {

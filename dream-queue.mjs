@@ -5,7 +5,7 @@ import { basename, dirname, join, resolve } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 
 const APPLICATION_ID = 0x53504452
-const SCHEMA_VERSION = 4
+const SCHEMA_VERSION = 5
 const MODES = ['ordinary', 'superagent']
 const ACTIVE = "'prepared', 'dispatching', 'running', 'uncertain'"
 const MAX_RUNS = 10_000
@@ -30,6 +30,22 @@ CREATE TABLE replay_sources (
   source_hash TEXT NOT NULL,
   occurred_at INTEGER NOT NULL,
   PRIMARY KEY (project_id,target_id)
+) STRICT;
+`
+const AUTO_APPLICATION_SCHEMA = `
+CREATE TABLE auto_applications (
+  run_id TEXT PRIMARY KEY REFERENCES runs(id),
+  target_id TEXT NOT NULL,
+  operation_id TEXT NOT NULL,
+  state TEXT NOT NULL CHECK (state IN ('pending', 'applied', 'skipped')),
+  record_id TEXT,
+  reason TEXT
+) STRICT;
+CREATE INDEX pending_auto_applications ON auto_applications (run_id) WHERE state='pending';
+CREATE TABLE auto_owner_activity (
+  project_id TEXT PRIMARY KEY,
+  source_id TEXT,
+  event_at INTEGER NOT NULL
 ) STRICT;
 `
 
@@ -100,9 +116,11 @@ CREATE TABLE reviewed (
 ) STRICT;
 ${EXECUTOR_REQUEST_SCHEMA}
 ${REPLAY_SOURCE_SCHEMA}
+${AUTO_APPLICATION_SCHEMA}
 `
 
 const digest = (value) => createHash('sha256').update(JSON.stringify(value)).digest('hex')
+const isHash = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
 const fail = (code) => { throw new Error(`dream-queue-${code}`) }
 
 function integer(value, min, max, name) {
@@ -199,10 +217,11 @@ function openDatabase(dataRoot, existingOnly) {
       const version = db.prepare('PRAGMA user_version').get().user_version
       if (appId === APPLICATION_ID && version === SCHEMA_VERSION) return
       if (existingOnly) fail('not-initialized')
-      if (appId === APPLICATION_ID && [1, 2, 3].includes(version)) {
+      if (appId === APPLICATION_ID && [1, 2, 3, 4].includes(version)) {
         if (version === 1) db.exec(EXECUTOR_REQUEST_SCHEMA)
         if (version <= 2) db.exec('ALTER TABLE runs ADD COLUMN remote_binding TEXT')
-        db.exec(REPLAY_SOURCE_SCHEMA)
+        if (version <= 3) db.exec(REPLAY_SOURCE_SCHEMA)
+        db.exec(AUTO_APPLICATION_SCHEMA)
         db.exec(`PRAGMA user_version=${SCHEMA_VERSION};`)
         return
       }
@@ -544,6 +563,7 @@ export function openDreamQueue(dataRoot, {
   function finish(claimValue, {
     status: outcome,
     report,
+    autoApplication,
     reviewedItemKeys = [],
     usedTokens,
     confirmedUnsent = false,
@@ -559,6 +579,11 @@ export function openDreamQueue(dataRoot, {
     integer(retryAfterMs, 0, 604_800_000, 'retry-delay')
     itemKeys(reviewedItemKeys)
     let payload
+    if (autoApplication !== undefined) {
+      if (local || outcome !== 'completed' || ![autoApplication.targetId, autoApplication.operationId].every(isHash) ||
+          report?.items?.filter(row => row.verdict === 'propose-correction').length !== 1 ||
+          !report.items.some(row => row.id === autoApplication.targetId && row.verdict === 'propose-correction')) fail('invalid-auto-application')
+    }
     if (outcome === 'completed') {
       if (!report || typeof report !== 'object' || Array.isArray(report)) fail('invalid-report')
       payload = boundedJson(report, 'report', 24 * 1024)
@@ -585,6 +610,9 @@ export function openDreamQueue(dataRoot, {
           const selected = new Set(JSON.parse(row.metadata).itemKeys ?? [])
           if (reviewedItemKeys.some((key) => !selected.has(key))) fail('unexpected-reviewed-item')
           db.prepare('INSERT INTO reports VALUES (?,?,?)').run(row.id, payload, at)
+          if (autoApplication && row.manual === 0) db.prepare(`
+            INSERT INTO auto_applications (run_id, target_id, operation_id, state) VALUES (?,?,?,'pending')
+          `).run(row.id, autoApplication.targetId, autoApplication.operationId)
           const review = db.prepare(`
             INSERT INTO reviewed (project_id, item_key, run_id) VALUES (?,?,?)
             ON CONFLICT(project_id, item_key) DO NOTHING
@@ -706,12 +734,60 @@ export function openDreamQueue(dataRoot, {
     identifier(runId, 'run-id')
     return write(() => {
       const row = runRow(runId)
-      if (!row || row.status !== 'completed') return undefined
+      if (!row || row.status !== 'completed' || autoApplication(runId)?.state === 'pending') return undefined
       db.prepare('DELETE FROM reviewed WHERE run_id=?').run(runId)
       db.prepare('DELETE FROM reports WHERE run_id=?').run(runId)
       db.prepare("UPDATE runs SET status='invalidated', reason='report-invalidated' WHERE id=?").run(runId)
       return getRun(runId)
     })
+  }
+
+  const applicationSelect = `SELECT a.run_id AS runId, r.project_id AS projectId, a.target_id AS targetId,
+    a.operation_id AS operationId, a.state, a.record_id AS recordId, a.reason
+    FROM auto_applications a JOIN runs r ON r.id=a.run_id`
+  function autoApplication(runId) {
+    identifier(runId, 'run-id')
+    const row = db.prepare(`${applicationSelect} WHERE a.run_id=?`).get(runId)
+    return row && { ...row }
+  }
+
+  function pendingAutoApplications(projectIds) {
+    const selected = projectFilter(projectIds)
+    return db.prepare(`${applicationSelect}
+      WHERE a.state='pending' AND r.project_id IN (SELECT value FROM json_each(?))
+      ORDER BY r.queued_at, a.run_id LIMIT 16`).all(selected).map(row => ({ ...row }))
+  }
+
+  function finishAutoApplication(runId, { recordId, reason } = {}) {
+    identifier(runId, 'run-id')
+    if (recordId === undefined ? typeof reason !== 'string' : !isHash(recordId) || reason !== undefined) fail('invalid-auto-outcome')
+    if (reason !== undefined) identifier(reason, 'auto-reason')
+    return write(() => {
+      db.prepare(`UPDATE auto_applications SET state=?, record_id=?, reason=? WHERE run_id=? AND state='pending'`)
+        .run(recordId ? 'applied' : 'skipped', recordId ?? null, reason ?? null, runId)
+      return autoApplication(runId)
+    })
+  }
+
+  function recordOwnerActivity(projectId, sourceId, eventAt) {
+    if (![projectId, sourceId].every(isHash)) fail('invalid-owner-activity')
+    integer(eventAt, 0, 8_640_000_000_000_000, 'owner-activity-time')
+    return write(() => {
+      db.prepare(`INSERT INTO auto_owner_activity VALUES (?,?,?)
+        ON CONFLICT(project_id) DO UPDATE SET event_at=excluded.event_at,
+          source_id=CASE WHEN excluded.event_at>auto_owner_activity.event_at THEN excluded.source_id ELSE NULL END
+        WHERE excluded.event_at>auto_owner_activity.event_at OR
+          (excluded.event_at=auto_owner_activity.event_at AND excluded.source_id<>auto_owner_activity.source_id)`
+      ).run(projectId, sourceId, eventAt)
+      db.prepare(`DELETE FROM auto_owner_activity WHERE project_id IN (
+        SELECT project_id FROM auto_owner_activity ORDER BY event_at DESC, project_id LIMIT -1 OFFSET 512
+      )`).run()
+    })
+  }
+
+  function ownerActivity(projectId) {
+    if (!isHash(projectId)) fail('invalid-project-id')
+    return db.prepare('SELECT source_id FROM auto_owner_activity WHERE project_id=?').get(projectId)?.source_id
   }
 
   return {
@@ -747,6 +823,11 @@ export function openDreamQueue(dataRoot, {
     report,
     listReports,
     invalidateReport,
+    autoApplication,
+    pendingAutoApplications,
+    finishAutoApplication,
+    recordOwnerActivity,
+    ownerActivity,
     recover() {
       write(() => recoverExpired(time()))
       return status()

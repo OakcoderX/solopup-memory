@@ -1,14 +1,21 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { mkdtempSync, realpathSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, realpathSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
+import { setTimeout as wait } from 'node:timers/promises'
 import { createDreamRuntime, renderDreamReport } from '../dream-runtime.mjs'
 import { createOrdinaryDreamExecutor, normalizeDreamUsage } from '../dream-ordinary.mjs'
 import { buildDreamEvidence } from '../dream-review.mjs'
 import { openDreamQueue } from '../dream-queue.mjs'
 import { normalizePluginConfig } from '../plugin-config.mjs'
+import { apply, searchStore, storeDirFor, withdrawManagedSource } from '../index.mjs'
+import { writeFixtureMemory } from '../fixture-host.mjs'
+import { candidateSnapshot } from '../candidates.mjs'
+import { episodeSnapshot } from '../episodes.mjs'
+import { planDreamCorrection, prepareDreamCorrection } from '../dream-auto-apply.mjs'
 
 const digest = value => createHash('sha256').update(value).digest('hex')
 const flush = async () => { for (let turn = 0; turn < 40; turn++) await Promise.resolve() }
@@ -23,6 +30,184 @@ const record = {
 }
 const approved = { items: [{ id: 'm1', verdict: 'keep', sourceIds: ['s1'], reason: '用户原话明确规定默认使用中文。' }] }
 const hashPacket = value => digest(JSON.stringify(value))
+
+const before = '正式交付说明默认用中文，内部审片批注用中文。'
+const after = '正式交付说明默认用英文，内部审片批注用中文。'
+const correction = `更正「${before}」→「${after}」`
+const applicability = { kind: 'decision',
+  conditions: [{ dimension: 'approval', value: 'signed' }],
+  except: [{ dimension: 'audience', value: 'internal_review' }] }
+
+function preparedCorrection({ old = before, next = after, message = `更正「${old}」→「${next}」`,
+  proposed = next, proofOnly = false, later = true, skipCitation = false, multiple = false } = {}) {
+  const projectId = digest('synthetic-project'), storeRevision = digest('initial-revision')
+  const parent = { ...record, summary: old, type: 'project', createdAt: new Date(1000).toISOString(),
+    indexLine: `- [project] ${old} — 索引摘要`, meaning: applicability, expires: '2030-12-12' }
+  const pointer = { sessionId: 'correction-owner', seq: 4, hash: digest(message) }
+  const source = { ...pointer, projectId, role: 'user', sourceComplete: true, messageId: 'correction-owner:4',
+    text: message, quote: message, occurredAt: new Date(later ? 2000 : 1000).toISOString(), wholeOwnerMessage: !proofOnly, liveCursor: 6 }
+  const proof = { pointers: { [parent.id]: [pointer] }, additionalEvidenceByTarget: { [parent.id]: [source] } }
+  const input = buildDreamEvidence({ projectId, storeRevision, records: [parent], ...proof, now: 3000 })
+  const row = { id: parent.id, verdict: 'propose-correction', proposedSummary: proposed, evidenceDigest: hashPacket(input.items[0]),
+    pointerDigest: hashPacket([pointer]), sourceIds: input.items[0].sources.map(source => source.id).slice(0, skipCitation ? 1 : 2) }
+  return { report: { projectId, storeRevision, items: multiple ? [row, { ...row, id: digest('another-target') }] : [row] }, input, proof, parent }
+}
+
+test('automatic admission changes one explicit primary value and preserves the complete prior guard', () => {
+  const prepared = preparedCorrection(), plan = planDreamCorrection(prepared)
+  assert.equal(plan.after, after)
+  const compiled = prepareDreamCorrection(plan, prepared.parent)
+  assert.deepEqual(compiled.meaning.conditions, applicability.conditions)
+  assert.deepEqual(compiled.meaning.except, applicability.except)
+  assert.equal(compiled.expires, '2030-12-12')
+  assert.equal(compiled.fieldLineage.parentId, record.id)
+  const version = preparedCorrection({ old: '交付模板版本为 V1', next: '交付模板版本为 V2' })
+  assert.ok(planDreamCorrection(version))
+  for (const guard of [{ dimension: 'template', value: 'release-v1' }, { dimension: 'release_v2', value: 'signed' }]) {
+    assert.equal(prepareDreamCorrection(planDreamCorrection(version), {
+      ...version.parent, meaning: { ...applicability, except: [guard] },
+    }), undefined)
+  }
+  const english = preparedCorrection({ old: 'Export format is PDF', next: 'Export format is DOCX', message: 'Correction: "Export format is PDF" -> "Export format is DOCX"' })
+  assert.equal(planDreamCorrection(english).after, 'Export format is DOCX')
+})
+
+test('automatic admission abstains from trial, incomplete, old, nonmatching and ambiguous evidence', () => {
+  for (const options of [
+    { message: correction + ' 不要写入记忆' }, { message: correction + '，先试行。' },
+    { message: `供模型测试用：${correction}` }, { proposed: '报告说明今后统一用英文' },
+    { old: '签字前交付模板版本为 V1', next: '签字前交付模板版本为 V2' },
+    { next: '正式交付说明默认用中文，内部审片批注用英文。' },
+    { old: '第1章交付说明默认用中文。', next: '第2章交付说明默认用中文。' },
+    { proofOnly: true }, { later: false }, { skipCitation: true }, { multiple: true },
+  ]) assert.equal(planDreamCorrection(preparedCorrection(options)), undefined, JSON.stringify(options))
+  const cold = preparedCorrection()
+  delete cold.proof.additionalEvidenceByTarget[record.id][0].liveCursor
+  assert.equal(planDreamCorrection(cold), undefined)
+})
+
+async function managedIdleFixture(t, { autoApply, failQueueReceipt = false, laterOwnerTurn = false, sourceKind = 'live' }, verify) {
+  const base = realpathSync(mkdtempSync(join(tmpdir(), 'solopup-dream-managed-')))
+  const home = join(base, 'home'), cwd = join(base, 'project'), root = join(home, 'memory')
+  mkdirSync(home); mkdirSync(cwd)
+  const previousHome = process.env.DSH_HOME
+  process.env.DSH_HOME = home
+  const events = [], handlers = [], tools = [], effects = [], sessions = new Map()
+  const header = { id: 'dream-live-owner', cwd, createdAt: Date.now() - 200, version: 4, isSeeded: false }
+  const session = { id: header.id, header, get seq() { return events.length } }
+  if (sourceKind === 'live') sessions.set(session.id, session)
+  const llm = { async prepareCall(config) { return { config, async* stream(request) {
+    assert.equal(request.purpose, 'memory-dream-review')
+    yield { type: 'text-delta', text: JSON.stringify({ items: [{ id: 'm1', verdict: 'propose-correction',
+      sourceIds: ['s1', 's2'], reason: '更正保留了原有条件和例外。', proposedSummary: after }] }) }
+    yield { type: 'finish', usage: { inputTokens: 100, outputTokens: 50 } }
+  } } } }
+  const ctx = { llm, systemPrompt: { context() {} }, workingDirectory: { get: () => cwd },
+    tools: { register(tool) { tools.push(tool) } }, on(event, fn) { handlers.push([event, fn]) },
+    effect(fn) { const stop = fn(); if (typeof stop === 'function') effects.push(stop) }, sessions,
+    sessionPersistence: { async stat() { return { header, sizeBytes: 1024, revision: 'known' } } },
+    sessionQuery: { async observeSession(id) {
+      assert.equal(id, session.id)
+      return { source: sourceKind, header, events: [...events], cursor: events.length - 1, inheritedEventCount: 0,
+        revision: 'known', [Symbol.dispose]() {} }
+    } },
+  }
+  const config = { autoCapture: { enabled: false }, dream: { enabled: true, autoApply, projects: [cwd],
+    idleMs: 1000, timeoutMs: 2500, provider: 'fixture', model: 'fixture' } }
+  const stop = () => { for (const effect of effects.splice(0).reverse()) effect(); handlers.length = 0; tools.length = 0 }
+  const emit = (eventSession, event) => { for (const [name, fn] of handlers) if (name === 'session/event') fn(eventSession, event) }
+  const user = (seq, time, text) => ({ seq, time, type: 'user/message', surfaceOp: 'append',
+    data: { id: `owner-${seq}`, role: 'user', source: { kind: 'user' }, content: [{ type: 'text', text }] } })
+  let queue, db
+  try {
+    apply(ctx, config)
+    const dir = storeDirFor('project', cwd)
+    const expires = `${new Date().getUTCFullYear() + 2}-12-12`
+    writeFixtureMemory({ dir, type: 'project', summary: before, meaning: applicability, expires })
+    const original = candidateSnapshot(dir, 'project').records[0]
+    queue = openDreamQueue(root, { existingOnly: true })
+    if (failQueueReceipt) {
+      db = new DatabaseSync(join(root + '.dream', 'state.sqlite'))
+      db.exec(`CREATE TRIGGER simulate_lost_receipt BEFORE UPDATE OF state ON auto_applications
+        WHEN NEW.state='applied' BEGIN SELECT RAISE(ABORT,'fixture-post-commit-receipt-failure'); END;`)
+    }
+    const time = Date.parse(original.createdAt) + 10
+    const event = user(0, time, correction)
+    events.push(event)
+    emit(session, event)
+    if (laterOwnerTurn) {
+      const otherSession = { id: 'later-project-owner', header: { ...header, id: 'later-project-owner' } }
+      emit(otherSession, user(5000, time + 30, '请不要写入刚才的更正。'))
+    }
+    async function until(read) {
+      const deadline = Date.now() + 3600
+      do {
+        const state = read()
+        if (state) return state
+        await wait(20)
+      } while (Date.now() < deadline)
+      assert.fail(`DREAM fixture did not settle: ${JSON.stringify(queue.status())}`)
+    }
+    const run = await until(() => queue.listReports()[0])
+    await verify({ queue, dir, run, original, expires, until, report() {
+      const tool = tools.find(tool => tool.name === 'memory_dream_report')
+      return tool.execute({ runId: run.runId }, { agent: { session } })
+    }, restart() { stop(); db?.exec('DROP TRIGGER simulate_lost_receipt;'); apply(ctx, config) } })
+  } finally {
+    stop()
+    db?.close(); queue?.close()
+    if (previousHome === undefined) delete process.env.DSH_HOME
+    else process.env.DSH_HOME = previousHome
+    rmSync(base, { recursive: true, force: true })
+  }
+}
+
+test('the idle host atomically replaces an exact value, reconciles a missing receipt after restart, and supports guarded withdrawal', async t => {
+  await managedIdleFixture(t, { autoApply: true, failQueueReceipt: true }, async f => {
+    const applied = await f.until(() => candidateSnapshot(f.dir, 'project').records.find(row => row.summary === after))
+    assert.deepEqual(applied.meaning.conditions, applicability.conditions)
+    assert.deepEqual(applied.meaning.except, applicability.except)
+    assert.equal(applied.expires, f.expires)
+    assert.equal(applied.fieldLineage.parentId, f.original.id)
+    assert.ok(f.original.sources.every(source => applied.sources.includes(source)))
+    assert.equal(f.queue.autoApplication(f.run.runId).state, 'pending')
+    assert.equal(searchStore(f.dir, before, { mode: 'exact' }).hits.length, 0)
+    assert.equal(searchStore(f.dir, f.original.id, { mode: 'exact', view: 'history' }).hits.length, 1)
+    f.restart()
+    const receipt = await f.until(() => {
+      const receipt = f.queue.autoApplication(f.run.runId)
+      return receipt?.state === 'applied' && receipt
+    })
+    assert.equal(receipt.recordId, applied.id)
+    const history = episodeSnapshot(f.dir).state.entries
+    assert.equal(history.filter(row => row.source.id === applied.id).length, 1)
+    assert.equal(history.find(row => row.source.id === f.original.id).closed.by, applied.id)
+    const report = JSON.parse((await f.report()).report)
+    assert.deepEqual(report.autoApplication.source, { sessionId: 'dream-live-owner', messageId: 'dream-live-owner:0' })
+    assert.equal(report.autoApplication.current, true)
+    const later = '正式交付说明默认用日文，内部审片批注用中文。'
+    writeFixtureMemory({ dir: f.dir, type: 'project', summary: later, supersedes: applied.indexLine, meaning: applicability })
+    assert.equal(JSON.parse((await f.report()).report).autoApplication.current, false)
+    const { sessionId, messageId } = report.autoApplication.source
+    const review = withdrawManagedSource(f.dir, sessionId, messageId)
+    withdrawManagedSource(f.dir, sessionId, messageId, { apply: true, controlReview: review.controlReview })
+    assert.equal(searchStore(f.dir, before, { mode: 'exact' }).hits.length, 0)
+    assert.equal(searchStore(f.dir, after, { mode: 'exact' }).hits.length, 0)
+    assert.equal(searchStore(f.dir, later, { mode: 'exact' }).hits.length, 1)
+    assert.ok(!JSON.parse((await f.report()).report).autoApplication.source)
+  })
+})
+
+for (const options of [{ autoApply: false }, { autoApply: true, laterOwnerTurn: true }, { autoApply: true, sourceKind: 'prepared' }]) {
+  test(`idle review remains advisory for ${JSON.stringify(options)}`, async t => {
+    await managedIdleFixture(t, options, async f => {
+      assert.equal(f.queue.report(f.run.runId).items[0].verdict, 'propose-correction')
+      assert.equal(f.queue.autoApplication(f.run.runId), undefined)
+      assert.equal(searchStore(f.dir, before, { mode: 'exact' }).hits.length, 1)
+      assert.equal(searchStore(f.dir, after, { mode: 'exact' }).hits.length, 0)
+    })
+  })
+}
 
 function keepAll(input) {
   let source = 1
@@ -50,7 +235,7 @@ function clock() {
   }
 }
 
-function fixture(t, executors, options = {}, readReplay, extraProjects = {}) {
+function fixture(t, executors, options = {}, readReplay, extraProjects = {}, callbacks = {}) {
   const home = realpathSync(mkdtempSync(join(tmpdir(), 'solopup-dream-runtime-')))
   const timer = clock()
   const queue = openDreamQueue(join(home, 'memory'), { now: timer.now, maxDailyTokens: options.maxDailyTokens })
@@ -58,11 +243,29 @@ function fixture(t, executors, options = {}, readReplay, extraProjects = {}) {
   const runtime = createDreamRuntime({
     options: { projects: ['project-a'], idleMs: 1000, timeoutMs: 5000, provider: 'fixture', model: 'fixture', ...options },
     queue, readProject: (path, consume) => consume(path === 'project-a' ? project : extraProjects[path]), readReplay, executors,
-    now: timer.now, timers: { setTimer: timer.setTimer, clearTimer: timer.clearTimer },
+    now: timer.now, timers: { setTimer: timer.setTimer, clearTimer: timer.clearTimer }, ...callbacks,
   })
   t.after(async () => { runtime.dispose(); await flush(); rmSync(home, { recursive: true, force: true }) })
   return { queue, project, runtime, timer }
 }
+
+test('a restarted runtime declines an uncommitted application from a previous owner', async t => {
+  const { queue, project, timer } = fixture(t, {}, { autoApply: true }, undefined, {}, {
+    readApplication() {},
+    publishCorrection() { assert.fail('Uncommitted prior-runtime work cannot publish') },
+  })
+  const { runId } = queue.enqueue({ projectId: project.projectId, inputHash: digest('interrupted'), policyVersion: 'review-v4',
+    metadata: { itemIds: [record.id], itemKeys: [record.id] } })
+  const claim = queue.claim({ owner: 'past-runtime' })
+  queue.beginDispatch(claim, { reservedTokens: 200 })
+  queue.finish(claim, { status: 'completed', usedTokens: 100,
+    report: { projectId: project.projectId, items: [{ id: record.id, verdict: 'propose-correction' }] },
+    autoApplication: { targetId: record.id, operationId: digest('interrupted-application') } })
+  assert.equal(queue.autoApplication(runId).state, 'pending')
+  await timer.advance(1000)
+  assert.equal(queue.autoApplication(runId).state, 'skipped')
+  assert.equal(queue.autoApplication(runId).reason, 'runtime-interrupted')
+})
 
 test('dream opt-in requires an explicit scope and route; default is off', () => {
   assert.equal(normalizePluginConfig({}).dream.enabled, false)

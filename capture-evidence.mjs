@@ -27,6 +27,53 @@ export function captureMessage(event, id) {
 const printedDate = /(?:[12]\d{3}年\d{1,2}月\d{1,2}日|[12]\d{3}-\d{2}-\d{2})/gu
 const minutesHeader = /(?:纪要|记录|交接|备忘|会议|访谈|笔记|minutes|handoff|meeting|interview|notes)[\s，,。：:·|—–(（-]*$/iu
 const speakerLine = /^([\p{L}][\p{L}\p{M} .·'-]{0,36})[：:]\s*/u
+const sentenceBoundary = /[。！？.!?\r\n]/u
+const trialCue = /先试(?!听)|仅试(?!听)|试留|拟试行|仅作试行|暂定|尚待定案|尚未定案/u
+const trialWording = /先试(?!听)|仅试(?!听)|试留|试行|试运行|暂定|待定|未定案/u
+const approvalCue = /(?:现已|已经|已)(?:正式)?(?:签字|签批|签署|批准|拍板|定案)/u
+const finalApprovalCue = /已(?:经)?(?:签字(?:并)?(?:批准|同意)?|批准|拍板(?:决定)?)\s*正式(?:采用|保留|执行|生效|选用)/u
+const beforeSignoffCue = /签字(?:\s*之)?前/u
+const pendingSignoffCue = /签字(?:\s*之)?前|(?:尚未|还未|未)签字/u
+
+// Recover qualifiers immediately around a uniquely located quotation. The
+// neighboring sentences remain separate evidence, even in a single message.
+function quoteContext({messageId, quote}, messages) {
+  const source = messages.find(message => message.role === 'user' && message.id === messageId)?.text
+  const at = source?.indexOf(quote) ?? -1
+  if (at < 0 || at !== source.lastIndexOf(quote)) return quote
+  const start = source.slice(0, at).split(sentenceBoundary).at(-1)
+  const end = source.slice(at + quote.length).split(sentenceBoundary)[0]
+  return start + quote + (sentenceBoundary.test(quote.at(-1)) ? '' : end)
+}
+
+/** Narrow capture checks for explicit trial and signature qualifiers, not general entailment. */
+export function captureQualifierIssues(candidate, messages, evidence = candidate.evidence) {
+  if (candidate.type !== 'project' || candidate.scope !== 'project') return []
+  const issues = new Set()
+  const {kind, conditions = []} = candidate.meaning ?? {}
+  const wording = `${candidate.summary}\n${candidate.detail ?? ''}`
+  const settledRule = kind === 'decision' || kind === 'preference'
+  if (settledRule && trialCue.test(candidate.summary) && !approvalCue.test(candidate.summary)) issues.add('meaning')
+  for (const ref of evidence) {
+    const sentences = quoteContext(ref, messages).split(sentenceBoundary).filter(sentence => sentence.trim())
+    // A broad excerpt spanning several subjects must not transfer a qualifier
+    // from one sentence to an unrelated proposal in another.
+    const anchors = sentences.length > 1 ? [...candidate.summary.matchAll(/(?=([\p{Script=Han}]{4}))/gu)].map(match => match[1]) : []
+    for (const source of sentences) {
+      if (sentences.length > 1 && !anchors.some(anchor => source.includes(anchor))) continue
+      if (trialCue.test(source) && !finalApprovalCue.test(source)) {
+        if (settledRule) issues.add('meaning')
+        if (!trialWording.test(candidate.summary) || finalApprovalCue.test(wording)) issues.add('wording')
+      }
+      const pending = source.search(beforeSignoffCue)
+      if (pending >= 0 && source.search(approvalCue) <= pending) {
+        if (!pendingSignoffCue.test(candidate.summary)) issues.add('wording')
+        if (!conditions.some(({dimension,value}) => (dimension === 'signoff' && value === 'pending') || pendingSignoffCue.test(value))) issues.add('applicability')
+      }
+    }
+  }
+  return [...issues]
+}
 
 export function bindDatedQuotation(candidate, owner) {
   if (candidate.type !== 'project' || candidate.scope !== 'project' || candidate.basis !== 'explicit' ||
@@ -82,6 +129,7 @@ export function assessCandidate(candidate, messages, hasProject) {
     }
   }
   if (['explicit','inferred'].includes(candidate.basis) && candidate.meaning === undefined) return { status: 'rejected', reason: 'invalid-meaning' }
+  if (captureQualifierIssues(candidate, messages, evidence).length) return { status: 'rejected', reason: 'candidate-rejected' }
   if (candidate.basis === 'explicit') return { status: 'eligible', scope, evidence }
   if (candidate.basis === 'inferred') return { status: 'candidate', scope, evidence, reason: 'inference-needs-review' }
   return { status: 'rejected', reason: 'missing-basis' }

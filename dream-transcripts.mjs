@@ -102,6 +102,15 @@ function correctionTarget(text) {
     ?? /^correction\s*:?\s*"([^"\n]{2,200})"\s*(?::|->|→)\s*\S/iu.exec(text))?.[1].trim()
 }
 
+export function observeDreamOwnerActivity(session, event) {
+  const header = session?.header, data = event?.data?.message ?? event?.data
+  if (!ownerHeader(header) || header.id !== session.id || !SESSION_ID.test(session.id) ||
+      !safeTime(header.createdAt) || !safeTime(event?.time) || event.time < header.createdAt ||
+      !Number.isSafeInteger(event?.seq) || event.seq < 0 ||
+      event.type !== 'user/message' || data?.role !== 'user' || data.source?.kind !== 'user') return
+  return { id: sourceId(session.id, `${session.id}:${event.seq}`), occurredAt: event.time }
+}
+
 /** Derive a reference from a real owner event. Keep transcript text in memory only. */
 export function observeDreamCorrection(session, event) {
   const header = session?.header
@@ -239,7 +248,7 @@ function sourceEvidence(pointer, owner, projectId, time, withdrawn) {
   } }
 }
 
-async function readExactSession(query, pointers, projectId, resolveProjectId, withdrawn, signal, preflightSession, readIndexedSession) {
+async function readExactSession(query, pointers, projectId, resolveProjectId, withdrawn, signal, preflightSession, readIndexedSession, checkPublication) {
   const id = pointers[0].sessionId
   const preflight = await inspectSource(preflightSession, id, projectId, resolveProjectId, signal)
   if (preflight?.source === 'prepared' && preflight.sizeBytes > MAX_STORED_BYTES) {
@@ -273,6 +282,8 @@ async function readExactSession(query, pointers, projectId, resolveProjectId, wi
     if (!Number.isSafeInteger(cursor) || cursor < -1 || cursor >= MAX_EVENTS) fail('event-cap')
     const events = observation.events
     if (!Array.isArray(events) || events.length !== cursor + 1) fail('source-changed')
+    const lastOwner = checkPublication ? events.findLast(event => event?.type === 'user/message' &&
+      (event.data?.message ?? event.data)?.source?.kind === 'user')?.seq : undefined
 
     const viable = pointers.filter(pointer => pointer.createdAt === header.createdAt && pointer.seq <= cursor)
     const { dirs, replaced } = transcriptSourceContext(events, new Set(viable.map(pointer => pointer.seq)), header)
@@ -302,7 +313,12 @@ async function readExactSession(query, pointers, projectId, resolveProjectId, wi
         verified.set(pointer, { reason: 'source-unusable' })
         continue
       }
-      verified.set(pointer, sourceEvidence(pointer, owner, projectId, event.time, withdrawn))
+      const answer = sourceEvidence(pointer, owner, projectId, event.time, withdrawn)
+      if (answer.evidence && lastOwner === pointer.seq && owner.wholeHash === undefined && owner.raw === owner.text) {
+        answer.evidence.wholeOwnerMessage = true
+        if (observation.source === 'live') answer.evidence.liveCursor = cursor
+      }
+      verified.set(pointer, answer)
     }
     return verified
   } finally {
@@ -330,7 +346,7 @@ function skipReason(error, timedOut) {
  */
 export async function readDreamTranscripts({
   query, projectId, pointersByTarget, resolveProjectId, withdrawnSourceIds = [], signal, preflightSession, readIndexedSession,
-  timeoutMs = 1500, maxBytes = 12 * 1024
+  timeoutMs = 1500, maxBytes = 12 * 1024, checkPublication = false,
 } = {}) {
   if (typeof projectId !== 'string' || !HASH.test(projectId) || !plain(pointersByTarget) ||
       typeof resolveProjectId !== 'function' || !Array.isArray(withdrawnSourceIds) ||
@@ -362,7 +378,7 @@ export async function readDreamTranscripts({
     for (const pointers of bySession.values()) {
       signal?.throwIfAborted()
       try {
-        const result = await readExactSession(query, pointers, projectId, resolveProjectId, withdrawn, linked, preflightSession, readIndexedSession)
+        const result = await readExactSession(query, pointers, projectId, resolveProjectId, withdrawn, linked, preflightSession, readIndexedSession, checkPublication)
         for (const [pointer, answer] of result) answers.set(pointer, answer)
       } catch (error) {
         signal?.throwIfAborted()

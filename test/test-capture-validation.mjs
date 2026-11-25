@@ -82,3 +82,32 @@ test('a supported model vote cannot approve an explicitly unshown revision targe
  const shown=prepareValidationPrompt([message],[c],24576,8,[prior()])
  assert.equal(new ValidationSubmission(shown).batch(JSON.stringify({checks:[{...check(),candidateId:validationCandidateId(c)}]})).verdicts[0].status,'approved')
 })
+
+test('owner qualifiers constrain approval even when the selected quote clips the qualifier',()=>{
+ const text='在制片签字之前，请先给我留个试听文件，暂时别替换交付母版。展映版先试留船尾最后一声铃。'
+ const owner={id:'owner-zhou',role:'user',text}
+ const verdict=(summary,meaning,quote,source=owner)=>{
+  const evidence=[{messageId:source.id,quote}]
+  const value={type:'project',scope:'project',basis:'explicit',summary,meaning,evidence}
+  const p=prepareValidationPrompt([source],[value])
+  const vote={...check(),candidateId:validationCandidateId(value),evidence}
+  return new ValidationSubmission(p).batch(JSON.stringify({checks:[vote]})).verdicts[0]
+ }
+ const trial='展映版先试留船尾最后一声铃'
+ const clippedTrial='留船尾最后一声铃'
+ assert.deepEqual(verdict(trial,{kind:'decision'},clippedTrial).unsupportedFields,['meaning'])
+ assert.deepEqual(verdict('展映版保留船尾最后一声铃',{kind:'decision'},clippedTrial).unsupportedFields,['wording','meaning'])
+ assert.deepEqual(verdict('展映版保留船尾最后一声铃',{kind:'claim'},clippedTrial).unsupportedFields,['wording'])
+ assert.equal(verdict(trial,{kind:'claim'},clippedTrial).status,'approved')
+ const signoff='制片签字前允许留试听文件，暂不替换交付母版'
+ const clippedSignoff='暂时别替换交付母版'
+ assert.deepEqual(verdict(signoff,{kind:'claim'},clippedSignoff).unsupportedFields,['applicability'])
+ assert.equal(verdict(signoff,{kind:'claim',conditions:[{dimension:'signoff',value:'pending'}]},clippedSignoff).status,'approved')
+ assert.equal(verdict(signoff,{kind:'claim',conditions:[{dimension:'signoff',value:'pending'}]},text).status,'approved')
+ assert.deepEqual(verdict('展映版保留船尾最后一声铃',{kind:'decision'},text).unsupportedFields,['wording','meaning'])
+ const approvedTrial='制片已签字批准仅试留船尾最后一声铃。'
+ assert.equal(verdict('展映版正式保留船尾最后一声铃',{kind:'decision'},approvedTrial,{...owner,text:approvedTrial}).status,'rejected')
+ const approved='制片已签字批准正式保留展映版船尾最后一声铃。'
+ const revised='原先只是试留，现'+approved
+ assert.equal(verdict(approved,{kind:'decision'},approved,{...owner,text:revised}).status,'approved')
+})

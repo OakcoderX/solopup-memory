@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.27.0-beta.2 — opt-in automatic Dream corrections
+
+- Enable automatic Dream corrections per configured project. A supported, explicit owner replacement can update the current value after source checks, retaining its conditions and exceptions. Dream receipts identify the change and its source.
+- Collapse exact duplicate project index rows during idle maintenance and preserve their original records and history.
+- Preserve the distinction between a trial and an approved decision when capturing project history.
+
 ## 0.27.0-beta.1 — source readback, turn receipts, and dream review
 
 - Open original DSH evidence for a saved current record with `memory_source`. Check the authorized workspace, message identity, source fingerprint, and current record before returning the quoted passage.

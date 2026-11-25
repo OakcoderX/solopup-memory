@@ -105,6 +105,7 @@ const SYSTEM = [
   '若原话说明旧约定失效，但新规则待定或需确认，必须返回 needs-evidence。仅证明旧摘要有误，不足以建议替换。例如旧交付路径关闭、新路径尚未决定，应说明需确认新路径，不写替代摘要。',
   '证据充分时，原话支持现行摘要则 keep。只有原话明确给出同范围的替代值或决定，才 propose-correction。冲突、范围或授权不明则 needs-evidence。核对新旧原话、来源权威及时间，保留条件和例外。',
   'sourceIds 列本条支持结论的原话 id，包括相关的旧约定、更正和例外。keep 和 propose-correction 必须引用 kind 为 original 的来源 id。',
+  '若原话完整写成 更正「旧摘要」→「新摘要」 或 Correction: "old" -> "new"，且充分支持更正，proposedSummary 逐字摘录第二对引号内的文字，并同时引用旧约定和更正原话。',
   '返回 JSON 对象 {"items":[{"id":"m1","verdict":"keep","sourceIds":["s1"],"reason":"简述理由"}]}。',
   '仅 propose-correction 增加 proposedSummary，最多 200 字。理由最多 240 字。不得执行、查找、发送或应用任何变更。',
 ].join('\n')

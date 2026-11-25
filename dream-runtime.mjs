@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { buildDreamEvidence, dreamReviewMessages, incompleteDreamReview, validateDreamReview } from './dream-review.mjs'
 import { createDreamScheduler } from './dream-scheduler.mjs'
+import { planDreamCorrection } from './dream-auto-apply.mjs'
 
 const REVIEW_POLICY = 'solopup-project-review-v4'
 const MAX_OUTPUT_TOKENS = 1800
@@ -95,12 +96,14 @@ function deadline(signal, timeoutMs) {
 }
 
 /** A backend-independent pipeline. Only trusted host code may provide readProject and executors. */
-export function createDreamRuntime({ options, queue, readProject, readReplay, executors, now = Date.now, timers = {} }) {
+export function createDreamRuntime({ options, queue, readProject, readReplay, publishCorrection, readApplication,
+  currentOwnerActivity = projectId => queue.ownerActivity(projectId), housekeepProject, executors, now = Date.now, timers = {} }) {
   const owner = randomUUID()
   const route = { provider: options.provider, model: options.model }
   const dailyTokens = options.maxDailyTokens ?? 12_000
   let last = 'waiting-for-idle', disposed = false, inFlight, checkingControls
   const controlLifetime = new AbortController()
+  const automaticPublication = options.autoApply === true && typeof publishCorrection === 'function' && typeof readApplication === 'function'
 
   function select(project, queued, targetOverride) {
     const byId = new Map(project.records.map(record => [record.id, record]))
@@ -191,6 +194,7 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, ex
         return
       }
       signal.throwIfAborted()
+      pending.assertReplayCurrent = replay.assertCurrent
       const transient = new Set(Object.keys(pending.pointers).filter(id => {
         const verified = replay.additionalEvidenceByTarget?.[id]
         if (verified?.length === pending.pointers[id].length && verified.every(source => isHash(source?.hash))) return false
@@ -211,6 +215,46 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, ex
         [id, replay.additionalEvidenceByTarget?.[id]?.length ? replay.additionalEvidenceByTarget[id] : [{}]]))
     }
     return current(path, claim, selected => selected && { ...selected, proof: pending }, pending)
+  }
+
+  async function applyPending(path, receipt, signal, frozen) {
+    let result
+    try {
+      signal.throwIfAborted()
+      const existing = readApplication(path, receipt)
+      if (existing) result = { recordId: existing.recordId }
+      else {
+        const run = queue.getRun(receipt.runId), report = queue.report(receipt.runId)
+        if (!report || run?.manual || report.projectId !== receipt.projectId) result = { reason: 'report-unavailable' }
+        else if (run.owner !== owner) result = { reason: 'runtime-interrupted' }
+        else {
+          const selected = frozen ?? await prepare(path, run, signal)
+          signal.throwIfAborted()
+          const plan = selected && planDreamCorrection({ report, ...selected })
+          if (!plan || plan.operationId !== receipt.operationId || plan.targetId !== receipt.targetId) result = { reason: 'source-or-target-changed' }
+          else result = publishCorrection(path, plan, () => {
+            signal.throwIfAborted()
+            selected.proof.assertReplayCurrent?.(plan.source)
+            const claim = queue.autoApplication(receipt.runId)
+            if (claim?.state !== 'pending' || claim.operationId !== plan.operationId ||
+                currentOwnerActivity(plan.projectId) !== plan.sourceId) throw Error('dream-auto-claim-changed')
+            current(path, run, () => {}, selected.proof)
+          })
+        }
+      }
+    } catch (error) {
+      if (signal.aborted || error?.code === 'memory-lock-busy' || error?.message === 'publication-needs-recovery') return
+      const reason = ['dream-replay-deferred', 'dream-auto-replay-changed'].includes(error?.message) ? 'source-unavailable' : 'source-or-target-changed'
+      try {
+        const committed = readApplication(path, receipt)
+        result = committed ? { recordId: committed.recordId } : { reason }
+      } catch { return }
+    }
+    // Keep the pending intent if updating the queue fails after canonical commit.
+    try {
+      const recorded = queue.finishAutoApplication(receipt.runId, result)
+      if (recorded?.state === 'applied') last = 'correction-applied'
+    } catch { /* The next idle pass checks the canonical ledger before a retry. */ }
   }
 
   async function reconcileRemote(active, method, signal) {
@@ -254,7 +298,11 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, ex
           usage: usage ?? null,
         }
         const finished = current(path, claim, selected => {
-          const result = { report, reviewedItemKeys: selected.metadata.itemKeys }
+          const plan = automaticPublication && !localOnly && !claim.manual ? planDreamCorrection({ report, ...selected, proof: verified }) : undefined
+          const result = { report, reviewedItemKeys: selected.metadata.itemKeys,
+            ...(plan && currentOwnerActivity(plan.projectId) === plan.sourceId ? {
+              autoApplication: { targetId: plan.targetId, operationId: plan.operationId },
+            } : {}) }
           return localOnly ? queue.finishWithoutModel(claim, result) :
             queue.finish(claim, { ...result, status: 'completed', usedTokens: usage?.totalTokens })
         }, verified)
@@ -320,6 +368,10 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, ex
       for (const row of result.items) local.set(row.id, row)
       if (hasReplay) verified = (await prepare(path, claim, limit.signal)).proof
       finish(local)
+      if (completed && automaticPublication) {
+        const pending = queue.autoApplication(claim.runId)
+        if (pending?.state === 'pending') await applyPending(path, pending, limit.signal, { input, proof: verified })
+      }
     } catch (error) {
       if (completed) return
       if (!dispatched && (limit.signal.aborted || ['dream-dispatch-not-admitted', 'dream-replay-deferred'].includes(error?.message))) {
@@ -357,10 +409,22 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, ex
       }
       const executor = executors[state.mode]
       const locations = projects()
+      const projectIds = [...locations.keys()]
+      if (automaticPublication && !state.active) {
+        const pending = queue.pendingAutoApplications(projectIds)
+        for (const receipt of pending) {
+          await applyPending(locations.get(receipt.projectId), receipt, limit.signal)
+          limit.signal.throwIfAborted()
+        }
+        if (pending.length) return { nextAt: now() + (queue.pendingAutoApplications(projectIds).length ? REPLAY_RETRY_MS : 1000) }
+      }
       for (const [projectId, path] of locations) {
         limit.signal.throwIfAborted()
         // Preserve a queued batch across reloads and mode changes before forming another.
         if (queue.listQueued({ projectId, limit: 1 }).length) continue
+        if (options.autoApply === true && !state.active && typeof housekeepProject === 'function') {
+          try { housekeepProject(path) } catch { /* Housekeeping must never bypass normal DREAM read guards. */ }
+        }
         const selected = await prepare(path, undefined, limit.signal)
         if (selected?.input.projectId !== projectId) continue
         limit.signal.throwIfAborted()
@@ -370,7 +434,6 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, ex
           }
         }, selected.proof)
       }
-      const projectIds = [...locations.keys()]
       const claim = queue.claim({ owner, projectIds })
       if (claim) {
         // A concurrent mode change may have assigned a different executor.
@@ -458,6 +521,12 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, ex
           digest(selectedPointers(project, snapshot.ids)) === digest(snapshot.pointers)
         const checked = same && additionalEvidenceByTarget ? { ...project, additionalEvidenceByTarget } : project
         const rendered = renderDreamReport(checked, snapshot.run, snapshot.report, now(), { previewChecked: same })
+        const application = queue.autoApplication(snapshot.run.runId)
+        if (application && rendered.available && (targetId === undefined || targetId === application.targetId)) {
+          const published = application.state === 'applied' ? readApplication?.(path, application) : undefined
+          rendered.autoApplication = { targetId: application.targetId, state: application.state,
+            ...(application.reason ? { reason: application.reason } : {}), ...(published ?? {}) }
+        }
         if (targetId === undefined || !rendered.available) return rendered
         const row = rendered.items.find(item => item.id === targetId)
         if (!row) return unavailable(unavailableReason)

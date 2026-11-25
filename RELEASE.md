@@ -1,9 +1,9 @@
-# SoloPup Memory 0.27.0-beta.1 开发候选
+# SoloPup Memory 0.27.0-beta.2 开发候选
 
-本候选新增原话回读和本轮回执。先用 `memory_search` 找到现行记忆的完整记录 ID，再用 `memory_source` 回查 DSH 原话。使用 `memory_receipt` 核对保存、请求和文件读回各自的状态。
+为一个项目开启 `dream.autoApply` 后，SoloPup 在闲置时回查明确的更正。能核对原话和唯一目标的单值替换，可自动更新现行项目记忆，保留其条件和例外。报告可查看来源和应用结果。
 
-This development candidate adds source readback and turn receipts. Search for the current memory by topic, then use its complete record ID to open the original source. The receipt records observations such as a successful write, a validated request, or a file check.
+With `dream.autoApply` enabled for a project, SoloPup can apply supported, explicit value replacements after checking the original message. Existing conditions and exceptions carry forward.
 
-做梦默认关闭。重新打开更正提案时，`memory_dream_report` 可用预览 ID 核验记录与出处。报告和回执均为只读。macOS Super Agent 仍为实验功能。
+整理会折叠同一节中完全相同的索引行，保留原记录和出处。查询和撤回步骤见做梦指南。macOS Super Agent 仍为实验功能。
 
-[实施与验收](docs/runs/2026-11-25-0.27-development.md) · [变更记录 / Changelog](CHANGELOG.md) · [已发布稳定版](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0)
+[设置与撤回](docs/dream-review.md) · [实施与验收](docs/runs/2026-11-25-dream-auto.md) · [变更记录](CHANGELOG.md) · [已发布稳定版](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0)

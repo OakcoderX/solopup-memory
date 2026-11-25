@@ -55,9 +55,11 @@ import { optionalService } from './host-services.mjs'
 import { projectStoreDir, inspectProjectStore, migrateProjectStore, recoverProjectStore, linkWorktreeProject, unlinkWorktreeProject } from './project-stores.mjs'
 import { watchOptionalService } from './service-readiness.mjs'
 import { createDreamRuntime } from './dream-runtime.mjs'
+import { prepareDreamCorrection, sameDreamValueSlot } from './dream-auto-apply.mjs'
+import { deduplicateDreamIndex } from './dream-housekeeping.mjs'
 import { openDreamQueue } from './dream-queue.mjs'
 import { createOrdinaryDreamExecutor } from './dream-ordinary.mjs'
-import { observeDreamCorrection, readDreamTranscripts } from './dream-transcripts.mjs'
+import { observeDreamCorrection, observeDreamOwnerActivity, readDreamTranscripts } from './dream-transcripts.mjs'
 import { createDreamReplayIndex } from './dream-replay-index.mjs'
 import { defineDeliveryCheckTool, defineMarkdownReferenceTool } from './markdown-reference.mjs'
 import { createSuperAgentDreamExecutor, SUPER_AGENT_DREAM_SERVICE, SUPER_AGENT_DREAM_ISOLATION_SERVICE } from './dream-superagent.mjs'
@@ -835,7 +837,7 @@ function storeRevisionLocal(dir) {
 }
 
 const REVIEW_LOCK = Symbol('private-review-lock')
-function writeMemoryLocal({ type, dir, line, detail, summary, expires, supersedes, meaning, provenance, scope = 'project', revisionGuard, lockToken, reviewWrite, reviewRecord, publicationFault }) {
+function writeMemoryLocal({ type, dir, line, detail, summary, expires, supersedes, exactSupersedes, meaning, provenance, scope = 'project', revisionGuard, lockToken, reviewWrite, reviewRecord, publicationFault }) {
   meaning=assertMeaningSatisfiable(meaningForScope(meaning,scope))
   if(meaning!==undefined&&!['tool-context','quoted-extraction'].includes(provenance?.basis)&&!(lockToken===REVIEW_LOCK&&reviewWrite))throw new Error('memory-meaning-needs-source-publication')
   ensureStoreDir(dir)
@@ -878,7 +880,7 @@ function writeMemoryLocal({ type, dir, line, detail, summary, expires, supersede
     if (supersedes !== undefined) {
       const hits = body
         .split(/\r?\n/)
-        .filter((item) => item.trim().startsWith('- [') && item.includes(supersedes))
+        .filter((item) => item.trim().startsWith('- [') && (exactSupersedes ? item.trim() === supersedes : item.includes(supersedes)))
       if (hits.length === 0) {
         throw new Error(`supersedes 没匹配到任何索引行：「${supersedes}」。先用 memory_forget 列表确认原文。`)
       }
@@ -956,7 +958,7 @@ function writeMemoryLocal({ type, dir, line, detail, summary, expires, supersede
 
     const base = supersededLine === undefined
       ? body
-      : forgetLines(body, supersededLine).text
+      : exactSupersedes ? body.split(/\r?\n/).filter(item => item.trim() !== supersededLine).join('\n') : forgetLines(body, supersededLine).text
 
     const newId = entryId(cleanLine)
     const oldId = supersededLine === undefined ? undefined : entryId(supersededLine)
@@ -1065,6 +1067,7 @@ function writeMemoryLocal({ type, dir, line, detail, summary, expires, supersede
       scope,
       evidence: provenance?.evidence,
       basis: provenance?.basis,
+      ...(provenance?.via === 'dream-auto-apply' ? { operationId: provenance.callHash, recordId: published?.id } : {}),
     })
     const privateLines=new Set(liveSourceRecords(dir,scope).filter(privateMemory).map(record=>record.indexLine).filter(Boolean))
     const hiddenLine=line=>privateLines.has(line)||privateMemory(line)
@@ -1333,6 +1336,61 @@ export function readDreamProject(root, cwd, consume) {
   })
 }
 
+/** Reconcile the queue receipt against the canonical source ledger and history. */
+function readDreamApplication(root, cwd, receipt) {
+  const location = resolveDreamProject(root, cwd)
+  if (location?.projectId !== receipt.projectId) return
+  const { dir } = location
+  return managedRead(dir, () => {
+    assertPublicationClear(dir)
+    const revoked = new Set(withdrawalPolicy(dir).revoked)
+    const records = liveSourceRecords(dir, 'project')
+    const proof = records.find(record => record.callHash === receipt.operationId) ??
+      episodeSnapshot(dir).state.entries.find(row => row.source.callHash === receipt.operationId)?.source ??
+      records.find(record => record.invocationHash === receipt.operationId)
+    if (!proof || proof.origin !== 'quoted-extraction' || proof.sources.some(id => revoked.has(id)) ||
+        (receipt.recordId && receipt.recordId !== proof.id)) return
+    const current = effectiveSourceRecords(dir, 'project', undefined, true).some(record => record.id === proof.id)
+    return { recordId: proof.id, current, ...(proof.evidence?.length === 1 ? {
+      source: { sessionId: proof.sessionId, messageId: proof.evidence[0].messageId },
+    } : {}) }
+  })
+}
+
+/** Publish a quoted owner correction using the native record/index/history transaction. */
+function publishDreamCorrection(root, cwd, plan, assertCurrent) {
+  const location = resolveDreamProject(root, cwd)
+  if (location?.projectId !== plan.projectId) return { reason: 'project-unavailable' }
+  const { dir } = location, { source } = plan
+  return managedWrite(dir, () => {
+    assertPublicationClear(dir)
+    const committed = readDreamApplication(root, cwd, plan)
+    if (committed) return { recordId: committed.recordId }
+    assertCurrent()
+    const revisionGuard = { value: plan.storeRevision }
+    if (storeRevisionLocal(dir) !== revisionGuard.value) return { reason: 'target-changed' }
+    const records = effectiveSourceRecords(dir, 'project', undefined, true)
+    const parent = records.find(record => record.id === plan.targetId)
+    const compiled = prepareDreamCorrection(plan, parent)
+    if (!compiled) return { reason: 'target-ineligible' }
+    const policy = withdrawalPolicy(dir)
+    const body = filterWithdrawn(readSafely(join(dir, 'MEMORY.md')) ?? '', policy, true)
+    const active = body.split(/\r?\n/).map(line => line.trim()).filter(line => line.startsWith('- [') && !isExpired(line))
+    if (active.filter(line => line === parent.indexLine).length !== 1 || active.some(line => line !== parent.indexLine &&
+        (summaryOf(line) === plan.before || sameDreamValueSlot(plan.before, summaryOf(line))))) return { reason: 'target-ambiguous' }
+    const evidence = [{ messageId: source.messageId, quote: source.quote, hash: source.hash }]
+    const ownerRoots = rootsFor(source.sessionId, evidence)
+    if (ownerRoots.length !== 1 || ownerRoots[0] !== plan.sourceId) return { reason: 'source-unavailable' }
+    requireManagedRoots(dir, [...new Set([...ownerRoots, ...parent.sources, ...inheritedRoots(compiled.fieldLineage)])])
+    const line = indexLine(parent.type, plan.after, compiled.expires, false)
+    const result = writeMemoryLocal({ type: parent.type, dir, scope: 'project', line, summary: plan.after,
+      supersedes: parent.indexLine, exactSupersedes: true, meaning: compiled.meaning, expires: compiled.expires, revisionGuard,
+      provenance: { basis: 'quoted-extraction', via: 'dream-auto-apply', sessionId: source.sessionId, evidence,
+        callHash: plan.operationId, fieldLineage: compiled.fieldLineage } })
+    return { recordId: result.recordId }
+  }, { sources: [plan.sourceId], requireSource: true })
+}
+
 /** Current index-only legacy entries are visible as unclassified data, never inherited sources. */
 function validationCurrentRecords(dir,scope,records,privateTarget){
  const policy=withdrawalPolicy(dir),index=filterWithdrawn(readTextSafe(join(dir,'MEMORY.md'))??'',policy,true)
@@ -1349,6 +1407,24 @@ function publishIndexChange(dir,before,after,reason){
   const historical=prepareEpisodes(dir,{before,after,baseline:liveSourceRecords(dir),revoked:withdrawalPolicy(dir).revoked,reason})
   commitPublication(dir,[{name:'MEMORY.md',text:after},...(historical?[historical]:[])])
   cache.clear()
+}
+
+/** A maintenance transaction over the index; exact duplicates share the same line identity. */
+export function tidyDreamIndex(root, cwd) {
+  const project = resolveDreamProject(root, cwd)
+  if (!project) return { removed: 0 }
+  const { dir } = project
+  return managedWrite(dir, () => withLock(dir, () => {
+    assertPublicationClear(dir)
+    const current = readTextSafe(join(dir, 'MEMORY.md')) ?? ''
+    const result = deduplicateDreamIndex(current)
+    if (result.removed) {
+      commitPublication(dir, [{ name: 'MEMORY.md', text: result.text }])
+      cache.clear()
+      appendAudit(dir, { op: 'dream-index-tidy', outcome: 'ok', removed: result.removed })
+    }
+    return { removed: result.removed }
+  }))
 }
 const clipUtf8=(text,limit)=>{let out='',bytes=0;for(const character of text){bytes+=Buffer.byteLength(character);if(bytes>limit)break;out+=character}return out}
 function searchHistoricalStores(stores,needle,options,context,task,limit,mode){
@@ -3374,6 +3450,7 @@ function setupDreamReview(ctx, root, options) {
     const resolveProjectId = cwd => resolveDreamProject(root, cwd)?.projectId
     const replayIndex = createDreamReplayIndex(root)
     const savingReplay = new WeakSet()
+    const observedOwnerActivity = new Map()
     function scheduleReplayIndex(session) {
       if (savingReplay.has(session)) return
       savingReplay.add(session)
@@ -3399,18 +3476,28 @@ function setupDreamReview(ctx, root, options) {
     }
     const trackCorrection = (session, event) => {
       const observed = observeDreamCorrection(session, event)
-      if (!observed) return
+      const ownerActivity = options.autoApply === true ? observeDreamOwnerActivity(session, event) : undefined
+      if (!observed && !ownerActivity) return
       try {
         const cwd = ctx.workingDirectory?.get?.(session) ?? session.header.cwd
-        const projectId = resolveProjectId(cwd)
-        if (!projectId || !options.projects.some(path => {
-          try { return resolveProjectId(path) === projectId } catch { return false }
+        const location = resolveDreamProject(root, cwd)
+        if (!location || !options.projects.some(path => {
+          try { return resolveProjectId(path) === location.projectId } catch { return false }
         })) return
+        if (ownerActivity) {
+          const recent = observedOwnerActivity.get(location.projectId)
+          if (!recent || ownerActivity.occurredAt > recent.occurredAt) observedOwnerActivity.set(location.projectId, ownerActivity)
+          else if (ownerActivity.occurredAt === recent.occurredAt && ownerActivity.id !== recent.id) {
+            observedOwnerActivity.set(location.projectId, { ...recent, id: null })
+          }
+          managedRead(location.dir, () => queue.recordOwnerActivity(location.projectId, ownerActivity.id, ownerActivity.occurredAt))
+        }
+        if (!observed) return
         readDreamProject(root, cwd, project => {
-          if (project?.projectId !== projectId) return
+          if (project?.projectId !== location.projectId) return
           const targets = project.records.filter(record => record.summary.trim() === observed.targetSummary)
           if (targets.length === 1 && !privateMemory(targets[0])) {
-            queue.recordReplaySource(projectId, targets[0].id, observed.pointer, observed.occurredAt)
+            queue.recordReplaySource(location.projectId, targets[0].id, observed.pointer, observed.occurredAt)
           }
         })
       } catch { /* Foreground turns must not depend on the optional review queue. */ }
@@ -3445,23 +3532,41 @@ function setupDreamReview(ctx, root, options) {
       maxDailyTokens: options.maxDailyTokens,
       leaseMs: options.timeoutMs + 10_000,
     })
-    const readReplay = (snapshot, signal) => {
+    const readReplay = async (snapshot, signal) => {
       const query = sessionQuery.refresh(), registry = sessions.refresh(), persistence = sessionPersistence.refresh()
       const canPreflight = typeof registry.value?.get === 'function' && typeof persistence.value?.stat === 'function'
-      return readDreamTranscripts({
+      const liveSessions = new Map()
+      const replay = await readDreamTranscripts({
         query: canPreflight ? query.value : undefined, projectId: snapshot.projectId,
         pointersByTarget: snapshot.pointers, withdrawnSourceIds: snapshot.withdrawnSourceIds, resolveProjectId,
-        readIndexedSession: replayIndex.read,
+        readIndexedSession: replayIndex.read, checkPublication: options.autoApply === true,
         signal: AbortSignal.any([signal, query.signal, registry.signal, persistence.signal]),
         async preflightSession(id, { signal }) {
           const live = registry.value.get(id)
-          if (live) return { source: 'live', header: live.header, cursor: live.seq - 1 }
+          if (live) {
+            liveSessions.set(id, live)
+            return { source: 'live', header: live.header, cursor: live.seq - 1 }
+          }
           const saved = await persistence.value.stat(id, { signal })
           return saved && { source: 'prepared', header: saved.header, sizeBytes: saved.sizeBytes, revision: saved.revision }
         },
       })
+      if (options.autoApply === true) replay.assertCurrent = source => {
+        if (query.signal.aborted || registry.signal.aborted || persistence.signal.aborted) throw Error('dream-auto-replay-changed')
+        const live = registry.value?.get?.(source.sessionId)
+        if (!live || live !== liveSessions.get(source.sessionId) || live.seq !== source.liveCursor + 1 ||
+            resolveProjectId(ctx.workingDirectory?.get?.(live) ?? live.header.cwd) !== source.projectId) throw Error('dream-auto-replay-changed')
+      }
+      return replay
     }
-    runtime = createDreamRuntime({ options, queue, readProject: (cwd, consume) => readDreamProject(root, cwd, consume), readReplay, executors })
+    runtime = createDreamRuntime({ options, queue, readProject: (cwd, consume) => readDreamProject(root, cwd, consume), readReplay,
+      publishCorrection: (cwd, plan, assertCurrent) => publishDreamCorrection(root, cwd, plan, assertCurrent),
+      readApplication: (cwd, receipt) => readDreamApplication(root, cwd, receipt),
+      currentOwnerActivity(projectId) {
+        const durable = queue.ownerActivity(projectId), observed = observedOwnerActivity.get(projectId)
+        return observed?.id === durable ? durable : undefined
+      },
+      housekeepProject: cwd => tidyDreamIndex(root, cwd), executors })
     controlWatch = watch(root + '.dream', { persistent: false }, () => {
       void runtime?.checkControls()
       try { runtime?.resumeAfterDiscard() } catch { /* The next idle turn rechecks the queue. */ }

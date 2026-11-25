@@ -3,6 +3,7 @@ import {createHash} from 'node:crypto'
 import {redactSecrets} from './security.mjs'
 import {CaptureSubmission} from './capture-submission.mjs'
 import {runCaptureModel} from './capture-llm.mjs'
+import {captureQualifierIssues} from './capture-evidence.mjs'
 import {validationTransitionContext} from './validation-transition-context.mjs'
 import {VALIDATION_FIELDS,VALIDATION_NAME,VALIDATION_TOOL,VALIDATION_SYSTEM,VALIDATION_CONTRACT} from './capture-validation-contract.mjs'
 export {VALIDATION_CONTRACT}
@@ -85,6 +86,7 @@ export class ValidationSubmission extends CaptureSubmission{
    }
    const fields={...check.fields}
    try{assertMeaningSatisfiable(record.value.meaning)}catch(error){if(error.code!=='memory-meaning-contradictory-conditions')throw error;fields.applicability='unsupported'}
+   for(const field of captureQualifierIssues(record.value,messages,check.evidence))fields[field]='unsupported'
    // A model vote cannot certify a target that the bounded request did not show.
    if(this.prepared.currentMemorySummary?.provided===true&&record.value.supersedes!==undefined&&!this.prepared.currentMemory?.some(row=>row.candidateId===record.candidateId&&row.targetShown===true)&&fields.transition==='supported')fields.transition='uncertain'
    const values=Object.values(fields),approved=values.every(v=>v==='supported')

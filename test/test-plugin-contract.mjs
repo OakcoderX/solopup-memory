@@ -30,6 +30,20 @@ for (const [key, values] of Object.entries({ enabled: [0, 'false'], everyTurns: 
     }
   })
 }
+test('dream auto-apply defaults off and accepts a boolean project opt-in', () => {
+  const dream = { enabled: true, projects: ['/tmp/example'], provider: 'fixture', model: 'fixture' }
+  assert.equal(normalizePluginConfig({}).dream.autoApply, false)
+  assert.equal(normalizePluginConfig({ dream }).dream.autoApply, false)
+  assert.equal(normalizePluginConfig({ dream: { ...dream, autoApply: undefined } }).dream.autoApply, false)
+  assert.deepEqual(normalizePluginConfig({ dream: { ...dream, autoApply: true } }).dream, {
+    ...normalizePluginConfig({ dream }).dream,
+    autoApply: true,
+  })
+  assert.throws(() => normalizePluginConfig({ dream: { ...dream, projects: [], autoApply: true } }), /memory-invalid-config:dream\.projects/)
+  for (const autoApply of [null, 1, 'true']) {
+    assert.throws(() => normalizePluginConfig({ dream: { ...dream, autoApply } }), /memory-invalid-config:dream\.autoApply/)
+  }
+})
 test('unknown fields, nonobjects and incomplete routes are rejected without echoing configured values', () => {
   for (const value of [null, [], true, { unknown: 'synthetic-private-value' }, { autoCapture: null }, { autoCapture: { timeout: 'synthetic-private-value' } }, { autoCapture: { provider: 'only-provider' } }, { autoCapture: { provider: ' ', model: 'model' } }]) {
     assert.throws(() => normalizePluginConfig(value), /memory-invalid-config/)

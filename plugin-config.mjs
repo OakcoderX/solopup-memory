@@ -3,7 +3,7 @@ import { dirname, isAbsolute, resolve } from 'node:path'
 
 export const DEFAULT_AUTO_CAPTURE = Object.freeze({ enabled: true, everyTurns: 4, maxEntries: 3, maxTokens: 800, maxInputBytes: 24 * 1024, timeoutMs: 25000 })
 export const DEFAULT_DREAM = Object.freeze({
-  enabled: false, projects: Object.freeze([]), idleMs: 20 * 60_000,
+  enabled: false, autoApply: false, projects: Object.freeze([]), idleMs: 20 * 60_000,
   timeoutMs: 180_000, maxDailyAttempts: 2, maxDailyTokens: 12_000,
 })
 const dreamLimits = {
@@ -39,7 +39,9 @@ function validate(input) {
   const dreamIssue = (field, message) => issues.push({ message, path: field ? ['dream', field] : ['dream'] })
   if (!object(dream)) return { issues: [...issues, { message: 'Dream configuration must be an object.', path: ['dream'] }] }
   if (Object.keys(dream).some(key => !dreamKeys.has(key))) dreamIssue(undefined, 'Unknown dream configuration field.')
-  if (dream.enabled !== undefined && typeof dream.enabled !== 'boolean') dreamIssue('enabled', 'enabled must be a boolean.')
+  for (const key of ['enabled', 'autoApply']) {
+    if (dream[key] !== undefined && typeof dream[key] !== 'boolean') dreamIssue(key, `${key} must be a boolean.`)
+  }
   for (const [key, [min, max]] of Object.entries(dreamLimits)) {
     if (dream[key] !== undefined && (!Number.isSafeInteger(dream[key]) || dream[key] < min || dream[key] > max)) {
       dreamIssue(key, `${key} must be an integer between ${min} and ${max}.`)
