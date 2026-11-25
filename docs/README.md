@@ -61,3 +61,23 @@ Opt in to automatic corrections for selected projects. SoloPup checks the origin
 - [安装方式选择页](install-options.md)
 
 [Source repository](https://github.com/OakcoderX/solopup-memory) · [npm](https://www.npmjs.com/package/solopup-memory) · [Release evidence](../RELEASE.md)
+
+## 已收录 / Listed on
+
+<a href="https://agentstackdirectory.com/tools/solopup-memory/" rel="nofollow"><img src="https://agentstackdirectory.com/badge/featured-on-light.svg" alt="SoloPup Memory listed on Agent Stack Directory" width="189"></a>
+<a href="https://aisotools.com/tool/solopup-memory" rel="nofollow"><img src="https://aisotools.com/badges/aiso-featured-basic.svg" alt="SoloPup Memory listed on AISO Tools" width="176"></a>
+<a href="https://promoteindex.com/p/solopup-memory" rel="nofollow"><img src="https://promoteindex.com/api/v1/projects/solopup-memory/badge.svg" alt="SoloPup Memory listed on PromoteIndex" width="176"></a>
+<a href="https://launchfree.io/listings/solopup-memory.html" rel="nofollow"><img src="https://launchfree.io/badge-light.svg" alt="SoloPup Memory listed on The Runway" width="179"></a>
+<a href="https://aiagentideas.ai/tool/solopup-memory/" rel="nofollow"><img src="https://aiagentideas.ai/badge/solopup-memory.svg" alt="SoloPup Memory listed on AI Agent Ideas; badge displays the directory’s own score" width="206"></a>
+<a href="https://postlaunchkit.com/directory/solopup-memory/" rel="nofollow"><img src="https://postlaunchkit.com/static/badge-listed-compact.svg" alt="SoloPup Memory listed on PostLaunchKit" width="176"></a>
+<a href="https://aiagents.org/agents/solopup-memory"><img src="https://aiagents.org/badges/light.svg" alt="SoloPup Memory listed on aiagents.org" width="180"></a>
+
+**DSH 生态目录 / DSH ecosystem:** [DSH Sea](https://dshsea.com/r/oakcoderx/solopup-memory) · [Awesome DeepSeek Harness Plugins (vvlife)](https://github.com/vvlife/awesome-deepseek-harness-plugins#tools--editor-ux) · [Awesome DeepSeek Harness](https://github.com/awesome-deepseekharness/awesome-deepseek-harness/blob/fdfaf4d8ab50daad27265ce97c4f82c07a08dc79/README.md#L102) · [1024 Store](https://deepseek1024.com/plugins/OakcoderX/solopup-memory) · [Awesome DSH Plugins (billLiao)](https://github.com/billLiao/awesome-dsh-plugin/blob/main/categories/memory.md#L191) · [Awesome DSH (0xsline)](https://github.com/0xsline/awesome-deepseek-harness/blob/main/README.md#L208) · [DSH Community Plugin Directory (lwmxiaobei)](https://github.com/lwmxiaobei/dsh-plugins/blob/main/README.md#L297)
+
+**其他公开目录 / Other public directories:** [AI Central Tools](https://aicentraltools.com/community-tools/solopup-memory/) · [Indie CN](https://dev.summhub.com/en/p/solopup-memory) · [NavXD](https://navxd.com/navigation/en/tool/solopup-memory/) · [Awesome AI Tools](https://docs.aliammari.dev/en/tools/solopup-memory/) · [爱自由](https://aiziyou.ai/tool/solopup-memory/) · [AI Tools Capital](https://aitoolscapital.com/tools/solopup-memory) · [ToolPassed](https://toolpassed.com/tools/solopup-memory/) · [PRKatalog](https://prkatalog.info/sites/solopup-memory)
+
+**Agent 与上下文工程目录 / Agent and context engineering lists:** [Awesome Agent Infrastructure](https://github.com/backblaze-labs/awesome-agent-infrastructure/blob/main/README.md#L86) · [Awesome Context Engineering](https://github.com/yzfly/awesome-context-engineering/blob/main/README.md#L458) · [Collective AI Tools](https://github.com/hanishrao/collective-ai-tools/blob/main/README.md#L553) · [Awesome AI Coding Tools](https://github.com/launchapp-dev/awesome-ai-coding-tools#prompt--context-engineering) · [Awesome AI Agents](https://github.com/Jenqyang/Awesome-AI-Agents/blob/main/README.md#L304)
+
+这些是收录记录，不代表认证、独立测试或推荐。徽章里显示的分数或票数是目录自己的指标，不是产品实测。部分条目仍描述早期公测版；安装请以[当前快速上手](guides/quickstart.md)和 [0.26.0 稳定版](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0)为准。
+
+These are listings, not endorsements or independent testing. Any score or vote count in a badge comes from the directory, not a product test. Some describe earlier betas. For current installation instructions, use the [quick start](guides/quickstart.md) and the [0.26.0 stable release](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0).
