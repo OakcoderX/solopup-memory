@@ -6,7 +6,7 @@
 
 **Explicit project corrections can carry over automatically.** With automatic application enabled, SoloPup checks the original message during idle time, applies a supported change to one value, and keeps existing conditions, exceptions and history. In an isolated desktop test, a fresh session switched the delivery language to English and kept Chinese for internal notes. The report-only session kept both in Chinese.
 
-- **查原话和本轮回执。** `memory_source` 回查原始 DSH 消息，`memory_receipt` 分别显示记忆保存、模型请求核对和文件检查的情况。
+- **查原话和本轮回执。** 在受支持的 DSH 宿主上，`memory_source` 可以回查原始消息。`memory_receipt` 分别显示记忆保存、模型请求核对和文件检查的情况。
 - **区分试案和定案。** 自动采集保留试行状态，闲时整理可折叠完全相同的索引行，同时保留原记录。
 
 做梦和自动应用均需主动开启。本次真机效果覆盖一个单人文字项目。Super Agent 仍为实验功能，标准原型的恢复问题已提交 DSH 官方。默认安装继续指向 `0.26.0`。 [设置与撤回](docs/dream-review.md) · [实测方法和限制](docs/runs/2026-11-25-dream-auto.md) · [完整变更](CHANGELOG.md) · [DSH 反馈](https://github.com/deepseek-ai/deepseek-harness/discussions/14293) · [稳定版](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0)

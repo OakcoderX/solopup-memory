@@ -7,7 +7,7 @@
 **真机对照。** 同一份旧记忆和同一句更正。重启 DSH 后，仅报告组仍用中文交付，自动应用组改用英文。两组都保留内部批注用中文的例外。闲置复核分别消耗 600 和 605 token。验证覆盖原生 macOS DSH `0.2.2-rc.3`、DeepSeek Flash 和一个文字项目。
 
 - **Apply explicit corrections during idle time.** With automatic application enabled, SoloPup checks the original message, updates one supported project value, and keeps its conditions, exceptions and history. The report shows the source and what changed. You can withdraw the correction source.
-- **Open the source and inspect what happened.** This preview includes `memory_source` for rereading the original DSH message and `memory_receipt` for checking what was saved, sent in the model request or verified in a file.
+- **Open the source and inspect what happened.** On supported DSH hosts, `memory_source` can reread the original DSH message. Use `memory_receipt` to check what was saved, sent in the model request or verified in a file.
 - **Keep trials tentative and tidy duplicate index rows.** Automatic capture preserves the distinction between a trial and a decision. Idle maintenance can fold identical index lines while retaining their records and sources.
 
 Try the preview with `dsh plugin --profile desktop add solopup-memory@0.27.0-beta.2 --ignore-scripts`. Dream and automatic application are both opt-in. Super Agent remains experimental. The npm default installation stays on `0.26.0`. [Setup and withdrawal](https://github.com/OakcoderX/solopup-memory/blob/v0.27.0-beta.2/docs/dream-review.md) · [Desktop comparison and limits](https://github.com/OakcoderX/solopup-memory/blob/v0.27.0-beta.2/docs/runs/2026-11-25-dream-auto.md)
