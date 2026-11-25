@@ -4,8 +4,21 @@
 
 SoloPup 是 DeepSeek Harness（DSH） 的文字记忆插件。它尝试保存值得长期保留的信息，帮助 DSH 在后续工作中找回并参考。**当前稳定版为 0.26.0。** 记忆可能保存或召回失败，重要内容请核对。
 
-[安装稳定版](docs/guides/quickstart.md) · [0.26.0 发行页](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0) · [历史评测](docs/runs/2026-11-18-memory-delivery.md) · [历史 12 题逐题成绩](docs/runs/2026-11-20-frontiermemory-text.md) · [做梦交互演示](https://oakcoderx.github.io/solopup-memory/dreaming/) · [做梦实测报告](docs/research/dreaming-in-dsh/README.md) · [更多示意案例](docs/README.md) · [常见问题](docs/faq.md) · [English](README.en.md)
+[安装稳定版](docs/guides/quickstart.md) · [0.26.0 发行页](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0) · [历史评测](docs/runs/2026-11-18-memory-delivery.md) · [历史 12 题逐题成绩](docs/runs/2026-11-20-frontiermemory-text.md) · [做梦交互演示](https://oakcoderx.github.io/solopup-memory/dreaming/) · [0.24 做梦历史实验](docs/research/dreaming-in-dsh/README.md) · [更多示意案例](docs/README.md) · [常见问题](docs/faq.md) · [English](README.en.md)
 
+## 试用 0.27.0-beta.2 的闲置更正
+
+**项目约定改了，下次打开 DSH 就能用。** 为选定项目开启自动应用（`dream.autoApply`）后，SoloPup 会在闲置时核对本次运行收到的明确更正。能对上原话和唯一一条现行约定时，它会更新受支持的一个值，保留原有条件和例外。做梦报告会列出改了什么、依据哪条消息。自动应用默认关闭，试行或证据不足的更正留待复核。 [设置、查看回执与撤回](docs/dream-review.md)
+
+同一台 Mac 上用 DSH 和 DeepSeek Flash 跑了一次对照。后台**只出报告花了 600 token**，重启后新会话仍回答「正式交付用中文」。**自动应用花了 605 token**，重启后回答「正式交付用英文」。内部审片批注用中文的例外在两组都保留。这个结果来自普通 DSH 的一个语言更正案例。 [实测设置、前后台用量与结果](docs/runs/2026-11-25-dream-auto.md)
+
+新版也能在受支持的宿主上打开记忆对应的 DSH 原消息，查看本轮实际保存了什么、模型请求里带了什么、交付文件核对到了哪一版。 [本版完整更新](RELEASE.md)
+
+日常使用请安装上方的稳定版。单独试用时请先备份，再安装指定的测试版。新版刚发布时，也可以下载核对过的归档离线安装。 [测试版下载与校验](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.27.0-beta.2)
+
+```sh
+dsh plugin --profile desktop add solopup-memory@0.27.0-beta.2 --ignore-scripts
+```
 
 ## DSH 养鱼：换个会话，大肥鱼还记得你刚改的称呼吗？
 
@@ -41,11 +54,11 @@ SoloPup 是 DeepSeek Harness（DSH） 的文字记忆插件。它尝试保存值
 
 ## 闲置做梦复核
 
-你原来约定「样片交付说明默认用中文」，后来明确改用英文。开启做梦并选好项目后，SoloPup 会等 DSH 闲置，核对旧记忆和更正原话，再生成一份建议。你确认并正式写入后，新会话才会从记忆里取得英文默认值。
+你原来约定「样片交付说明默认用中文」，后来明确改用英文。开启做梦并选好项目后，SoloPup 会等 DSH 闲置，核对旧记忆和更正原话，再把建议放进报告。默认由你确认并正式写入。在 0.27.0-beta.2 里，也可以为所选项目开启自动应用，让通过来源核对、范围明确的单值更正直接生效。
 
-**记住旧约定 → 闲置时回查原话 → 打开复核报告 → 你确认并更新 → 新会话使用新约定**
+**记住旧约定 → 闲置时回查原话 → 查看报告并确认，或按你开启的设置自动应用 → 新会话可以获得新约定**
 
-普通 DSH 可以独立完成这个流程。已配置 Super Agent 的用户可切换到实验模式，由隔离的 Worker 负责复核。两种方式共用项目记忆、队列和报告，切换会等当前工作结束。功能默认关闭。 [开启与切换](docs/dream-review.md) · [实测结果和限制](docs/runs/2026-11-13-dream-review-beta1.md)
+普通 DSH 可以独立完成复核。已配置 Super Agent 的用户可切换到实验模式，由隔离的 Worker 负责复核。两种方式共用项目记忆、队列和报告，切换会等当前工作结束。做梦默认关闭。 [开启与切换](docs/dream-review.md) · [0.27 自动应用对照](docs/runs/2026-11-25-dream-auto.md) · [0.24 历史实验](docs/runs/2026-11-13-dream-review-beta1.md)
 
 ## 记忆如何帮上忙？
 
@@ -61,7 +74,7 @@ SoloPup 是 DeepSeek Harness（DSH） 的文字记忆插件。它尝试保存值
 
 ## Super Agent 能用吗？
 
-Super Agent 负责安排和推进任务；SoloPup 尝试提供之前保存的项目约定，让执行任务的 AI 有机会参考。
+Super Agent 负责安排和推进任务。SoloPup 的实验性接入可为执行任务的 AI 提供之前保存的项目约定。
 
 **配合流程示意：**
 
@@ -77,9 +90,9 @@ AI 结合当前任务和记忆判断，再继续工作
 
 可以在**满足配置条件时**为 Super Agent 的任务提供项目背景：先显式关联同一仓库的工作区，负责具体任务的 AI 才可能收到项目记忆摘要。
 
-在两个虚构项目的对照中，我们实际重启 DSH，再由同一线程的消息恢复原 Super Agent 任务。旧检查点仍在。关闭做梦时，两个 Worker 继续用旧值。做梦建议经确认写入后，两例都改用新值，并保留原例外。跨夜用任务引擎的逻辑时钟模拟。 [看跨天恢复实测](docs/research/dreaming-in-dsh/README.md#第二天旧检查点还在)
+在 0.24 的两个虚构项目对照中，我们实际重启 DSH，再由同一线程的消息恢复原 Super Agent 任务。旧检查点仍在。关闭做梦时，两个 Worker 继续用旧值。做梦建议经人工确认写入后，两例都改用新值，并保留原例外。跨夜用任务引擎的逻辑时钟模拟。 [看跨天恢复实测](docs/research/dreaming-in-dsh/README.md#第二天旧检查点还在)
 
-Super Agent 原型准备失败后直接重试，Worker 可能缺少项目记忆；默认也不一定具备记忆检索或写入工具。撤回记忆不会自动清除旧会话副本。[查看接入条件、测试和限制](docs/runs/2026-11-12-superagent-examples.md)。
+Super Agent 原型准备失败后直接重试，Worker 可能缺少项目记忆，工具取决于 Worker 的设置。旧会话副本仍可保留已经撤回的内容。针对 0.27 的复测在 DSH `0.2.2-rc.3` 发现工单结算兼容问题。 [接入条件与限制](docs/runs/2026-11-12-superagent-examples.md) · [DSH 官方反馈](https://github.com/deepseek-ai/deepseek-harness/discussions/14293)
 
 ## 先试起来
 

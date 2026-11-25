@@ -35,4 +35,14 @@ For an existing install, [back up your data](backup.md), stop the profile, remov
 
 Idle review is optional. Select your project and model, leave DSH running, then open the latest dream report in that project's session. Check the source and use the regular memory write flow to adopt any correction. Ordinary DSH can run the review on its own. Super Agent mode remains experimental. [Idle review setup](../dream-review.md) · [Test results and limits](../runs/2026-11-13-dream-review-beta1.md)
 
+## 试用自动应用更正 / Try automatic corrections
+
+想让明确的项目更正在 DSH 闲置时自动生效，可以在隔离 profile 试用 `0.27.0-beta.2`。先备份，再按做梦指南为选定项目开启 `autoApply`。下方命令里的 `desktop` 可替换为测试 profile 名称。重启后用 `memory_status` 核对实际版本。 [做梦设置](../dream-review.md#自动应用明确的项目更正) · [真机对照](../runs/2026-11-25-dream-auto.md) · [测试版下载与校验](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.27.0-beta.2)
+
+```sh
+dsh plugin --profile desktop add solopup-memory@0.27.0-beta.2 --ignore-scripts
+```
+
+Try `0.27.0-beta.2` in a separate profile if you want explicit project corrections to apply while DSH is idle. Replace `desktop` with that profile name. Back up first, then enable `autoApply` for your selected projects. [Setup and evidence](../dream-review.md#自动应用明确的项目更正)
+
 [安装与限制](../../README.md) · [English](../../README.en.md) · [试用导航](../README.md)

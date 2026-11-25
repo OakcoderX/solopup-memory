@@ -16,6 +16,12 @@ When you resume a workspace, the plugin can surface a small set of relevant, sou
 
 欢迎下载源码或 [Fork](https://github.com/OakcoderX/solopup-memory/fork)，附虚构用例、环境和实际交付的复现结果，一起改进 DSH 的记忆层。 Download or fork the source and share a fictional reproduction with the versions, steps and observed output.
 
+## 0.27.0-beta.2 自动应用更正 / Automatic corrections preview
+
+给选定项目开启自动应用后，SoloPup 可以在 DSH 闲置时核对原话，让一条明确更正直接生效。真机对照里，下一次会话改用英文交付，内部批注仍用中文。 [测试版说明](../RELEASE.md) · [配置与撤回](dream-review.md#自动应用明确的项目更正) · [配对实测](runs/2026-11-25-dream-auto.md)
+
+Opt in to automatic corrections for selected projects. SoloPup checks the original message while idle and applies a supported change to one value. In the desktop comparison, the next session used English for delivery and kept Chinese for internal notes. [Release notes](../RELEASE.md) · [Setup and withdrawal](dream-review.md#自动应用明确的项目更正)
+
 ## 第一次使用 / Getting started
 
 第一次使用可以从快速上手开始，用一个虚构项目试试保存和回忆。想在 DSH 压缩聊天后核对作者原话，可开启做梦复核。长稿可以按采用版本和章节回查。 [交互演示](https://oakcoderx.github.io/solopup-memory/dreaming/) · [做梦设置](dream-review.md) · [0.25 验收](runs/2026-11-14-long-project-beta.md) · [0.24 做梦验收](runs/2026-11-13-dream-review-beta1.md)

@@ -4,7 +4,21 @@
 
 SoloPup is a text-memory plugin for DeepSeek Harness (DSH). It attempts to save useful long-term context for DSH to recall and consider later. **Current stable release: 0.26.0.** Check important details, since saving or recall can fail.
 
-[Install the stable release](docs/guides/quickstart.md) · [0.26.0 release](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0) · [Historical evaluation](docs/runs/2026-11-18-memory-delivery.md) · [Historical 12-task scores](docs/runs/2026-11-20-frontiermemory-text.md) · [Dreaming study](docs/research/dreaming-in-dsh/README.en.md) · [More fictional examples](docs/README.md) · [FAQ](docs/faq.md) · [中文](README.md)
+[Install the stable release](docs/guides/quickstart.md) · [0.26.0 release](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0) · [Historical evaluation](docs/runs/2026-11-18-memory-delivery.md) · [Historical 12-task scores](docs/runs/2026-11-20-frontiermemory-text.md) · [Earlier 0.24 Dreaming study](docs/research/dreaming-in-dsh/README.en.md) · [More fictional examples](docs/README.md) · [FAQ](docs/faq.md) · [中文](README.md)
+
+## Preview idle corrections in 0.27.0-beta.2
+
+**Carry an explicit correction into your next chat.** With automatic application (`dream.autoApply`) enabled for a project, SoloPup can revisit an explicit correction from the current DSH run once DSH is idle. When the original message points to one current rule and changes a supported value, SoloPup can apply the correction and carry forward the existing conditions and exceptions. The report includes a receipt that shows what changed and which message supports it. Automatic application is off by default. Tentative changes and corrections with insufficient evidence still need review. [Setup, receipts, and source withdrawal (Chinese)](docs/dream-review.md)
+
+In one comparison on the same Mac with DSH and DeepSeek Flash, **report-only review used 600 background tokens**. A fresh chat after restarting DSH still answered “Chinese for formal deliveries.” **Automatic application used 605 background tokens**, and the fresh chat answered “English for formal deliveries.” Both kept Chinese for internal review notes. This was one language correction in ordinary DSH. [Test setup, background and foreground usage, and results](docs/runs/2026-11-25-dream-auto.md)
+
+The preview also lets you open the original DSH message on supported hosts and see what was saved, sent to the model, or verified in a file. [Full release notes](RELEASE.md)
+
+For everyday use, choose the stable release above. To try this feature, back up your memory first and pin the preview version. You can also verify the archive and install it offline. [Preview downloads and checksums](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.27.0-beta.2)
+
+```sh
+dsh plugin --profile desktop add solopup-memory@0.27.0-beta.2 --ignore-scripts
+```
 
 ## What could it look like?
 
@@ -36,7 +50,7 @@ Memory is context for the AI, and may not be saved, recalled, or interpreted cor
 
 ## Can Super Agent use it?
 
-Super Agent organizes and advances tasks; SoloPup attempts to provide saved project decisions for the AI doing the work to consider.
+Super Agent organizes and advances tasks. SoloPup’s experimental integration can pass saved project decisions to the AI doing the work.
 
 **Illustrative flow:**
 
@@ -52,21 +66,21 @@ This simplified illustration does not mean every task automatically receives mem
 
 **With the required setup**, Super Agent tasks can receive project context: worktrees in the same repository must first be explicitly linked, after which a Worker may receive a project memory summary.
 
-In two fictional projects, we restarted DSH and resumed the same Super Agent tasks via a follow-up in the original thread. The old checkpoints were still there. Both Workers kept the old default with dreaming off. After we adopted a correction, both used the new default and kept the original exception. We simulated the overnight interval with the task engine’s clock. [Read the study](docs/research/dreaming-in-dsh/README.en.md#the-old-checkpoint-was-still-there-the-next-day)
+In two fictional projects tested with 0.24, we restarted DSH and resumed the same Super Agent tasks via a follow-up in the original thread. The old checkpoints were still there. Both Workers kept the old default with dreaming off. After we manually confirmed and saved a correction, both used the new default and kept the original exception. We simulated the overnight interval with the task engine’s clock. [Read the study](docs/research/dreaming-in-dsh/README.en.md#the-old-checkpoint-was-still-there-the-next-day)
 
-After a prepare failure, the prototype can retry without project memory. Workers do not necessarily have memory search or write tools by default. Withdrawing a memory does not erase old session copies. [Setup, tests and limitations](docs/runs/2026-11-12-superagent-examples.md).
+After a prepare failure, the prototype can retry without project memory. Tools depend on the Worker's configuration, and earlier session copies may retain withdrawn content. During 0.27 testing on DSH `0.2.2-rc.3`, we found a compatibility issue that prevents the prototype from closing out a Worker turn. [Setup, tests and limitations](docs/runs/2026-11-12-superagent-examples.md) · [DSH bug report](https://github.com/deepseek-ai/deepseek-harness/discussions/14293)
 
 ## Review project memory while DSH is idle
 
-Dream Review is opt-in. Suppose you first say “Deliver reports as plain text” and later explicitly switch to PDF. A review can surface both statements and suggest a correction for you to check.
+Dream Review is opt-in. Suppose you first say “Deliver reports as plain text” and later explicitly switch to PDF. By default, a review puts both statements and a suggested correction in a report. In 0.27.0-beta.2, you can also opt in to automatic application for selected projects. SoloPup can apply a supported single-value change after checking its source and scope.
 
 For longer projects, write the explicit correction as its own final paragraph. SoloPup can check that original statement after DSH compacts the chat. You can also bind an approved decision to a Markdown draft and heading, then reopen that section in a new chat with the version fingerprint checked. [Reviewing long chats](docs/dream-review.md) · [Opening an approved Markdown draft](docs/guides/markdown-reference.md) · [0.25 host test results](docs/runs/2026-11-14-long-project-beta.md)
 
 1. Enable `dream` for the projects you choose and select a configured model. Keep DSH running. By default, it checks after 20 minutes of foreground inactivity, with up to two model requests per day.
 2. In a fresh session for the same project, ask DSH to open the latest dream report. SoloPup rechecks the cited sources and displays suggestions it can still verify.
-3. Use the usual memory write flow to confirm a correction and make it effective in future sessions.
+3. Use the usual memory write flow to confirm a correction. If you enabled automatic application, use the report to see which corrections were applied and check their sources.
 
-Ordinary DSH can run the entire review. An optional Super Agent Worker can run it with the same queue, evidence rules and reports. That mode was tested on macOS with DSH `0.2.2-rc.1` and a pinned Super Agent prototype. The beta tests used fictional projects. In one fresh-session probe without the original messages, the adopted correction changed the answer. A separate test with the original messages attached fell short of its preset improvement criterion. [Interactive demo in Chinese](https://oakcoderx.github.io/solopup-memory/dreaming/) · [Enable idle review](docs/dream-review.md) · [Test results and limits](docs/runs/2026-11-13-dream-review-beta1.md)
+Ordinary DSH can run the entire review. An optional Super Agent Worker can run it with the same queue, evidence rules and reports. The earlier 0.24 tests used fictional projects, macOS with DSH `0.2.2-rc.1`, and a pinned Super Agent prototype. In one fresh-session probe without the original messages, the adopted correction changed the answer. A separate test with the original messages attached fell short of its preset improvement criterion. [Interactive demo in Chinese](https://oakcoderx.github.io/solopup-memory/dreaming/) · [Enable idle review](docs/dream-review.md) · [0.27 automatic application test](docs/runs/2026-11-25-dream-auto.md) · [Earlier 0.24 results and limits](docs/runs/2026-11-13-dream-review-beta1.md)
 
 ## Quick install
 
