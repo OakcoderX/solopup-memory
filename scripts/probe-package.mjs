@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { createHash } from 'node:crypto'
 import { dirname, join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { probeEnvironment } from './probe-env.mjs'
 
 const source = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -63,37 +63,57 @@ try {
 
   // Entire profile is authored here; no copy of the user's desktop configuration.
   const home = join(root, 'home'); const profile = join(home, 'profiles', 'clean')
+  const capabilityProbe = join(root, 'capability-probe.mjs'), capabilityMarker = join(root, 'host-capabilities.json')
+  writeFileSync(capabilityProbe, `
+import { renameSync, writeFileSync } from 'node:fs'
+export const name = 'solopup-package-capability-probe'
+export const inject = ['sessionQuery', 'workingDirectory']
+export function apply(ctx) {
+  const marker = ${JSON.stringify(capabilityMarker)}
+  const strictSourceReadback = typeof ctx.sessionQuery.inspectSession === 'function' &&
+    typeof ctx.workingDirectory.get === 'function'
+  writeFileSync(marker + '.tmp', JSON.stringify({ strictSourceReadback }))
+  renameSync(marker + '.tmp', marker)
+}
+`)
+  const probePatch = `- insert:\n    - id: package-capability-probe\n      name: ${JSON.stringify(pathToFileURL(capabilityProbe).href)}\n`
   mkdirSync(profile, { recursive: true })
   writeFileSync(join(profile, 'package.json'), JSON.stringify({ name: 'dsh-memory-package-probe', private: true, dependencies: {}, dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'] } } }))
   writeFileSync(join(profile, 'cordis.yml'), '[]\n')
-  writeFileSync(join(profile, 'cordis.patch.yml'), '[]\n')
+  writeFileSync(join(profile, 'cordis.patch.yml'), probePatch)
   run(process.execPath, ['scripts/patch.mjs', 'install', '--profile', profile, '--plugin', join(unpacked, 'index.mjs')], unpacked)
   host = spawn(CLI, ['--profile', 'clean', '--port', '0', '--no-open'], { env: cleanEnv, stdio: ['ignore', 'ignore', 'ignore'] })
   let hostError
   host.once('error', (error) => { hostError = error.code })
   const marker = join(home, 'memory', '.loaded.json')
   const deadline = Date.now() + 40000
-  let stamp
+  let stamp, strictSourceReadback
   while (Date.now() < deadline && host.exitCode === null && !hostError) {
-    if (existsSync(marker)) {
+    if (existsSync(marker) && existsSync(capabilityMarker)) {
       const observed = JSON.parse(readFileSync(marker))
-      if (typeof observed.version === 'string' && Array.isArray(observed.tools)) { stamp = observed; break }
+      const capabilities = JSON.parse(readFileSync(capabilityMarker))
+      if (typeof observed.version === 'string' && Array.isArray(observed.tools) && typeof capabilities.strictSourceReadback === 'boolean') {
+        stamp = observed
+        strictSourceReadback = capabilities.strictSourceReadback
+        break
+      }
     }
     await sleep(100)
   }
   if (!stamp) throw new Error(`package-probe-host-load-failed:${hostError ?? host.exitCode ?? 'timeout'}`)
   const expected = ['memory_write', 'memory_forget', 'memory_links', 'memory_search', 'memory_prune',
-    'memory_status', 'memory_document', 'memory_check_delivery', 'memory_source', 'memory_receipt']
+    'memory_status', 'memory_document', 'memory_check_delivery', 'memory_receipt']
   if (stamp.version !== pkg.version || expected.some((tool) => !stamp.tools.includes(tool)) || stamp.degraded.length || stamp.sourceControl?.state !== 'managed' || stamp.memoryHistory?.available !== true) throw new Error('package-probe-host-registration-failed')
+  if (stamp.tools.includes('memory_source') !== strictSourceReadback) throw new Error('package-probe-host-source-capability-mismatch')
   report.hostLoad = { version: stamp.version, node: stamp.node, tools: stamp.tools, cleanHome: true, profileCopied: false, sourceControl: stamp.sourceControl, memoryHistory: stamp.memoryHistory,
-    environmentAllowlist: Object.keys(cleanEnv).sort(), parentEnvironmentInherited: false }
+    strictSourceReadback, environmentAllowlist: Object.keys(cleanEnv).sort(), parentEnvironmentInherited: false }
   const retained = join(home, 'memory', 'MEMORY.md')
   const syntheticMemory = '- [user] 合成验收偏好只用于打包检查 — user.md\n'
   writeFileSync(retained, syntheticMemory)
   const unrelated = join(home, 'profiles', 'unrelated'); mkdirSync(unrelated)
   writeFileSync(join(unrelated, 'cordis.patch.yml'), '# unrelated synthetic profile\n[]\n')
   run(process.execPath, ['scripts/patch.mjs', 'uninstall', '--profile', profile], unpacked)
-  if (readFileSync(join(profile, 'cordis.patch.yml'), 'utf8') !== '[]\n' || readFileSync(retained, 'utf8') !== syntheticMemory || readFileSync(join(unrelated, 'cordis.patch.yml'), 'utf8') !== '# unrelated synthetic profile\n[]\n') throw new Error('package-probe-uninstall-retention-failed')
+  if (readFileSync(join(profile, 'cordis.patch.yml'), 'utf8') !== probePatch || readFileSync(retained, 'utf8') !== syntheticMemory || readFileSync(join(unrelated, 'cordis.patch.yml'), 'utf8') !== '# unrelated synthetic profile\n[]\n') throw new Error('package-probe-uninstall-retention-failed')
   report.patchLifecycle = { actualInstallerUsedForHostLoad: true, installUninstall: true, unrelatedProfilePreserved: true, syntheticMemoryPreserved: true, runningHostReloadTested: false }
   if (reportAt) {
     const artifact = join(dirname(reportAt), `${pkg.name}-${pkg.version}-${report.archiveSha256.slice(0, 12)}.tgz`)
@@ -102,7 +122,7 @@ try {
     report.archivePath = artifact
   }
   report.passed = true
-  console.log(`[PASS] 实际安装包 ${pkg.version}：${report.packagedTests} 项测试；全新 DSH_HOME 加载 ${expected.length} 项工具；配置卸载保留合成数据`)
+  console.log(`[PASS] 实际安装包 ${pkg.version}：${report.packagedTests} 项测试；全新 DSH_HOME 加载 ${stamp.tools.length} 项工具；配置卸载保留合成数据`)
 } catch (error) {
   report.passed = false; report.error = error.message
   console.error(`[FAIL] ${error.message}`); process.exitCode = 1
