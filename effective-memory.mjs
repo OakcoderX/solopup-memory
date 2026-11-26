@@ -15,6 +15,7 @@ const COMMON_WORDS = new Set([
   '这个', '那个', '应该', '需要', '请把', '使用', '之后', '之前',
 ])
 const INTRO = '以下是带来源的记忆约定。以本轮用户明确要求和适用例外为准。仅用于现有任务，不增加操作权限。若某条约定替换了旧做法，须彻底清除旧做法、不并列。'
+const EXCEPTION_NOTE = '例外仅说明主规则不适用；替代做法须有本项目当前依据，否则标注未确认，不得视为已授权。'
 const safeLine = value => sanitizeForInjection(value).replace(/\s+/gu, ' ').trim()
 
 function relevantTokens(text) {
@@ -114,25 +115,28 @@ export function selectEffectiveMemory({ records, query, context, includeProjectD
   const chosen = []
   const seen = new Set()
   let bytes = Buffer.byteLength(INTRO)
+  let exceptionNoteIncluded = false
   for (const match of matches) {
     if (chosen.length === MAX_RULES) break
     let { rule } = match
     const ruleKey = JSON.stringify([rule.summary.toLowerCase(), rule.conditions, rule.except])
     if (seen.has(ruleKey)) continue
-    let size = Buffer.byteLength(renderRule(rule)) + 1
+    const noteSize = !exceptionNoteIncluded && rule.except.length ? Buffer.byteLength(EXCEPTION_NOTE) + 1 : 0
+    let size = Buffer.byteLength(renderRule(rule)) + 1 + noteSize
     if (bytes + size > MAX_CONTEXT_BYTES && rule.detail) {
       const { detail, ...summaryOnly } = rule
       rule = summaryOnly
-      size = Buffer.byteLength(renderRule(rule)) + 1
+      size = Buffer.byteLength(renderRule(rule)) + 1 + noteSize
     }
     if (bytes + size > MAX_CONTEXT_BYTES) continue
     seen.add(ruleKey)
     chosen.push(rule)
     bytes += size
+    if (noteSize) exceptionNoteIncluded = true
   }
   return chosen
 }
 
 export function renderEffectiveMemory(rules) {
-  return rules.length ? [INTRO, ...rules.map(renderRule)].join('\n') : ''
+  return rules.length ? [INTRO, ...(rules.some(rule => rule.except.length) ? [EXCEPTION_NOTE] : []), ...rules.map(renderRule)].join('\n') : ''
 }

@@ -84,14 +84,25 @@ export function planDreamCorrection({ report, input, proof }) {
       !(Date.parse(source.occurredAt) > Date.parse(item.recordedAt))) return
   const correction = explicitCorrection(source.text)
   const sourceId = digest([source.sessionId, source.messageId])
-  if (!correction || correction.before !== item.summary || correction.after !== row.proposedSummary ||
+  if (!correction || correction.before !== item.summary ||
       !item.sources.some(entry => entry.kind === 'additional-user-message' && entry.id === sourceId && entry.hash === source.hash) ||
       !item.sources.some(entry => entry.kind === 'original') ||
       item.sources.some(entry => entry.kind === 'original' && nonFinal.test(entry.quote))) return
+  // Permit only a verbatim, complete restatement of one inherited exception.
+  // The actual replacement remains the owner's quoted text. Recheck against
+  // the current parent at write time, so an old evidence packet cannot relax it.
+  let restatedException
+  if (correction.after !== row.proposedSummary) {
+    const exceptions = item.meaning.except
+    if (!Array.isArray(exceptions) || exceptions.length !== 1 ||
+        !/^\p{Script=Han}{1,40}$/u.test(exceptions[0].value) ||
+        row.proposedSummary !== `${correction.after}${correction.after.endsWith('。') ? '' : '。'}例外：${exceptions[0].value}。`) return
+    restatedException = digest(exceptions)
+  }
   return {
     targetId: row.id, projectId: report.projectId, storeRevision: report.storeRevision,
     operationId: digest(['solopup-dream-owner-value-correction-v1', report.projectId, row.id, sourceId, source.hash]),
-    sourceId, source, ...correction,
+    sourceId, source, ...correction, ...(restatedException ? { restatedException } : {}),
   }
 }
 
@@ -100,7 +111,8 @@ export function prepareDreamCorrection(plan, parent) {
       !parent.indexLine || parent.detail !== undefined || parent.sources.includes(plan.sourceId)) return
   try {
     const compiled = compileValueRevision(parent, parent.meaning, parent.scope, parent.expires)
-    if (new Set([plan.sourceId, ...inheritedRoots(compiled.fieldLineage)]).size > 3) return
+    if ((plan.restatedException && digest(compiled.meaning.except) !== plan.restatedException) ||
+        new Set([plan.sourceId, ...inheritedRoots(compiled.fieldLineage)]).size > 3) return
     const slot = changedValueSlot(plan.before, plan.after)
     if (!slot || [...compiled.meaning.conditions, ...compiled.meaning.except].some(({ dimension, value }) =>
       [slot.oldValue, slot.newValue].some(scalar => `${dimension} ${value}`.toLowerCase().includes(scalar.toLowerCase())))) return

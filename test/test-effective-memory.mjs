@@ -47,6 +47,9 @@ test('maintains exact applicability and excludes pending conditions from review'
   assert.equal(active[0].applicability, 'applicable')
   assert.equal(effectiveRuleText(active[0]), '字幕导出包含校对说明')
   assert.match(renderEffectiveMemory(active), /例外 delivery=preview/)
+  assert.match(renderEffectiveMemory(active), /例外仅说明主规则不适用；替代做法须有本项目当前依据，否则标注未确认，不得视为已授权/)
+  const withoutException = selectEffectiveMemory({ records: [record('b', '字幕导出包含校对说明')], query: '完成字幕导出' })
+  assert.doesNotMatch(renderEffectiveMemory(withoutException), /替代做法须有本项目当前依据/)
 })
 
 test('selects current workspace defaults deliberately, with relevant rules ahead of defaults', () => {
@@ -100,6 +103,11 @@ test('long user turns retain boundary cues and projection has measured bounds', 
   assert.ok(rules.length > 0 && rules.length <= 4)
   assert.ok(Buffer.byteLength(renderEffectiveMemory(rules)) <= 2304)
   assert.ok(rules.every(rule => rule.summary.endsWith('远景')))
+  const guarded = records.map(row => ({ ...row, meaning: { kind: 'preference', except: [{ dimension: 'edition', value: '预览版' }] } }))
+  const withExceptions = selectEffectiveMemory({ records: guarded, query: '长篇稿件结尾修正' })
+  assert.ok(withExceptions.length > 0)
+  assert.match(renderEffectiveMemory(withExceptions), /替代做法须有本项目当前依据/)
+  assert.ok(Buffer.byteLength(renderEffectiveMemory(withExceptions)) <= 2304)
 })
 
 test('recalls an exact project detail when the summary omits the delivery terms', () => {
