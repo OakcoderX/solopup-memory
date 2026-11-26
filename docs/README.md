@@ -29,6 +29,7 @@ Opt in to automatic corrections for selected projects. SoloPup checks the origin
 下列案例提供操作步骤。历史离线样例的实际结果见其记录。 [离线来源回查记录](runs/2026-11-07-source-recall.md)
 
 - [快速上手 / Quick start](guides/quickstart.md)
+- [第一次养大肥鱼：从第一句话到换窗口](guides/dsh-first-fish.md)
 - [DSH 养鱼教程：大肥鱼换会话如何保留长期记忆](guides/dsh-fish-memory.md)
 - [适合谁 / Who it is for](guides/who-its-for.md)
 - [明确记住 / Explicit remember](guides/remember.md)
