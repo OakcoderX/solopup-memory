@@ -137,7 +137,9 @@ async function managedIdleFixture(t, { autoApply, failQueueReceipt = false, late
     emit(session, event)
     if (laterOwnerTurn) {
       const otherSession = { id: 'later-project-owner', header: { ...header, id: 'later-project-owner' } }
-      emit(otherSession, user(5000, time + 30, '请不要写入刚才的更正。'))
+      const laterTime = laterOwnerTurn === 'clock-backward' ? time - 1 : time + 30
+      const laterText = laterOwnerTurn === 'oversized' ? '不要写入。'.repeat(20000) : '请不要写入刚才的更正。'
+      emit(otherSession, user(5000, laterTime, laterText))
     }
     async function until(read) {
       const deadline = Date.now() + 3600
@@ -149,9 +151,9 @@ async function managedIdleFixture(t, { autoApply, failQueueReceipt = false, late
       assert.fail(`DREAM fixture did not settle: ${JSON.stringify(queue.status())}`)
     }
     const run = await until(() => queue.listReports()[0])
-    await verify({ queue, dir, run, original, expires, until, report() {
+    await verify({ queue, dir, run, original, expires, until, report(args = {}) {
       const tool = tools.find(tool => tool.name === 'memory_dream_report')
-      return tool.execute({ runId: run.runId }, { agent: { session } })
+      return tool.execute({ runId: run.runId, ...args }, { agent: { session } })
     }, restart() { stop(); db?.exec('DROP TRIGGER simulate_lost_receipt;'); apply(ctx, config) } })
   } finally {
     stop()
@@ -185,6 +187,12 @@ test('the idle host atomically replaces an exact value, reconciles a missing rec
     const report = JSON.parse((await f.report()).report)
     assert.deepEqual(report.autoApplication.source, { sessionId: 'dream-live-owner', messageId: 'dream-live-owner:0' })
     assert.equal(report.autoApplication.current, true)
+    const preview = JSON.parse((await f.report({ withdrawalPreview: true })).report).withdrawalPreview
+    assert.equal(preview.available, true)
+    assert.equal(preview.scope, 'project-preview')
+    assert.equal(preview.executionScope, 'all-managed-stores')
+    assert.equal(preview.restoresPreviousValue, false)
+    assert.ok(preview.affected > 0)
     const later = '正式交付说明默认用日文，内部审片批注用中文。'
     writeFixtureMemory({ dir: f.dir, type: 'project', summary: later, supersedes: applied.indexLine, meaning: applicability })
     assert.equal(JSON.parse((await f.report()).report).autoApplication.current, false)
@@ -195,14 +203,23 @@ test('the idle host atomically replaces an exact value, reconciles a missing rec
     assert.equal(searchStore(f.dir, after, { mode: 'exact' }).hits.length, 0)
     assert.equal(searchStore(f.dir, later, { mode: 'exact' }).hits.length, 1)
     assert.ok(!JSON.parse((await f.report()).report).autoApplication.source)
+    assert.equal(JSON.parse((await f.report({ withdrawalPreview: true })).report).withdrawalPreview.available, false)
   })
 })
 
-for (const options of [{ autoApply: false }, { autoApply: true, laterOwnerTurn: true }, { autoApply: true, sourceKind: 'prepared' }]) {
+for (const options of [{ autoApply: false }, { autoApply: true, laterOwnerTurn: true },
+  { autoApply: true, laterOwnerTurn: 'clock-backward' }, { autoApply: true, laterOwnerTurn: 'oversized' },
+  { autoApply: true, sourceKind: 'prepared' }]) {
   test(`idle review remains advisory for ${JSON.stringify(options)}`, async t => {
     await managedIdleFixture(t, options, async f => {
       assert.equal(f.queue.report(f.run.runId).items[0].verdict, 'propose-correction')
       assert.equal(f.queue.autoApplication(f.run.runId), undefined)
+      const report = JSON.parse((await f.report()).report)
+      assert.equal(report.autoApplication.state, 'report-only')
+      const expectedReason = !options.autoApply ? 'automatic-application-disabled-at-review' :
+        options.laterOwnerTurn ? 'owner-activity-unverified' : 'no-eligible-correction'
+      assert.equal(report.autoApplication.reason, expectedReason)
+      assert.equal(f.queue.report(f.run.runId).reportOnlyReason, expectedReason)
       assert.equal(searchStore(f.dir, before, { mode: 'exact' }).hits.length, 1)
       assert.equal(searchStore(f.dir, after, { mode: 'exact' }).hits.length, 0)
     })
@@ -246,7 +263,7 @@ function fixture(t, executors, options = {}, readReplay, extraProjects = {}, cal
     now: timer.now, timers: { setTimer: timer.setTimer, clearTimer: timer.clearTimer }, ...callbacks,
   })
   t.after(async () => { runtime.dispose(); await flush(); rmSync(home, { recursive: true, force: true }) })
-  return { queue, project, runtime, timer }
+  return { queue, project, runtime, timer, home }
 }
 
 test('a restarted runtime declines an uncommitted application from a previous owner', async t => {
@@ -363,7 +380,7 @@ test('open a completed historical report only with the current authorized eviden
     return { output: correction }
   } }
   let available = true
-  const { timer, queue, runtime, project } = fixture(t, { ordinary }, {}, async () => ({
+  const { timer, queue, runtime, project, home } = fixture(t, { ordinary }, {}, async () => ({
     additionalEvidenceByTarget: available ? { [record.id]: [source] } : {},
   }))
   queue.recordReplaySource(projectId, record.id, pointer, 1000)
@@ -371,6 +388,12 @@ test('open a completed historical report only with the current authorized eviden
   const [{ runId }] = queue.listReports()
   const shown = await runtime.openReport('project-a')
   assert.equal(shown.runId, runId)
+  assert.equal(shown.autoApplication.reason, 'automatic-application-disabled-at-review')
+  const oldReport = queue.report(runId)
+  delete oldReport.reportOnlyReason
+  const db = new DatabaseSync(join(home, 'memory.dream', 'state.sqlite'))
+  try { db.prepare('UPDATE reports SET payload = ? WHERE run_id = ?').run(JSON.stringify(oldReport), runId) } finally { db.close() }
+  assert.equal((await runtime.openReport('project-a', runId)).autoApplication.reason, 'application-reason-not-recorded')
   assert.equal(shown.items[0].sources[1].quote, changedQuote)
   const preview = shown.items[0].preview
   assert.match(preview.id, /^[a-f0-9]{64}$/)

@@ -49,7 +49,11 @@ DSH 对话压缩后，SoloPup 可以沿宿主的检查点回查原话。摘要�
 
 ## 撤回自动应用的更正来源
 
-如需撤回误应用的更正，可以在插件安装目录用报告提供的更正会话和消息编号预览来源撤回。核对预览涉及的记忆后，再使用同样的参数加 `--apply --control-review HASH` 执行。`HASH` 使用预览返回的 `controlReview` 值。
+报告会标明自动应用或仅供复核。未自动应用时，新报告会记录复核时自动应用未开启、手动复核、没有符合条件的更正或无法确认最新用户活动等原因；旧报告未保存具体原因时不会猜测。
+
+在对应项目会话中说「预览撤回这次自动应用的更正」，SoloPup 可通过报告编号请求只读预览。预览仅展示本项目受影响的数量，重新核对项目和来源，不会执行撤回。实际来源撤回可能影响其他托管库，执行前请通过下述既有命令核对完整范围。
+
+如需执行撤回，可以在插件安装目录用报告提供的更正会话和消息编号预览来源撤回。核对预览涉及的记忆后，再使用同样的参数加 `--apply --control-review HASH` 执行。`HASH` 使用预览返回的 `controlReview` 值。
 
 ```sh
 node scripts/candidates.mjs withdraw-managed-source --cwd /absolute/path/to/project --session SESSION_ID --message MESSAGE_ID

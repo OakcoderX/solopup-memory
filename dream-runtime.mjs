@@ -9,6 +9,7 @@ const SUPER_AGENT_RESERVE = 8000
 const REPLAY_RETRY_MS = 60_000
 const HASH = /^[a-f0-9]{64}$/
 const isHash = value => typeof value === 'string' && HASH.test(value)
+const reportReason = report => report.reportOnlyReason
 const permanentReplayLoss = new Set(['source-replaced', 'source-withdrawn'])
 const digest = value => createHash('sha256').update(JSON.stringify(value)).digest('hex')
 const ordinaryReservation = input => Buffer.byteLength(JSON.stringify(dreamReviewMessages(input))) + MAX_OUTPUT_TOKENS + 512
@@ -96,7 +97,7 @@ function deadline(signal, timeoutMs) {
 }
 
 /** A backend-independent pipeline. Only trusted host code may provide readProject and executors. */
-export function createDreamRuntime({ options, queue, readProject, readReplay, publishCorrection, readApplication,
+export function createDreamRuntime({ options, queue, readProject, readReplay, publishCorrection, readApplication, previewWithdrawal,
   currentOwnerActivity = projectId => queue.ownerActivity(projectId), housekeepProject, executors, now = Date.now, timers = {} }) {
   const owner = randomUUID()
   const route = { provider: options.provider, model: options.model }
@@ -299,10 +300,12 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, pu
         }
         const finished = current(path, claim, selected => {
           const plan = automaticPublication && !localOnly && !claim.manual ? planDreamCorrection({ report, ...selected, proof: verified }) : undefined
+          const admitted = plan && currentOwnerActivity(plan.projectId) === plan.sourceId
+          if (!admitted) report.reportOnlyReason = options.autoApply !== true ? 'automatic-application-disabled-at-review' :
+            !automaticPublication ? 'automatic-application-unavailable' : claim.manual ? 'manual-review' :
+              !plan ? 'no-eligible-correction' : 'owner-activity-unverified'
           const result = { report, reviewedItemKeys: selected.metadata.itemKeys,
-            ...(plan && currentOwnerActivity(plan.projectId) === plan.sourceId ? {
-              autoApplication: { targetId: plan.targetId, operationId: plan.operationId },
-            } : {}) }
+            ...(admitted ? { autoApplication: { targetId: plan.targetId, operationId: plan.operationId } } : {}) }
           return localOnly ? queue.finishWithoutModel(claim, result) :
             queue.finish(claim, { ...result, status: 'completed', usedTokens: usage?.totalTokens })
         }, verified)
@@ -480,12 +483,13 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, pu
     return checkingControls
   }
 
-  async function openReport(path, runId, signal = controlLifetime.signal, { targetId, expectedPreviewId } = {}) {
+  async function openReport(path, runId, signal = controlLifetime.signal, { targetId, expectedPreviewId, withdrawalPreview = false } = {}) {
     const unavailable = reason => ({ available: false, reason })
     const unavailableReason = expectedPreviewId === undefined ? 'dream-report-unavailable' : 'dream-preview-unavailable'
     if (disposed || !path || (runId !== undefined && !isHash(runId)) ||
         (targetId !== undefined && !isHash(targetId)) ||
-        (expectedPreviewId !== undefined && (!isHash(expectedPreviewId) || !runId || !targetId))) {
+        (expectedPreviewId !== undefined && (!isHash(expectedPreviewId) || !runId || !targetId)) ||
+        typeof withdrawalPreview !== 'boolean' || (withdrawalPreview && !runId)) {
       return unavailable(unavailableReason)
     }
     const linked = AbortSignal.any([signal, controlLifetime.signal])
@@ -513,7 +517,7 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, pu
         } finally { limit.dispose() }
       }
       linked.throwIfAborted()
-      return liveProject(path, project => {
+      const result = liveProject(path, project => {
         if (!project || project.projectId !== snapshot.projectId || !queue.report(snapshot.run.runId)) {
           return unavailable(unavailableReason)
         }
@@ -525,8 +529,13 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, pu
         if (application && rendered.available && (targetId === undefined || targetId === application.targetId)) {
           const published = application.state === 'applied' ? readApplication?.(path, application) : undefined
           rendered.autoApplication = { targetId: application.targetId, state: application.state,
-            ...(application.reason ? { reason: application.reason } : {}), ...(published ?? {}) }
+            ...(application.reason ? { reason: application.reason } : {}), ...(published ?? {}),
+            ...(application.state === 'applied' && !published ? { reason: 'application-evidence-unavailable-or-withdrawn' } : {}) }
         }
+        if (!application && rendered.available) rendered.autoApplication = { state: 'report-only',
+          reason: ['automatic-application-disabled-at-review', 'automatic-application-unavailable', 'manual-review',
+            'no-eligible-correction', 'owner-activity-unverified'].includes(reportReason(snapshot.report))
+            ? reportReason(snapshot.report) : 'application-reason-not-recorded' }
         if (targetId === undefined || !rendered.available) return rendered
         const row = rendered.items.find(item => item.id === targetId)
         if (!row) return unavailable(unavailableReason)
@@ -539,6 +548,14 @@ export function createDreamRuntime({ options, queue, readProject, readReplay, pu
         }
         return { ...rendered, items: [row] }
       })
+      if (withdrawalPreview && result.available) {
+        const application = queue.autoApplication(snapshot.run.runId)
+        result.withdrawalPreview = application?.state === 'applied' && (targetId === undefined || targetId === application.targetId) &&
+          typeof previewWithdrawal === 'function'
+          ? previewWithdrawal(path, application) ?? { available: false, reason: 'source-unavailable-or-withdrawn' }
+          : { available: false, reason: 'no-applied-correction' }
+      }
+      return result
     } catch { return unavailable(unavailableReason) }
   }
 

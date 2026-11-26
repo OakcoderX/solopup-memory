@@ -78,7 +78,7 @@ Recognized private records, including their quoted evidence, are omitted from au
 
 ## 发版前机械自查（0.22.0-beta.1 起）
 
-`node scripts/security-check.mjs` 只读检查发行面的机械项：零运行时依赖与安装钩子、运行时无网络/监听面、唯一子进程是 `restore.mjs` 以固定参数调用 `tar`（无 shell）、发行文件无密钥与机器绝对路径、工作流 action 按 commit pin 且权限为 `contents: read`、无 `secrets.*`/`pull_request_target`、发行包不含研究目录与日志、MIT 许可与引擎声明。
+`node scripts/security-check.mjs` 只读检查部分发行机械项：运行时依赖与安装钩子声明、所选运行时文件中的网络和子进程代码模式、发行清单文件中的特定密钥及 `/Users` 路径模式、发布工作流的 action 固定与部分权限模式、发行清单条目、许可证及引擎声明。子进程检查允许 `restore.mjs` 的 tar、`project-stores.mjs` 的 git 身份查询以及实验性 Dream companion 的固定隔离入口；脚本和评测目录不在运行时网络扫描范围内。工作流另有发布所需的作业级权限，检查不等于证明所有权限均为只读。
 
 这不是独立安全审计，也不覆盖：依赖供应链以外的攻击、宿主自身的模型/网络行为、物理访问、已知的隐私分类器不完整、以及“记忆被用户自己手工编辑”的情形。可靠性验证见 `node scripts/soak.mjs`（官方离线安装 + 真实宿主多轮启停 + SIGKILL 恢复 + 并发宿主 + 数据指纹不变）。
 

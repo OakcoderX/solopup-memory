@@ -1,12 +1,9 @@
-# SoloPup Memory 0.27.0-beta.2
+# SoloPup Memory 0.27.0-rc.1
 
-**做梦可以让明确的项目更正在下一个会话里自动生效。** 为选定项目开启自动应用后，SoloPup 在 DSH 闲置时核对更正原话。能准确定位的一项值会更新，原有条件、例外和历史会保留。做梦报告会留下来源和应用结果。
+候选版：Dream 和自动应用均需主动开启。自动应用仅处理符合严格格式、来源和项目条件的单值明确更正，范围限于受支持的交付语言、交付格式和交付模板版本；其他情况留待复核。原有条件和例外仍须通过检查。
 
-在原生 macOS DSH `0.2.2-rc.3` 上，我们用同一个 DeepSeek Flash、同一份旧记忆和同一句更正做了配对。重启后，只出报告组仍用中文交付，自动应用组改用英文。两组都保留内部批注用中文。后台用量分别为 600 和 605 token。随后撤回更正来源，英文规则退出了现行记忆。
+报告区分已应用与仅供复核；自动应用关闭时可显示原因，未保存原因时不会猜测。项目内撤回预览为只读，执行撤回前还需核对完整影响范围。
 
-**Explicit project corrections can carry over automatically.** With automatic application enabled, SoloPup checks the original message during idle time, applies a supported change to one value, and keeps existing conditions, exceptions and history. In an isolated desktop test, a fresh session switched the delivery language to English and kept Chinese for internal notes. The report-only session kept both in Chinese.
+0.27 的 Dream 队列为 v5，0.26 无法打开。跨版本回退前需退出所有写入进程，在所有相关配置中关闭 Dream，并备份完整 Dream 目录；按[离线停放与重新挂回说明](docs/dream-rollback.md)操作。
 
-- **查原话和本轮回执。** 在受支持的 DSH 宿主上，`memory_source` 可以回查原始消息。`memory_receipt` 分别显示记忆保存、模型请求核对和文件检查的情况。
-- **区分试案和定案。** 自动采集保留试行状态，闲时整理可折叠完全相同的索引行，同时保留原记录。
-
-做梦和自动应用均需主动开启。本次真机效果覆盖一个单人文字项目。Super Agent 仍为实验功能，标准原型的恢复问题已提交 DSH 官方。默认安装继续指向 `0.26.0`。 [设置与撤回](docs/dream-review.md) · [实测方法和限制](docs/runs/2026-11-25-dream-auto.md) · [完整变更](CHANGELOG.md) · [DSH 反馈](https://github.com/deepseek-ai/deepseek-harness/discussions/14293) · [稳定版](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0)
+Super Agent 仍为实验功能。本候选包尚未完成付费真实模型验收；beta.2 的桌面测试结果只适用于当时的版本。详见[完整变更](CHANGELOG.md)和[使用说明](docs/dream-review.md)。

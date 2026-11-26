@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.27.0-rc.1 — narrow opt-in Dream corrections and rollback preparation
+
+- Dream and automatic application are separately opt-in. Automatic correction accepts only tightly specified, explicit single-value changes to supported delivery languages, delivery formats, or delivery-template versions; other changes remain for review. Conditions, exceptions and source checks still apply.
+- Reports distinguish applied changes from review-only proposals and can explain when automatic application is disabled. A reason is not invented when the report did not save one. A project-scoped withdrawal preview is read-only; check the full impact before withdrawal.
+- The 0.27 Dream queue uses v5, which 0.26 cannot open. For a temporary rollback, stop all writers and disable Dream in every profile before using the offline park/reattach procedure; preserve a full Dream directory backup. See [rollback instructions](docs/dream-rollback.md).
+- Super Agent remains experimental. This candidate has not yet completed paid real-model acceptance; prior beta.2 desktop results describe that earlier version and do not establish acceptance of this archive.
+
 ## 0.27.0-beta.2 — opt-in automatic Dream corrections
 
 **改过的项目约定，下次打开 DSH 就能用。** 为选定项目开启自动应用后，SoloPup 会在 DSH 闲置时核对用户明确作出的单值更正。符合条件的更正会生效，原有条件、例外和历史保留。做梦报告会显示改了什么、依据哪句原话，支持撤回更正来源。

@@ -1357,6 +1357,22 @@ function readDreamApplication(root, cwd, receipt) {
   })
 }
 
+/** Return only this project's part of the managed, read-only source withdrawal plan. */
+function previewDreamWithdrawal(root, cwd, receipt) {
+  const location = resolveDreamProject(root, cwd)
+  if (location?.projectId !== receipt.projectId) return
+  const proof = readDreamApplication(root, cwd, receipt)
+  if (!proof?.source) return
+  const plan = withdrawManagedSource(location.dir, proof.source.sessionId, proof.source.messageId)
+  const ownName = relative(root, location.dir)
+  const own = plan.stores.find(store => store.name === ownName)
+  const checked = readDreamApplication(root, cwd, receipt)
+  if (!own || checked?.recordId !== proof.recordId || checked?.source?.sessionId !== proof.source.sessionId ||
+      checked?.source?.messageId !== proof.source.messageId) return
+  return { available: true, scope: 'project-preview', affected: own.affected,
+    executionScope: 'all-managed-stores', restoresPreviousValue: false }
+}
+
 /** Publish a quoted owner correction using the native record/index/history transaction. */
 function publishDreamCorrection(root, cwd, plan, assertCurrent) {
   const location = resolveDreamProject(root, cwd)
@@ -3420,20 +3436,21 @@ export function apply(ctx, config = {}) {
 function defineDreamReportTool(ctx, sourceInputs, dream) {
   return {
     name: 'memory_dream_report',
-    description: '按用户请求查看当前项目的做梦复核报告。报告建议需要用户核对。处理更正前可用之前的预览 ID 重新检查证据。',
+    description: '按用户请求查看当前项目的做梦复核报告。报告区分已应用和仅供复核。可用之前的预览 ID 重新检查证据，也可只读预览撤回影响。',
     parameters: { type: 'object', additionalProperties: false, properties: {
       runId: { type: 'string', description: '复核报告 ID，省略时打开当前项目的最新报告。' },
       targetId: { type: 'string', description: '报告中的完整记录 ID，只打开这一项。' },
       expectedPreviewId: { type: 'string', description: '先前报告项中的 preview.id，须同时提供 runId 和 targetId。证据或版本变化时要求重新审阅。' },
+      withdrawalPreview: { type: 'boolean', description: '只读预览本项目中撤回已应用更正来源的影响；须提供 runId。' },
     } },
     output: { schema: { type: 'object', additionalProperties: false, required: ['available', 'report'], properties: {
       available: { type: 'boolean' }, report: { type: 'string' },
     } }, render: (_args, value) => [{ type: 'text', text: value.report }] },
-    async execute({ runId, targetId, expectedPreviewId }, exec) {
+    async execute({ runId, targetId, expectedPreviewId, withdrawalPreview }, exec) {
       const session = exec?.agent?.session
       if (!captureSessionEligible(session)) throw Error('dream-report-session-unavailable')
       const cwd = ctx.workingDirectory?.get?.(session) ?? session.header.cwd
-      const result = await dream.openReport(cwd, runId, sourceInputs.signalFor(exec), { targetId, expectedPreviewId })
+      const result = await dream.openReport(cwd, runId, sourceInputs.signalFor(exec), { targetId, expectedPreviewId, withdrawalPreview })
       if (cwd !== (ctx.workingDirectory?.get?.(session) ?? session.header.cwd)) {
         return { available: false, report: JSON.stringify({ reason: 'dream-report-unavailable' }) }
       }
@@ -3477,7 +3494,10 @@ function setupDreamReview(ctx, root, options) {
     const trackCorrection = (session, event) => {
       const observed = observeDreamCorrection(session, event)
       const ownerActivity = options.autoApply === true ? observeDreamOwnerActivity(session, event) : undefined
-      if (!observed && !ownerActivity) return
+      const message = event?.data?.message ?? event?.data
+      const ambiguousOwner = options.autoApply === true && !ownerActivity &&
+        message?.role === 'user' && message.source?.kind === 'user'
+      if (!observed && !ownerActivity && !ambiguousOwner) return
       try {
         const cwd = ctx.workingDirectory?.get?.(session) ?? session.header.cwd
         const location = resolveDreamProject(root, cwd)
@@ -3487,11 +3507,13 @@ function setupDreamReview(ctx, root, options) {
         if (ownerActivity) {
           const recent = observedOwnerActivity.get(location.projectId)
           if (!recent || ownerActivity.occurredAt > recent.occurredAt) observedOwnerActivity.set(location.projectId, ownerActivity)
-          else if (ownerActivity.occurredAt === recent.occurredAt && ownerActivity.id !== recent.id) {
+          else if (ownerActivity.id !== recent.id) {
+            // Arrival order and wall-clock order disagree: neither message can
+            // safely be treated as the latest authority for an auto-write.
             observedOwnerActivity.set(location.projectId, { ...recent, id: null })
           }
           managedRead(location.dir, () => queue.recordOwnerActivity(location.projectId, ownerActivity.id, ownerActivity.occurredAt))
-        }
+        } else if (ambiguousOwner) observedOwnerActivity.set(location.projectId, { id: null, occurredAt: Infinity })
         if (!observed) return
         readDreamProject(root, cwd, project => {
           if (project?.projectId !== location.projectId) return
@@ -3562,6 +3584,7 @@ function setupDreamReview(ctx, root, options) {
     runtime = createDreamRuntime({ options, queue, readProject: (cwd, consume) => readDreamProject(root, cwd, consume), readReplay,
       publishCorrection: (cwd, plan, assertCurrent) => publishDreamCorrection(root, cwd, plan, assertCurrent),
       readApplication: (cwd, receipt) => readDreamApplication(root, cwd, receipt),
+      previewWithdrawal: (cwd, receipt) => previewDreamWithdrawal(root, cwd, receipt),
       currentOwnerActivity(projectId) {
         const durable = queue.ownerActivity(projectId), observed = observedOwnerActivity.get(projectId)
         return observed?.id === durable ? durable : undefined

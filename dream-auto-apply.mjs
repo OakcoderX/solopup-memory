@@ -19,6 +19,24 @@ const scalars = [
   /(?<![\w.-])(?:PDF|DOCX|PPTX|XLSX|TXT|CSV|JSON|PNG|JPG|MP4|WAV)(?![\w/-]|\.\w)/gu,
 ]
 
+// This is intentionally a small allowlist, not a general scalar-change parser.
+// Anything with scope, numbers outside the version, or an unfamiliar clause
+// remains a report for human review.
+function clearDeliveryValue(slot) {
+  const { prefix, suffix, oldValue, newValue } = slot
+  const language = /^(?:中文|英文|日文|法文|德文|Chinese|English|Japanese|French|German)$/iu
+  const format = /^(?:PDF|DOCX|PPTX|XLSX|TXT|CSV|JSON|PNG|JPG|MP4|WAV)$/iu
+  const version = /^v\d+(?:\.\d+){0,3}$/iu
+  const plainEnd = /^ *(?:[.。])?$/u.test(suffix)
+  const languageEnd = plainEnd || /^，内部审片批注用(?:中文|英文|日文|法文|德文)。?$/u.test(suffix)
+  return (language.test(oldValue) && language.test(newValue) && languageEnd &&
+      /^(?:(?:本项目的)?(?:正式)?交付说明(?:默认)?(?:使用|用)|(?:Delivery|Deliverable) language (?:is|defaults? to) )$/iu.test(prefix)) ||
+    (format.test(oldValue) && format.test(newValue) && plainEnd &&
+      /^(?:(?:本项目的)?(?:交付|导出)格式(?:为|用|采用|使用|设为)|(?:Export|Delivery|Deliverable) format (?:is|defaults? to|set to) )$/iu.test(prefix)) ||
+    (version.test(oldValue) && version.test(newValue) && plainEnd &&
+      /^(?:(?:本项目的)?交付模板版本(?:为|用|采用|使用|设为) *|(?:Delivery|Deliverable) template version (?:is|defaults? to|set to) )$/iu.test(prefix))
+}
+
 function explicitCorrection(text) {
   if (typeof text !== 'string' || text.length > 500 || /[\r\n\u2028\u2029]/u.test(text) || nonFinal.test(text) ||
       normalizeText(text).trim() !== text || escapeFraming(text) !== text || privateMemory(text) || findSecrets(text).length) return
@@ -28,7 +46,7 @@ function explicitCorrection(text) {
   const [, before, after] = match
   const slot = changedValueSlot(before, after)
   if (before.trim() !== before || after.trim() !== after || !slot || !valuePrefix.test(slot.prefix) ||
-      !valueSuffix.test(slot.suffix) || applicability.test(slot.prefix)) return
+      !valueSuffix.test(slot.suffix) || applicability.test(slot.prefix) || !clearDeliveryValue(slot)) return
   return { before, after }
 }
 
