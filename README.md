@@ -2,23 +2,19 @@
 
 **让 DSH 记住你的工作偏好和项目约定，下次继续时少一些重复交代。**
 
-SoloPup 是 DeepSeek Harness（DSH） 的文字记忆插件。它尝试保存值得长期保留的信息，帮助 DSH 在后续工作中找回并参考。**当前稳定版为 0.26.0。** 记忆可能保存或召回失败，重要内容请核对。
+SoloPup 是 DeepSeek Harness（DSH） 的文字记忆插件。它尝试保存值得长期保留的信息，帮助 DSH 在后续工作中找回并参考。**当前稳定版为 0.27.0。** 记忆可能保存或召回失败，重要内容请核对。
 
-[安装稳定版](docs/guides/quickstart.md) · [0.26.0 发行页](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0) · [历史评测](docs/runs/2026-11-18-memory-delivery.md) · [历史 12 题逐题成绩](docs/runs/2026-11-20-frontiermemory-text.md) · [做梦交互演示](https://oakcoderx.github.io/solopup-memory/dreaming/) · [0.24 做梦历史实验](docs/research/dreaming-in-dsh/README.md) · [更多示意案例](docs/README.md) · [常见问题](docs/faq.md) · [English](README.en.md)
+[安装稳定版](docs/guides/quickstart.md) · [0.27.0 发行页](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.27.0) · [历史评测](docs/runs/2026-11-18-memory-delivery.md) · [历史 12 题逐题成绩](docs/runs/2026-11-20-frontiermemory-text.md) · [做梦交互演示](https://oakcoderx.github.io/solopup-memory/dreaming/) · [0.24 做梦历史实验](docs/research/dreaming-in-dsh/README.md) · [更多示意案例](docs/README.md) · [常见问题](docs/faq.md) · [English](README.en.md)
 
-## 试用 0.27.0-beta.2 的闲置更正
+## 闲置时复核明确更正
 
 **项目约定改了，下次打开 DSH 就能用。** 为选定项目开启自动应用（`dream.autoApply`）后，SoloPup 会在闲置时核对本次运行收到的明确更正。能对上原话和唯一一条现行约定时，它会更新受支持的一个值，保留原有条件和例外。做梦报告会列出改了什么、依据哪条消息。自动应用默认关闭，试行或证据不足的更正留待复核。 [设置、查看回执与撤回](docs/dream-review.md)
 
-同一台 Mac 上用 DSH 和 DeepSeek Flash 跑了一次对照。后台**只出报告花了 600 token**，重启后新会话仍回答「正式交付用中文」。**自动应用花了 605 token**，重启后回答「正式交付用英文」。内部审片批注用中文的例外在两组都保留。这个结果来自普通 DSH 的一个语言更正案例。 [实测设置、前后台用量与结果](docs/runs/2026-11-25-dream-auto.md)
+同一台 Mac 上用 DSH 和 DeepSeek Flash 跑了一次对照。后台**只出报告花了 600 token**，重启后新会话仍回答「正式交付用中文」。**自动应用花了 605 token**，重启后回答「正式交付用英文」。内部审片批注用中文的例外在两组都保留。这个结果来自 beta.2 的普通 DSH 单个语言更正案例，不代表本安装包的验收结果。 [实测设置、前后台用量与结果](docs/runs/2026-11-25-dream-auto.md) · [0.27.0 桌面验收回执](https://github.com/OakcoderX/solopup-memory/releases/download/v0.27.0/desktop-acceptance.json)
 
 新版也能在受支持的宿主上打开记忆对应的 DSH 原消息，查看本轮实际保存了什么、模型请求里带了什么、交付文件核对到了哪一版。 [本版完整更新](RELEASE.md)
 
-日常使用请安装上方的稳定版。单独试用时请先备份，再安装指定的测试版。新版刚发布时，也可以下载核对过的归档离线安装。 [测试版下载与校验](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.27.0-beta.2)
-
-```sh
-dsh plugin --profile desktop add solopup-memory@0.27.0-beta.2 --ignore-scripts
-```
+升级前请先备份。做梦与自动应用均需主动开启；自动应用只支持严格格式的交付语言、交付格式和交付模板版本的单值更正。其他情况留待复核。[设置与撤回](docs/dream-review.md) · [跨版本回退](docs/dream-rollback.md)
 
 ## DSH 养鱼：换个会话，大肥鱼还记得你刚改的称呼吗？
 
@@ -50,11 +46,11 @@ dsh plugin --profile desktop add solopup-memory@0.27.0-beta.2 --ignore-scripts
 
 ## 按当前约定交付
 
-0.26 在工作开始时呈现少量与任务有关的现行约定，并保留来源、条件与例外。支持的 DSH 宿主在任务改动文件并正常收尾时，可以提示一次交付复核。模型仍需要实际检查文件和测试。历史评测报告列出各次测试实际使用的版本、得分、失分和复跑方法。欢迎下载源码或在 GitHub Fork 后，用自己的项目案例复跑和改进。 [历史评测与复现](docs/runs/2026-11-18-memory-delivery.md) · [下载源码](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0) · [Fork](https://github.com/OakcoderX/solopup-memory/fork)
+0.26 在工作开始时呈现少量与任务有关的现行约定，并保留来源、条件与例外。支持的 DSH 宿主在任务改动文件并正常收尾时，可以提示一次交付复核。模型仍需要实际检查文件和测试。历史评测报告列出各次测试实际使用的版本、得分、失分和复跑方法。欢迎下载源码或在 GitHub Fork 后，用自己的项目案例复跑和改进。 [历史评测与复现](docs/runs/2026-11-18-memory-delivery.md) · [下载源码](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.27.0) · [Fork](https://github.com/OakcoderX/solopup-memory/fork)
 
 ## 闲置做梦复核
 
-你原来约定「样片交付说明默认用中文」，后来明确改用英文。开启做梦并选好项目后，SoloPup 会等 DSH 闲置，核对旧记忆和更正原话，再把建议放进报告。默认由你确认并正式写入。在 0.27.0-beta.2 里，也可以为所选项目开启自动应用，让通过来源核对、范围明确的单值更正直接生效。
+你原来约定「样片交付说明默认用中文」，后来明确改用英文。开启做梦并选好项目后，SoloPup 会等 DSH 闲置，核对旧记忆和更正原话，再把建议放进报告。默认由你确认并正式写入。在 0.27.0 里，也可以为所选项目开启自动应用，让通过来源核对、范围明确的单值更正直接生效。
 
 **记住旧约定 → 闲置时回查原话 → 查看报告并确认，或按你开启的设置自动应用 → 新会话可以获得新约定**
 
@@ -99,7 +95,7 @@ Super Agent 原型准备失败后直接重试，Worker 可能缺少项目记忆�
 需要已安装 DeepSeek Harness，Node >=24.9。以下以 desktop profile 为例：
 
 ```sh
-dsh plugin --profile desktop add solopup-memory@0.26.0 --ignore-scripts
+dsh plugin --profile desktop add solopup-memory@0.27.0 --ignore-scripts
 ```
 
 如果 DSH 更新后出现 `memory-context-render-mismatch`，请按[升级指南](docs/guides/quickstart.md)安装当前稳定版、重启 DSH，再回到原对话重试。原来的聊天记录可继续使用。
@@ -195,7 +191,7 @@ node /absolute/path/to/solopup-memory/scripts/superagent-worktree.mjs --owner /a
 
 使用上方[先试起来](#先试起来)的 DeepSeek Harness 官方插件管理器命令安装。代码为可直接执行的 ESM，无安装时构建脚本，也不需要 npm 账户。
 
-`latest` 跟随当前稳定版，发布当天或需要复现时可固定为 `solopup-memory@0.26.0`。需要主动试用预览版时再选 `@next`（候选）或 `@beta`（测试）。Git 安装可用 `dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.26.0 --ignore-scripts`，需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。也可下载 `.tgz` 后运行 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.26.0.tgz --offline --ignore-scripts`。 [发行页与校验值](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0)
+`latest` 跟随当前稳定版，发布当天或需要复现时可固定为 `solopup-memory@0.27.0`。需要主动试用预览版时再选 `@next`（候选）或 `@beta`（测试）。Git 安装可用 `dsh plugin --profile desktop add github:OakcoderX/solopup-memory#v0.27.0 --ignore-scripts`，需要不可变 Git 来源时，用发行页的完整提交 SHA 替换标签。也可下载 `.tgz` 后运行 `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.27.0.tgz --offline --ignore-scripts`。 [发行页与校验值](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.27.0)
 
 已安装旧名 `dsh-memory` 时，先完成完整备份、关闭使用该库的宿主，用官方管理器移除旧包，再安装新包；不要同时启用两个记忆插件。新名字继续使用原记忆库和控制格式。
 

@@ -2,23 +2,19 @@
 
 **Help DSH remember your preferences and project decisions, so you have less to repeat next time.**
 
-SoloPup is a text-memory plugin for DeepSeek Harness (DSH). It attempts to save useful long-term context for DSH to recall and consider later. **Current stable release: 0.26.0.** Check important details, since saving or recall can fail.
+SoloPup is a text-memory plugin for DeepSeek Harness (DSH). It attempts to save useful long-term context for DSH to recall and consider later. **Current stable release: 0.27.0.** Check important details, since saving or recall can fail.
 
-[Install the stable release](docs/guides/quickstart.md) · [0.26.0 release](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0) · [Historical evaluation](docs/runs/2026-11-18-memory-delivery.md) · [Historical 12-task scores](docs/runs/2026-11-20-frontiermemory-text.md) · [Earlier 0.24 Dreaming study](docs/research/dreaming-in-dsh/README.en.md) · [More fictional examples](docs/README.md) · [FAQ](docs/faq.md) · [中文](README.md)
+[Install the stable release](docs/guides/quickstart.md) · [0.27.0 release](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.27.0) · [Historical evaluation](docs/runs/2026-11-18-memory-delivery.md) · [Historical 12-task scores](docs/runs/2026-11-20-frontiermemory-text.md) · [Earlier 0.24 Dreaming study](docs/research/dreaming-in-dsh/README.en.md) · [More fictional examples](docs/README.md) · [FAQ](docs/faq.md) · [中文](README.md)
 
-## Preview idle corrections in 0.27.0-beta.2
+## Review explicit corrections while idle
 
 **Carry an explicit correction into your next chat.** With automatic application (`dream.autoApply`) enabled for a project, SoloPup can revisit an explicit correction from the current DSH run once DSH is idle. When the original message points to one current rule and changes a supported value, SoloPup can apply the correction and carry forward the existing conditions and exceptions. The report includes a receipt that shows what changed and which message supports it. Automatic application is off by default. Tentative changes and corrections with insufficient evidence still need review. [Setup, receipts, and source withdrawal (Chinese)](docs/dream-review.md)
 
-In one comparison on the same Mac with DSH and DeepSeek Flash, **report-only review used 600 background tokens**. A fresh chat after restarting DSH still answered “Chinese for formal deliveries.” **Automatic application used 605 background tokens**, and the fresh chat answered “English for formal deliveries.” Both kept Chinese for internal review notes. This was one language correction in ordinary DSH. [Test setup, background and foreground usage, and results](docs/runs/2026-11-25-dream-auto.md)
+In one comparison on the same Mac with DSH and DeepSeek Flash, **report-only review used 600 background tokens**. A fresh chat after restarting DSH still answered “Chinese for formal deliveries.” **Automatic application used 605 background tokens**, and the fresh chat answered “English for formal deliveries.” Both kept Chinese for internal review notes. This was one language correction in ordinary DSH on beta.2, not acceptance of this archive. [Test setup, background and foreground usage, and results](docs/runs/2026-11-25-dream-auto.md) · [0.27.0 desktop acceptance receipt](https://github.com/OakcoderX/solopup-memory/releases/download/v0.27.0/desktop-acceptance.json)
 
-The preview also lets you open the original DSH message on supported hosts and see what was saved, sent to the model, or verified in a file. [Full release notes](RELEASE.md)
+This release also lets you open the original DSH message on supported hosts and see what was saved, sent to the model, or verified in a file. [Full release notes](RELEASE.md)
 
-For everyday use, choose the stable release above. To try this feature, back up your memory first and pin the preview version. You can also verify the archive and install it offline. [Preview downloads and checksums](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.27.0-beta.2)
-
-```sh
-dsh plugin --profile desktop add solopup-memory@0.27.0-beta.2 --ignore-scripts
-```
+Back up before upgrading. Dream and automatic application are separately opt-in. Automatic application only supports strictly formatted single-value changes to supported delivery languages, delivery formats and delivery-template versions; other changes remain for review. [Setup and withdrawal](docs/dream-review.md) · [Rollback](docs/dream-rollback.md)
 
 ## What could it look like?
 
@@ -36,7 +32,7 @@ For a project, you might record a travel budget or an agreed character detail fo
 
 ## How does memory help?
 
-In 0.26, SoloPup surfaces a small set of current, source-linked conventions for the active task. On supported DSH hosts, after a successful edit, it can ask the model to review the deliverables once before the turn closes. The earlier evaluation lists the tested versions, scores, observed failures and reproduction steps. Download or fork the source to try it on your own DSH workflows. [Historical evaluation](docs/runs/2026-11-18-memory-delivery.md) · [Source downloads](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0) · [Fork](https://github.com/OakcoderX/solopup-memory/fork)
+In 0.26, SoloPup surfaces a small set of current, source-linked conventions for the active task. On supported DSH hosts, after a successful edit, it can ask the model to review the deliverables once before the turn closes. The earlier evaluation lists the tested versions, scores, observed failures and reproduction steps. Download or fork the source to try it on your own DSH workflows. [Historical evaluation](docs/runs/2026-11-18-memory-delivery.md) · [Source downloads](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.27.0) · [Fork](https://github.com/OakcoderX/solopup-memory/fork)
 
 **① You share something worth remembering**<br>
 ↓<br>
@@ -72,7 +68,7 @@ After a prepare failure, the prototype can retry without project memory. Tools d
 
 ## Review project memory while DSH is idle
 
-Dream Review is opt-in. Suppose you first say “Deliver reports as plain text” and later explicitly switch to PDF. By default, a review puts both statements and a suggested correction in a report. In 0.27.0-beta.2, you can also opt in to automatic application for selected projects. SoloPup can apply a supported single-value change after checking its source and scope.
+Dream Review is opt-in. Suppose you first say “Deliver reports as plain text” and later explicitly switch to PDF. By default, a review puts both statements and a suggested correction in a report. In 0.27.0, you can also opt in to automatic application for selected projects. SoloPup can apply a supported single-value change after checking its source and scope.
 
 For longer projects, write the explicit correction as its own final paragraph. SoloPup can check that original statement after DSH compacts the chat. You can also bind an approved decision to a Markdown draft and heading, then reopen that section in a new chat with the version fingerprint checked. [Reviewing long chats](docs/dream-review.md) · [Opening an approved Markdown draft](docs/guides/markdown-reference.md) · [0.25 host test results](docs/runs/2026-11-14-long-project-beta.md)
 
@@ -87,7 +83,7 @@ Ordinary DSH can run the entire review. An optional Super Agent Worker can run i
 Requires an installed DeepSeek Harness and Node >=24.9. For the desktop profile:
 
 ```sh
-dsh plugin --profile desktop add solopup-memory@0.26.0 --ignore-scripts
+dsh plugin --profile desktop add solopup-memory@0.27.0 --ignore-scripts
 ```
 
 If a DSH update leaves a conversation stuck with `memory-context-render-mismatch`, follow the [upgrade guide](docs/guides/quickstart.md) to install the current stable release, restart DSH, and retry in the same conversation.
@@ -122,7 +118,7 @@ The Chinese message asks to keep this project's delivery notes in Chinese. Curre
 
 Use the official plugin-manager command in [Quick install](#quick-install).
 
-`solopup-memory@latest` follows stable releases. Pin `solopup-memory@0.26.0` to install this exact version on release day or reproduce a run. Choose `@next` or `@beta` when you want to test a prerelease. Git installation is available with `github:OakcoderX/solopup-memory#v0.26.0`. The release page supplies a full commit SHA for an immutable Git pin. This package ships executable ESM and has no dependency installation or build scripts. You can also download the release tarball and install it with `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.26.0.tgz --offline --ignore-scripts`.
+`solopup-memory@latest` follows stable releases. Pin `solopup-memory@0.27.0` to install this exact version on release day or reproduce a run. Choose `@next` or `@beta` when you want to test a prerelease. Git installation is available with `github:OakcoderX/solopup-memory#v0.27.0`. The release page supplies a full commit SHA for an immutable Git pin. This package ships executable ESM and has no dependency installation or build scripts. You can also download the release tarball and install it with `dsh plugin --profile desktop add /absolute/path/to/solopup-memory-0.27.0.tgz --offline --ignore-scripts`.
 
 Restart the profile and use `memory_status`. Existing legacy stores may require explicit local review. Do not delete control files to bypass that review. If upgrading from `dsh-memory`, create a full private backup, stop the hosts using that data, remove the old package, then install SoloPup Memory. Do not run both packages together. The data location and legacy format identifiers are intentionally retained.
 

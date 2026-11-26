@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.27.0 — source readback and opt-in Dream corrections
+
+- Open supported source messages and inspect turn receipts for saved memory, model requests and file checks.
+- Dream and automatic application are separately opt-in. Only narrowly formatted, explicit single-value changes to supported delivery languages, formats or delivery-template versions qualify for automatic application; other cases remain for review. Reports and read-only withdrawal previews help inspect the result.
+- The v5 Dream queue cannot be opened by 0.26. Back up the complete Dream directory and follow the [offline park/reattach procedure](docs/dream-rollback.md) for rollback. Super Agent remains experimental.
+- The [0.27 development evidence](docs/runs/2026-11-25-0.27-development.md) and [beta.2 comparison](docs/runs/2026-11-25-dream-auto.md) describe their respective tested builds; they do not establish acceptance of this stable archive. See the [0.27.0 desktop acceptance receipt](https://github.com/OakcoderX/solopup-memory/releases/download/v0.27.0/desktop-acceptance.json) attached to the official release for the exact archive.
+
 ## 0.27.0-rc.1 — narrow opt-in Dream corrections and rollback preparation
 
 - Dream and automatic application are separately opt-in. Automatic correction accepts only tightly specified, explicit single-value changes to supported delivery languages, delivery formats, or delivery-template versions; other changes remain for review. Conditions, exceptions and source checks still apply.
