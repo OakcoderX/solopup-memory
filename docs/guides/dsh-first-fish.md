@@ -35,17 +35,13 @@ npx @deepseek-ai/dsh web
 
 ## 3｜确实需要跨会话记忆，再试 SoloPup Memory
 
-这一步可跳过。SoloPup Memory 是我们维护的开源插件，只试 **DSH 原生文字会话**里的约定；它不会接管桌宠、QQ、B 站或其他插件的独立记忆。这里故意用固定的 [0.26.0 稳定发行包](https://github.com/OakcoderX/solopup-memory/releases/tag/v0.26.0)，不是教你追最新预览。已有记忆库先[备份](https://github.com/OakcoderX/solopup-memory/blob/v0.26.0/docs/guides/backup.md)，先用空白工作区和测试 profile，不在原来的环境叠装。
+这一步可跳过。SoloPup Memory 是我们维护的开源插件，只试 **DSH 原生文字会话**里的约定；它不会接管桌宠、QQ、B 站或其他插件的独立记忆。按[受维护的快速上手](https://github.com/OakcoderX/solopup-memory/blob/main/docs/guides/quickstart.md)选择当前稳定版的明确版本号，不追预览。已有记忆库先[备份](https://github.com/OakcoderX/solopup-memory/blob/main/docs/guides/backup.md)，先用空白工作区和测试 profile，不在原来的环境叠装。
 
-- [固定版本要求](https://github.com/OakcoderX/solopup-memory/blob/v0.26.0/docs/guides/quickstart.md)：Node ≥24.9，DSH ≥0.2.1-rc.0 且 <0.3.0。固定版文档的本地验证环境是 macOS；本文没有在 Windows 重新端到端测试。
-- 以下是官方项目指南中的 **desktop profile 示例**。前面只开的 Web 版不能默认用 `desktop`；按快速上手换成实际运行的 profile。若终端找不到 `dsh`，先按官方说明完成 CLI 安装；没确认 profile 就先停在第 2 步。
+- Node、DSH 和支持环境以快速上手为准。本文没有在 Windows 重新端到端测试。
+- 快速上手用的是 **desktop profile 示例**。前面只开的 Web 版不能照搬 `desktop`；先核对自己在运行哪个 profile，并按快速上手安装。发布当天如需立即装指定稳定包，照快速上手的精确版本或校验后离线安装。若找不到 `dsh` 或不能确认 profile，先停在第 2 步。
 
-```sh
-dsh plugin --profile desktop add solopup-memory@0.26.0 --ignore-scripts
-```
-
-重启相同 profile，打开同一测试工作区，让助手实际调用 `memory_status`，核对加载的是 **0.26.0**。之后重新做第 2 步，这一次在写入和替换时查看工具结果；没写入、被拒绝或还待确认时，不当作成功。**记忆写入、找回规则、按规则交付是三件事。** 哪一环失败就记哪一环。
+重启相同 profile，打开同一测试工作区，让助手实际调用 `memory_status`，核对实际加载版本和所选稳定版一致。之后重新做第 2 步，这一次在写入和替换时查看工具结果；没写入、被拒绝或还待确认时，不当作成功。**记忆写入、找回规则、按规则交付是三件事。** 哪一环失败就记哪一环。
 
 ## 给想复现的人
 
-可以留这四项：DSH/插件版本、模型、在哪一步见到问题、虚构片单的实际答案。不用贴真实聊天、私人目录或密钥。想进一步检查时，走[完整换会话自测](https://github.com/OakcoderX/solopup-memory/blob/v0.26.0/docs/guides/dsh-fish-memory.md)。这篇是按公开文档整理的入门练习，不是我刚完成的一轮真实模型安装评测。
+可以留这四项：DSH/插件版本、模型、在哪一步见到问题、虚构片单的实际答案。不用贴真实聊天、私人目录或密钥。想进一步检查时，走[完整换会话自测](https://github.com/OakcoderX/solopup-memory/blob/main/docs/guides/dsh-fish-memory.md)。这篇是按公开文档整理的入门练习，不是我刚完成的一轮真实模型安装评测。
