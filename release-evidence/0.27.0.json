@@ -1,0 +1,58 @@
+{
+  "passed": true,
+  "pluginVersion": "0.27.0",
+  "archiveSha256": "e514f562ff45084551eef58b7285d2dbfc0516775beca01bc0be7e9cb479eb16",
+  "hostVersion": "macOS native DSH 0.2.2-rc.3",
+  "model": "deepseek-flash",
+  "modelCalls": 8,
+  "sourceCommit": "c55fdc9455ed981c0551d27e75e558b6907c8bb3",
+  "workflowRunUrl": "https://github.com/OakcoderX/solopup-memory/actions/runs/46123509249",
+  "maintainerApproval": "Approved after reviewing final receipt and four delivery bodies; mandatory pre-release checks passed.",
+  "checks": {
+    "upgrade_readback": true,
+    "rollback_readback": true,
+    "fresh_rule_and_exception": true,
+    "withdrawal_and_scope": true,
+    "delivery_positive_and_negative": true
+  },
+  "limitations": [
+    "Ordinary DSH only; Super Agent not retested.",
+    "Delivery bodies retain conditional applicability/confirmation caveats. No alternative format was invented.",
+    "Upgrade/rollback and delivery detection checks used synthetic scripted providers, not real model inference.",
+    "First rollback install attempt failed due to omitted isolated XDG store environment; corrected environment succeeded."
+  ],
+  "evidenceScope": {
+    "withdrawal_and_scope": "46 local withdrawal and project-store tests passed; mechanical checks, not real model inference.",
+    "delivery": "Four file hashes reverified; maintainer reviewed bodies."
+  },
+  "preRelease": {
+    "at": "2026-11-28T08:15:19.613192+00:00",
+    "securityChecks": 12,
+    "securityPrivacyAdversarialTests": 133,
+    "failures": 0,
+    "injectionEscapes": 0,
+    "fuzzRounds": 400,
+    "fuzzCrashes": 0,
+    "fuzzLeaks": 0,
+    "renderMedianMs": [
+      1.945,
+      1.748,
+      2.055,
+      2.478
+    ],
+    "platform": "darwin",
+    "soak": "passed including store permissions",
+    "archiveFiles": 230,
+    "archiveFileContentsMatchCI": true,
+    "gitignoreVerified": [
+      ".auth_cache",
+      ".env",
+      "release/",
+      "release-gates/",
+      "source-gates/",
+      "eval/last-run.json"
+    ],
+    "credentialFindings": 0
+  },
+  "sourceReceiptSha256": "0487d722e49e945a0782a80ca29eecfa9f60f231004044e2ff65e0d103917c6e"
+}
