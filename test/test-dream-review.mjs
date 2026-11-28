@@ -165,3 +165,12 @@ test('rejects missing, duplicate, foreign, fabricated and unauthorized response 
     [answer([{ ...keep(), reason: '家庭住址：一个测试地点。' }, second]), /unsupported-item/],
   ]) assert.throws(() => validateDreamReview(input, result), error)
 })
+
+ test('review prompt explains verified later owner authority and dual-source correction', () => {
+  const system = dreamReviewMessages(build([record('authority')]))[0].content[0].text
+  assert.match(system, /kind="original".*最初依据的用户原话/)
+  assert.match(system, /kind="additional-user-message".*同一项目所有者.*SHA-256.*同等用户权威/)
+  assert.match(system, /较新的 additional-user-message.*同范围替代值.*propose-correction.*sourceIds.*original.*additional-user-message/)
+  assert.match(system, /先检查 incompleteEvidence/)
+  assert.match(system, /保留原条件和例外/)
+})
